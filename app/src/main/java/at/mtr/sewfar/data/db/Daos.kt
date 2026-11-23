@@ -120,6 +120,20 @@ interface ProjectDao {
     @Query("SELECT * FROM project_pattern WHERE projectId = :projectId AND deletedAt IS NULL ORDER BY sortOrder")
     fun observePatterns(projectId: String): Flow<List<ProjectPatternEntity>>
 
+    /** Live links of all live projects, for the project list. */
+    @Query(
+        "SELECT pp.* FROM project_pattern pp JOIN project p ON p.id = pp.projectId " +
+            "WHERE pp.deletedAt IS NULL AND p.deletedAt IS NULL ORDER BY pp.sortOrder",
+    )
+    fun observeAllPatternLinks(): Flow<List<ProjectPatternEntity>>
+
+    /** Live fabric lines of all live projects, for list search. */
+    @Query(
+        "SELECT f.* FROM project_fabric f JOIN project p ON p.id = f.projectId " +
+            "WHERE f.deletedAt IS NULL AND p.deletedAt IS NULL ORDER BY f.sortOrder",
+    )
+    fun observeAllFabrics(): Flow<List<ProjectFabricEntity>>
+
     @Query("SELECT COALESCE(MAX(sortOrder) + 1, 0) FROM project_pattern WHERE projectId = :projectId")
     suspend fun nextPatternOrder(projectId: String): Int
 
@@ -217,6 +231,9 @@ interface PhotoDao {
 
     @Query("SELECT COALESCE(MAX(sortOrder) + 1, 0) FROM photo WHERE ownerType = :ownerType AND ownerId = :ownerId")
     suspend fun nextOrder(ownerType: PhotoOwner, ownerId: String): Int
+
+    @Query("SELECT * FROM photo WHERE ownerType = :ownerType AND deletedAt IS NULL ORDER BY sortOrder")
+    fun observeAllOfType(ownerType: PhotoOwner): Flow<List<PhotoEntity>>
 
     /** Photos deleted before [cutoff]: their Undo window has passed, so the files can go (SPEC 7). */
     @Query("SELECT id FROM photo WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff")

@@ -36,6 +36,8 @@ class PhotoRepository(
 
     fun observe(ownerType: PhotoOwner, ownerId: String): Flow<List<PhotoEntity>> = dao.observeForOwner(ownerType, ownerId)
 
+    fun observeAllOfType(ownerType: PhotoOwner): Flow<List<PhotoEntity>> = dao.observeAllOfType(ownerType)
+
     suspend fun forOwner(ownerType: PhotoOwner, ownerId: String): List<PhotoEntity> = dao.forOwner(ownerType, ownerId)
 
     /** Adds a project photo (tag required); [logEntryId] attaches it to a progress log entry (SPEC 3.4). */

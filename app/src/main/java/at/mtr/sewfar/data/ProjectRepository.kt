@@ -31,6 +31,10 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
 
     fun observe(id: String): Flow<ProjectEntity?> = dao.observe(id)
 
+    fun observeAllPatternLinks(): Flow<List<ProjectPatternEntity>> = dao.observeAllPatternLinks()
+
+    fun observeAllFabrics(): Flow<List<ProjectFabricEntity>> = dao.observeAllFabrics()
+
     suspend fun get(id: String): ProjectEntity? = dao.get(id)
 
     /** Creates a Planned project (SPEC 3.2) with the given patterns, in that order. */

@@ -49,4 +49,10 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   UI: `rememberTakePhoto` (TakePicture → cache temp file via FileProvider, no CAMERA permission),
   `rememberPickPhotos` (Photo Picker), `PhotoImage` (via `LocalPhotoLoader`), `PhotoViewerRoute`.
   Photo tests need `@GraphicsMode(NATIVE)`.
-- Tests use `TestDb` (in-memory Room + `FakeTime`) under Robolectric.
+- **UI conventions**: ViewModels are created with `viewModel { XViewModel(container) }`; their writes run in
+  `container.appScope` so edits saved while leaving a screen survive. In-place editing uses `AutoSaveTextField`.
+  Snackbars (incl. Undo) go through `LocalMessages`. Pickers are `EntityPicker` (search + "Create …"); show only one
+  dialog at a time. After a suspend call, navigate inside `withContext(Dispatchers.Main)`.
+- Tests use `TestDb` (in-memory Room + `FakeTime`) under Robolectric. UI flow tests keep Robolectric's default screen
+  (a larger `w…dp-h…dp` qualifier made dialogs with text fields never go idle) and reach off-screen controls with
+  `performScrollTo()`.
