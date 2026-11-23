@@ -15,5 +15,6 @@ class SewFarApp : Application() {
         container = AppContainer(this)
         container.seedInBackground()
         container.purgePhotoFilesInBackground()
+        container.keepAutoBackupScheduled()
     }
 }

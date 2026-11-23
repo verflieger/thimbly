@@ -208,4 +208,32 @@
     <string name="last_time">Last time</string>
     <string name="last_time_open">Open previous project</string>
     <string name="last_time_nothing">No lessons recorded.</string>
+
+    <!-- Backup (SPEC 9) -->
+    <string name="settings_backup">Backup</string>
+    <string name="backup_export">Save backup</string>
+    <string name="backup_share">Share backup</string>
+    <string name="backup_import">Restore backup</string>
+    <string name="backup_restore_safety">Undo last restore</string>
+    <string name="backup_restore_safety_summary">Restores the data from before the last restore</string>
+    <string name="backup_saved">Backup saved</string>
+    <string name="backup_restored">Backup restored</string>
+    <string name="backup_failed">Backup failed</string>
+    <string name="backup_working">Working…</string>
+    <string name="backup_confirm_title">Replace all data?</string>
+    <string name="backup_confirm_text">%1$d projects, %2$d patterns, %3$d people and %4$d photos will replace your current data. Your current data is kept as a safety copy.</string>
+    <string name="backup_replace">Replace</string>
+    <string name="backup_error_not_backup">This file is not a SewFar backup.</string>
+    <string name="backup_error_newer">This backup is from a newer SewFar version. Update the app first.</string>
+    <string name="backup_error_unsafe">This backup contains invalid file names.</string>
+    <string name="backup_phone_switch">Android\'s own backup is off. To move to a new phone, save a backup and restore it there.</string>
+    <string name="auto_backup">Weekly automatic backup</string>
+    <string name="auto_backup_folder">Folder: %1$s</string>
+    <string name="auto_backup_last">Last backup: %1$s</string>
+    <string name="auto_backup_never">No automatic backup yet</string>
+    <string name="auto_backup_error">Last attempt failed: %1$s</string>
+    <string name="auto_backup_choose_folder">Choose folder again</string>
+    <string name="auto_backup_now">Back up now</string>
+    <string name="auto_backup_error_folder">the folder is no longer available</string>
+    <string name="auto_backup_error_failed">the backup could not be written</string>
 </resources>

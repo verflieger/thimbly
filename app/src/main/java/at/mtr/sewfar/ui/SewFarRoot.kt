@@ -175,7 +175,7 @@ fun SewFarRoot(container: AppContainer) {
                 composable<MachinesRoute> { MachinesScreen(onOpenSettings = openSettings) }
                 composable<SettingsRoute> { entry ->
                     SettingsScreen(
-                        container.settings, container.versionName, onBack = { navController.popFrom(entry) },
+                        container, onBack = { navController.popFrom(entry) },
                         onOpenList = { kind -> navController.navigate(ListEditRoute(kind.name)) },
                     )
                 }

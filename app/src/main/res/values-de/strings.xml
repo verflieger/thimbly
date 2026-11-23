@@ -204,4 +204,32 @@
     <string name="last_time">Beim letzten Mal</string>
     <string name="last_time_open">Vorheriges Projekt öffnen</string>
     <string name="last_time_nothing">Keine Erkenntnisse festgehalten.</string>
+
+    <!-- Backup (SPEC 9) -->
+    <string name="settings_backup">Sicherung</string>
+    <string name="backup_export">Sicherung speichern</string>
+    <string name="backup_share">Sicherung teilen</string>
+    <string name="backup_import">Sicherung wiederherstellen</string>
+    <string name="backup_restore_safety">Letzte Wiederherstellung rückgängig machen</string>
+    <string name="backup_restore_safety_summary">Stellt die Daten von vor der letzten Wiederherstellung her</string>
+    <string name="backup_saved">Sicherung gespeichert</string>
+    <string name="backup_restored">Sicherung wiederhergestellt</string>
+    <string name="backup_failed">Sicherung fehlgeschlagen</string>
+    <string name="backup_working">Wird bearbeitet …</string>
+    <string name="backup_confirm_title">Alle Daten ersetzen?</string>
+    <string name="backup_confirm_text">%1$d Projekte, %2$d Schnittmuster, %3$d Personen und %4$d Fotos ersetzen deine aktuellen Daten. Die aktuellen Daten bleiben als Sicherheitskopie erhalten.</string>
+    <string name="backup_replace">Ersetzen</string>
+    <string name="backup_error_not_backup">Diese Datei ist keine SewFar-Sicherung.</string>
+    <string name="backup_error_newer">Diese Sicherung stammt von einer neueren SewFar-Version. Aktualisiere zuerst die App.</string>
+    <string name="backup_error_unsafe">Diese Sicherung enthält ungültige Dateinamen.</string>
+    <string name="backup_phone_switch">Die Android-eigene Sicherung ist aus. Für ein neues Handy speichere eine Sicherung und stelle sie dort wieder her.</string>
+    <string name="auto_backup">Wöchentliche automatische Sicherung</string>
+    <string name="auto_backup_folder">Ordner: %1$s</string>
+    <string name="auto_backup_last">Letzte Sicherung: %1$s</string>
+    <string name="auto_backup_never">Noch keine automatische Sicherung</string>
+    <string name="auto_backup_error">Letzter Versuch fehlgeschlagen: %1$s</string>
+    <string name="auto_backup_choose_folder">Ordner neu wählen</string>
+    <string name="auto_backup_now">Jetzt sichern</string>
+    <string name="auto_backup_error_folder">der Ordner ist nicht mehr verfügbar</string>
+    <string name="auto_backup_error_failed">die Sicherung konnte nicht geschrieben werden</string>
 </resources>

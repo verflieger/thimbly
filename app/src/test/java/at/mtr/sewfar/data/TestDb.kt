@@ -14,6 +14,7 @@ import java.time.LocalDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 
 /** Clock under test control. */
 class FakeTime(var now: Long = 1_000_000L, var day: LocalDate = LocalDate.of(2026, 11, 23)) : TimeSource() {
@@ -46,6 +47,8 @@ class TestDb {
         db.close()
         photoFiles.dir.deleteRecursively()
     }
+
+    suspend fun ProjectRepository.observeAllOnce(): List<String> = observeAll().first().map { it.id }
 
     fun lessonTagId(key: String) = Ids.builtIn("lesson_tag", key)
 

@@ -8,6 +8,7 @@ import at.mtr.sewfar.data.PhotoRepository
 import at.mtr.sewfar.data.ProjectRepository
 import at.mtr.sewfar.data.SettingsRepository
 import at.mtr.sewfar.data.TimeSource
+import at.mtr.sewfar.data.backup.BackupRepository
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
 import at.mtr.sewfar.data.photos.PhotoFiles
@@ -17,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** Creates and owns long-lived objects (database, repositories, settings). */
@@ -39,6 +41,13 @@ class AppContainer(private val context: Context) {
     val photos: PhotoRepository by lazy { PhotoRepository(database, deleter, photoFiles, time, appScope) }
     val photoLoader: PhotoLoader by lazy { PhotoLoader(photoFiles) }
 
+    val backup: BackupRepository by lazy {
+        BackupRepository(
+            database, photoFiles, context.filesDir, context.cacheDir, time, versionName,
+            afterImport = { Seeder(database, time).seed() },
+        )
+    }
+
     val settings: SettingsRepository by lazy { SettingsRepository.create(context) }
 
     val versionName: String by lazy {
@@ -51,13 +60,29 @@ class AppContainer(private val context: Context) {
      */
     suspend fun <T> runInApp(block: suspend () -> T): T = appScope.async { block() }.await()
 
+    /** Re-applies the weekly auto-backup schedule on start (KEEP: an existing schedule stays as it is). */
+    fun keepAutoBackupScheduled() {
+        appScope.launch {
+            val folder = settings.autoBackupFolder.first()
+            // A start-up chore must never crash the app (e.g. WorkManager not initialised in tests).
+            runCatching { at.mtr.sewfar.data.backup.AutoBackupWorker.schedule(context, enabled = folder != null) }
+                .onFailure { android.util.Log.w("SewFar", "Could not schedule automatic backup", it) }
+        }
+    }
+
     /** Adds missing built-in list entries (SPEC 1). Cheap when nothing is missing; called on start. */
     fun seedInBackground() {
         appScope.launch { Seeder(database, time).seed() }
     }
 
-    /** Removes files of photos whose Undo window has passed and orphan files (SPEC 7); called on start. */
+    /**
+     * On start: finish or roll back a photo swap an interrupted import left behind (SPEC 9.2), then remove files of
+     * photos whose Undo window has passed and orphan files (SPEC 7). Order matters: the purge must see the final folder.
+     */
     fun purgePhotoFilesInBackground() {
-        appScope.launch { photos.purgeFiles() }
+        appScope.launch {
+            runCatching { backup.recoverPhotoSwap() }.onFailure { android.util.Log.e("SewFar", "Photo swap recovery failed", it) }
+            photos.purgeFiles()
+        }
     }
 }

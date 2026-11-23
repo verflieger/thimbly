@@ -5,6 +5,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import at.mtr.sewfar.domain.ProjectStatus
@@ -35,7 +37,36 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         }
     }
 
+    // ---- Automatic backup (SPEC 9.2) ----
+
+    /** SAF tree URI of the chosen folder; null = automatic backup off. */
+    val autoBackupFolder: Flow<String?> = store.data.map { it[AutoBackupFolder] }
+    val lastAutoBackupAt: Flow<Long?> = store.data.map { it[LastAutoBackupAt] }
+    val lastAutoBackupError: Flow<String?> = store.data.map { it[LastAutoBackupError] }
+
+    suspend fun setAutoBackupFolder(uri: String?) {
+        store.edit { prefs ->
+            if (uri == null) prefs.remove(AutoBackupFolder) else prefs[AutoBackupFolder] = uri
+            prefs.remove(LastAutoBackupError)
+        }
+    }
+
+    /** A success updates the last run and clears the error; a failure keeps the last success and stores the error. */
+    suspend fun recordAutoBackup(success: Boolean, error: String?, at: Long) {
+        store.edit { prefs ->
+            if (success) {
+                prefs[LastAutoBackupAt] = at
+                prefs.remove(LastAutoBackupError)
+            } else {
+                prefs[LastAutoBackupError] = error.orEmpty()
+            }
+        }
+    }
+
     companion object {
+        private val AutoBackupFolder = stringPreferencesKey("auto_backup_folder")
+        private val LastAutoBackupAt = longPreferencesKey("last_auto_backup_at")
+        private val LastAutoBackupError = stringPreferencesKey("last_auto_backup_error")
         private val CollapsedSections = stringSetPreferencesKey("collapsed_sections")
         private val DynamicColor = booleanPreferencesKey("dynamic_color")
 

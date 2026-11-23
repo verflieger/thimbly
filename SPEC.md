@@ -340,21 +340,25 @@ From v1.0 on, every app version reads every older backup format (migrate on impo
     "Choose folder again" action. Settings always show the last successful run.
 - **Import = replace all** (merge comes with sync, see ROADMAP):
   1. Pick a zip. Reject entries with absolute paths or `..` (zip slip), and a `format` newer than the app supports.
-  2. Validate: JSON parses, every live photo row has its file in the zip.
+  2. Validate: exactly one `backup.json`, it parses and has a known format. Photo rows whose file is missing are
+     accepted (the photo shows as missing), so one lost file never makes later backups unrestorable.
   3. Confirm dialog with counts ("12 projects, 30 patterns … will replace your current data").
   4. Write a safety export of the current data to `filesDir/import-safety.zip` (kept until the next import;
      restorable from Settings).
   5. Extract photos to `filesDir/photos.new`.
   6. Replace all tables in one database transaction.
-  7. Rename `photos` → `photos.old`, `photos.new` → `photos`, then delete `photos.old`. A marker file records the
-     step; on the next app start an unfinished swap is completed (database committed) or rolled back (not committed).
+  7. Rename `photos` → `photos.old`, `photos.new` → `photos`, then delete `photos.old`. A marker file (written before
+     step 6) flags a swap in progress; on the next app start an unfinished swap is completed if every live photo row
+     of the committed database has its file in `photos.new`, otherwise rolled back (`photos.new` is dropped).
+- Unknown entries in the zip are ignored; absolute paths, `..` segments and nested paths under `photos/` are rejected.
 
 ## 10. Settings
 
 - Appearance: dynamic colour on/off.
 - Lists: Pattern categories, Lesson tags, Measurement types, Setup purposes (each: add, rename, hide, reorder).
-- Backup: export, import, restore safety export, automatic backup (on/off, folder, last run, last error), note that
-  switching phones needs a manual export.
+- Backup: save (file) or share, restore, "Undo last restore" (restores the safety export), automatic backup (on/off,
+  folder, last run, last error, "Back up now", "Choose folder again"), note that switching phones needs a manual
+  export.
 - About: version, licence (GPLv3), source code link, open-source licences.
 
 ## 11. Out of scope for v1
@@ -377,9 +381,10 @@ any kind.
   - snapshot diff: value change, label rename, hidden/added fields, deleted setup, write-back (§6.4)
   - locale-aware number parsing
 - Room migration tests from every exported schema (from v1.0 on).
-- Backup tests: export → import round trip gives identical tables and photos; every format fixture imports; corrupt
-  zip, missing photo, zip-slip entry and newer format are rejected with no change to existing data; interrupted
-  photo swap is recovered on start.
+- Backup tests: export → import round trip gives identical tables and photos; every format fixture imports
+  (`src/test/resources/backup/format<n>.zip`); corrupt zip, duplicate `backup.json`, zip-slip entry and newer format
+  are rejected with no change to existing data; a failed commit keeps the old data; interrupted photo swaps are
+  recovered on start; "Undo last restore" keeps the replaced data as the new safety export.
 - Auto-backup worker tests (Robolectric/WorkManager test): pruning only touches `sewfar-auto-*`, revoked URI is
   reported.
 - Photo file cleanup after the Undo window.
