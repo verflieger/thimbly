@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Thread spool with a loose thread end. 108dp adaptive icon; artwork stays inside the 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- thread body -->
+    <path android:fillColor="#D98C6A" android:pathData="M39,36h30v36h-30z" />
+    <!-- winding lines -->
+    <path android:strokeColor="#B5694A" android:strokeWidth="1.6" android:strokeLineCap="round"
+        android:pathData="M41,42L67,40M41,48L67,46M41,54L67,52M41,60L67,58M41,66L67,64" />
+    <!-- flanges -->
+    <path android:fillColor="#F3EBDD" android:pathData="M35,30h38a2,2 0 0 1 2,2v4h-42v-4a2,2 0 0 1 2,-2z" />
+    <path android:fillColor="#F3EBDD" android:pathData="M33,72h42v4a2,2 0 0 1 -2,2h-38a2,2 0 0 1 -2,-2z" />
+    <!-- loose thread end -->
+    <path android:strokeColor="#D98C6A" android:strokeWidth="2" android:strokeLineCap="round"
+        android:pathData="M69,62C78,62 80,70 76,76C73,81 78,84 82,82" />
+</vector>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">SewFar</string>
+
+    <!-- Tabs (SPEC 2) -->
+    <string name="tab_projects">Projects</string>
+    <string name="tab_patterns">Patterns</string>
+    <string name="tab_people">People</string>
+    <string name="tab_machines">Machines</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="action_back">Back</string>
+
+    <!-- Empty states -->
+    <string name="projects_empty">No projects yet.</string>
+    <string name="patterns_empty">No patterns yet.</string>
+    <string name="people_empty">No people yet.</string>
+    <string name="machines_empty">No machines yet.</string>
+
+    <!-- Settings (SPEC 10) -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_dynamic_color">Wallpaper colours</string>
+    <string name="settings_dynamic_color_summary">Use colours from your wallpaper instead of SewFar\'s own</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_licence">Free software under the GNU GPL v3</string>
+</resources>
