@@ -273,14 +273,15 @@ A setup is a reusable, named machine configuration:
   deleted.
 - Photo files of deleted photos are removed from disk once the Undo window has passed (the row keeps its tombstone).
 - A list entry (category, purpose, lesson tag, measurement type, machine field) that is in use can only be hidden,
-  not deleted.
+  not deleted. Built-in list entries can never be deleted, only hidden (so seeding never has to resurrect them).
 
 ## 8. Data model (Room)
 
 All tables have `id TEXT PRIMARY KEY` (UUID), `createdAt`, `updatedAt`, `deletedAt` unless noted. Enums are stored
 as stable text codes. `?` marks nullable columns; everything else is required (text columns default to `""`).
 Foreign keys are declared without ON DELETE actions (rows are never hard-deleted), and every FK column is indexed.
-`photo.ownerId` is polymorphic and has no FK. Dates without time (`startedOn`, `finishedOn`, session `date`,
+`photo.ownerId` is polymorphic and has no FK; `project.coverPhotoId` has none either (it would make project ↔ photo
+circular). Dates without time (`startedOn`, `finishedOn`, session `date`,
 `lastServicedOn`) are stored as ISO `yyyy-MM-dd` text. Amounts in m are stored as integer centimetres
 (`amountCm`).
 
@@ -308,7 +309,7 @@ Foreign keys are declared without ON DELETE actions (rows are never hard-deleted
 | `setup_use` | setupId, projectId, logEntryId?, snapshotAt, tweaked, snapshot (JSON: list of {fieldId, label, value}) | |
 
 Room schema export is on. **Schema version 1 and backup format 1 are frozen at the v1.0 release**; during
-development the schema may change freely (destructive migration in debug builds). From v1.0 on, every schema change
+development the version is raised on every schema change and debug builds drop the database instead of migrating. From v1.0 on, every schema change
 ships a migration and a test.
 
 ## 9. Backup
