@@ -23,4 +23,10 @@
     <string name="settings_about">Über</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_licence">Freie Software unter der GNU GPL v3</string>
+    <string name="action_close">Schließen</string>
+
+    <!-- Photos (SPEC 3.6) -->
+    <string name="photo_content_description">Foto</string>
+    <string name="photo_load_failed">Foto konnte nicht geladen werden</string>
+    <string name="photo_import_failed">Foto konnte nicht hinzugefügt werden</string>
 </resources>

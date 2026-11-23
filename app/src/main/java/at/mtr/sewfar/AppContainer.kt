@@ -4,11 +4,14 @@ import android.content.Context
 import at.mtr.sewfar.data.ListRepository
 import at.mtr.sewfar.data.PatternRepository
 import at.mtr.sewfar.data.PersonRepository
+import at.mtr.sewfar.data.PhotoRepository
 import at.mtr.sewfar.data.ProjectRepository
 import at.mtr.sewfar.data.SettingsRepository
 import at.mtr.sewfar.data.TimeSource
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
+import at.mtr.sewfar.data.photos.PhotoFiles
+import at.mtr.sewfar.data.photos.PhotoLoader
 import at.mtr.sewfar.data.seed.Seeder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +34,10 @@ class AppContainer(private val context: Context) {
     val persons: PersonRepository by lazy { PersonRepository(database, deleter, time) }
     val lists: ListRepository by lazy { ListRepository(database, deleter, time) }
 
+    private val photoFiles: PhotoFiles by lazy { PhotoFiles(context.filesDir) }
+    val photos: PhotoRepository by lazy { PhotoRepository(database, deleter, photoFiles, time, appScope) }
+    val photoLoader: PhotoLoader by lazy { PhotoLoader(photoFiles) }
+
     val settings: SettingsRepository by lazy { SettingsRepository.create(context) }
 
     val versionName: String by lazy {
@@ -40,5 +47,10 @@ class AppContainer(private val context: Context) {
     /** Adds missing built-in list entries (SPEC 1). Cheap when nothing is missing; called on start. */
     fun seedInBackground() {
         appScope.launch { Seeder(database, time).seed() }
+    }
+
+    /** Removes files of photos whose Undo window has passed and orphan files (SPEC 7); called on start. */
+    fun purgePhotoFilesInBackground() {
+        appScope.launch { photos.purgeFiles() }
     }
 }

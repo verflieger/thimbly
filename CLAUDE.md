@@ -43,4 +43,10 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   `ProjectDao.touch` (`lastActivityAt`). Status changes only via `ProjectRepository.setStatus`.
 - Raw SQL writes (`openHelper.writableDatabase.execSQL`) only inside `db.withTransaction`, so they run off the main
   thread and Room observers are notified.
+- **Photos** (SPEC 3.6): `PhotoRepository` stores the processed file first (`PhotoFiles`, `ImageProcessor`: EXIF
+  orientation, ≤ 2048 px, JPEG 85, no EXIF), then inserts the row. Files are immutable; replacing = new row.
+  Files of deleted photos and old orphan files are purged after `UndoWindowMillis` (on start and after deletions).
+  UI: `rememberTakePhoto` (TakePicture → cache temp file via FileProvider, no CAMERA permission),
+  `rememberPickPhotos` (Photo Picker), `PhotoImage` (via `LocalPhotoLoader`), `PhotoViewerRoute`.
+  Photo tests need `@GraphicsMode(NATIVE)`.
 - Tests use `TestDb` (in-memory Room + `FakeTime`) under Robolectric.

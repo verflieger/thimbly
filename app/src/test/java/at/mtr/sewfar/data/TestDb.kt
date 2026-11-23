@@ -5,9 +5,15 @@ import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.test.core.app.ApplicationProvider
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
+import at.mtr.sewfar.data.photos.PhotoFiles
 import at.mtr.sewfar.data.seed.Seeder
 import at.mtr.sewfar.domain.Ids
+import android.graphics.Bitmap
+import java.io.File
 import java.time.LocalDate
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 
 /** Clock under test control. */
 class FakeTime(var now: Long = 1_000_000L, var day: LocalDate = LocalDate.of(2026, 11, 23)) : TimeSource() {
@@ -28,9 +34,18 @@ class TestDb {
     val persons = PersonRepository(db, deleter, time)
     val lists = ListRepository(db, deleter, time)
 
+    /** Delayed photo cleanup jobs; cancelled in [close]. */
+    val cleanupScope = CoroutineScope(SupervisorJob())
+    val photoFiles = PhotoFiles(File(ApplicationProvider.getApplicationContext<android.content.Context>().cacheDir, "test-${Ids.random()}"))
+    val photos = PhotoRepository(db, deleter, photoFiles, time, cleanupScope)
+
     suspend fun seed() = Seeder(db, time).seed()
 
-    fun close() = db.close()
+    fun close() {
+        cleanupScope.cancel()
+        db.close()
+        photoFiles.dir.deleteRecursively()
+    }
 
     fun lessonTagId(key: String) = Ids.builtIn("lesson_tag", key)
 
@@ -86,5 +101,13 @@ class TestDb {
             id, setupId, projectId, logEntryId,
         )
         return id
+    }
+
+    companion object {
+        /** A JPEG of the given size as bytes, for feeding the photo pipeline. */
+        fun jpeg(width: Int, height: Int): ByteArray {
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            return java.io.ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }.toByteArray()
+        }
     }
 }

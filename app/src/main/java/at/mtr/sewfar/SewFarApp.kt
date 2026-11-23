@@ -14,5 +14,6 @@ class SewFarApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         container.seedInBackground()
+        container.purgePhotoFilesInBackground()
     }
 }

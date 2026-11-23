@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.RawQuery
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
+import at.mtr.sewfar.domain.PhotoOwner
 import kotlinx.coroutines.flow.Flow
 
 // Reads return live rows only (deletedAt IS NULL) unless the name says otherwise ("Any").
@@ -198,4 +199,30 @@ interface ListDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedPatternCategories(rows: List<PatternCategoryEntity>)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedLessonTags(rows: List<LessonTagEntity>)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedPurposes(rows: List<PurposeEntity>)
+}
+
+@Dao
+interface PhotoDao {
+    @Insert suspend fun insert(photo: PhotoEntity)
+    @Update suspend fun update(photo: PhotoEntity)
+
+    @Query("SELECT * FROM photo WHERE id = :id AND deletedAt IS NULL")
+    suspend fun get(id: String): PhotoEntity?
+
+    @Query("SELECT * FROM photo WHERE ownerType = :ownerType AND ownerId = :ownerId AND deletedAt IS NULL ORDER BY sortOrder")
+    fun observeForOwner(ownerType: PhotoOwner, ownerId: String): Flow<List<PhotoEntity>>
+
+    @Query("SELECT * FROM photo WHERE ownerType = :ownerType AND ownerId = :ownerId AND deletedAt IS NULL ORDER BY sortOrder")
+    suspend fun forOwner(ownerType: PhotoOwner, ownerId: String): List<PhotoEntity>
+
+    @Query("SELECT COALESCE(MAX(sortOrder) + 1, 0) FROM photo WHERE ownerType = :ownerType AND ownerId = :ownerId")
+    suspend fun nextOrder(ownerType: PhotoOwner, ownerId: String): Int
+
+    /** Photos deleted before [cutoff]: their Undo window has passed, so the files can go (SPEC 7). */
+    @Query("SELECT id FROM photo WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff")
+    suspend fun deletedBefore(cutoff: Long): List<String>
+
+    /** IDs of all photo rows, live or deleted. */
+    @Query("SELECT id FROM photo")
+    suspend fun allIds(): List<String>
 }

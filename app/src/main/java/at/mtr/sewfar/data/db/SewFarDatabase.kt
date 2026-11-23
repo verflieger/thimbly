@@ -28,6 +28,7 @@ abstract class SewFarDatabase : RoomDatabase() {
     abstract fun patternDao(): PatternDao
     abstract fun projectDao(): ProjectDao
     abstract fun listDao(): ListDao
+    abstract fun photoDao(): PhotoDao
 
     companion object {
         fun create(context: Context): SewFarDatabase =

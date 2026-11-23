@@ -24,6 +24,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import androidx.compose.runtime.collectAsState
+import at.mtr.sewfar.domain.PhotoOwner
+import at.mtr.sewfar.ui.photos.PhotoViewerScreen
 import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
 import at.mtr.sewfar.ui.machines.MachinesScreen
@@ -38,6 +42,8 @@ import kotlinx.serialization.Serializable
 @Serializable object PeopleRoute
 @Serializable object MachinesRoute
 @Serializable object SettingsRoute
+/** All photos of one owner, opened at [photoId] (SPEC 3.6). [ownerType] is a [PhotoOwner] name. */
+@Serializable data class PhotoViewerRoute(val ownerType: String, val ownerId: String, val photoId: String? = null)
 
 private enum class Tab(val route: Any, @StringRes val label: Int, val icon: ImageVector) {
     PROJECTS(ProjectsRoute, R.string.tab_projects, Icons.Outlined.Checklist),
@@ -84,6 +90,14 @@ fun SewFarRoot(container: AppContainer) {
             composable<MachinesRoute> { MachinesScreen(onOpenSettings = openSettings) }
             composable<SettingsRoute> {
                 SettingsScreen(container.settings, container.versionName, onBack = { navController.popBackStack() })
+            }
+            composable<PhotoViewerRoute> { entry ->
+                val route = entry.toRoute<PhotoViewerRoute>()
+                val photos by container.photos.observe(PhotoOwner.valueOf(route.ownerType), route.ownerId)
+                    .collectAsState(initial = null)
+                photos?.let { list ->
+                    PhotoViewerScreen(list.map { it.id }, route.photoId, onClose = { navController.popBackStack() })
+                }
             }
         }
     }
