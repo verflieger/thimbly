@@ -67,6 +67,18 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
         dao.update(project.copy(name = project.name.trim(), updatedAt = now, lastActivityAt = now))
     }
 
+    /**
+     * Applies [change] to the current row in one transaction, so concurrent edits of different fields don't overwrite
+     * each other. Nothing happens if the project is gone. The status changes only through [setStatus].
+     */
+    suspend fun edit(id: String, change: (ProjectEntity) -> ProjectEntity) = db.withTransaction {
+        val current = dao.get(id) ?: return@withTransaction
+        val next = change(current)
+        require(next.status == current.status) { "Use setStatus to change the status" }
+        val now = time.nowMillis()
+        dao.update(next.copy(name = next.name.trim(), updatedAt = now, lastActivityAt = now))
+    }
+
     /** Changes the status with its date effects and writes a status log entry (SPEC 3.2, 3.4). */
     suspend fun setStatus(id: String, status: ProjectStatus): StatusChange = db.withTransaction {
         val current = requireNotNull(dao.get(id)) { "Project $id not found" }
@@ -155,10 +167,13 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
         id
     }
 
-    suspend fun updateFabric(fabric: ProjectFabricEntity) = db.withTransaction {
+    /** Edits a live fabric line atomically; a removed line stays removed (late saves from the UI are dropped). */
+    suspend fun editFabric(fabricId: String, change: (ProjectFabricEntity) -> ProjectFabricEntity) = db.withTransaction {
+        val current = dao.getFabric(fabricId) ?: return@withTransaction
         val now = time.nowMillis()
-        dao.updateFabric(fabric.copy(description = fabric.description.trim(), updatedAt = now))
-        dao.touch(fabric.projectId, now)
+        val next = change(current)
+        dao.updateFabric(next.copy(description = next.description.trim(), updatedAt = now))
+        dao.touch(current.projectId, now)
     }
 
     suspend fun removeFabric(fabricId: String): DeletionToken? = db.withTransaction {

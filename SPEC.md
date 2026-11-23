@@ -179,7 +179,8 @@ Sweater/Hoodie, Jacket/Coat, Dress, Skirt, Pants/Shorts, Underwear/Nightwear, Ba
 in cm, note), **notes**.
 
 Read-only sections: **Projects** sewn with this pattern (with person and size), and **Lessons** aggregated from
-them (tag counts, e.g. "Lengthen ×2", plus each project's completion notes).
+them (tag counts, e.g. "Lengthen ×2", plus each project's completion notes). Only lessons attached to this pattern's
+link count; project-level lessons (projects without a pattern, §3.5) are not attributed to any pattern.
 
 Actions: Start project with this pattern, Archive / Delete (§7).
 

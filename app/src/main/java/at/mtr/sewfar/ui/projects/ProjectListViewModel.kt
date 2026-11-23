@@ -74,9 +74,9 @@ class ProjectListViewModel(private val container: AppContainer) : ViewModel() {
         container.appScope.launch { container.settings.setSectionCollapsed(status, collapsed) }
     }
 
-    suspend fun createPerson(name: String): String = container.persons.create(name)
-    suspend fun createPattern(name: String): String = container.patterns.create(name)
+    suspend fun createPerson(name: String): String = container.runInApp { container.persons.create(name) }
+    suspend fun createPattern(name: String): String = container.runInApp { container.patterns.create(name) }
 
     suspend fun createProject(name: String, type: ProjectType, personId: String?, patternIds: List<String>): String =
-        container.projects.create(name, type, personId, patternIds)
+        container.runInApp { container.projects.create(name, type, personId, patternIds) }
 }

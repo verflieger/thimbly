@@ -242,7 +242,7 @@ private fun ProjectCard(project: ProjectSummary, onClick: () -> Unit, modifier: 
                 Text(project.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (project.personName != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Avatar(project.personName, project.personColor ?: 0, size = 18.dp)
+                        Avatar(project.personName, project.personColor ?: 0, size = 18.dp, photoId = project.personPhotoId)
                         Spacer(Modifier.width(6.dp))
                         Text(project.personName, style = MaterialTheme.typography.bodyMedium)
                     }

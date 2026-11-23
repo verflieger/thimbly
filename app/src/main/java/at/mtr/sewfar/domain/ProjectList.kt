@@ -23,6 +23,7 @@ data class ProjectSummary(
     val createdOn: LocalDate,
     val lastActivityAt: Long,
     val coverPhotoId: String?,
+    val personPhotoId: String? = null,
 ) {
     /** SPEC 3.1: finish year for Done, else start year, else creation year. */
     val year: Int

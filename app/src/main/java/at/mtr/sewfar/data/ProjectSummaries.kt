@@ -25,17 +25,20 @@ object ProjectSummaries {
         fabrics: List<ProjectFabricEntity>,
         photos: List<PhotoEntity>,
         zone: ZoneId,
+        personPhotos: List<PhotoEntity> = emptyList(),
     ): List<ProjectSummary> {
         val personById = persons.associateBy { it.id }
         val patternById = patterns.associateBy { it.id }
         val linksByProject = links.groupBy { it.projectId }
         val fabricsByProject = fabrics.groupBy { it.projectId }
         val photosByProject = photos.groupBy { it.ownerId }
+        val personPhotoByPerson = personPhotos.associateBy({ it.ownerId }, { it.id })
         return projects.map { p ->
             val person = p.personId?.let(personById::get)
             ProjectSummary(
                 id = p.id, name = p.name, type = p.type, status = p.status,
                 personId = person?.id, personName = person?.name, personColor = person?.avatarColor,
+                personPhotoId = person?.id?.let(personPhotoByPerson::get),
                 patterns = linksByProject[p.id].orEmpty().mapNotNull { link ->
                     patternById[link.patternId]?.let { PatternRef(it.id, it.name, it.designer, link.sizeSewn) }
                 },
@@ -60,14 +63,17 @@ object ProjectSummaries {
         photos: PhotoRepository,
         zone: ZoneId = ZoneId.systemDefault(),
     ): Flow<List<ProjectSummary>> {
-        val people = combine(persons.observe(includeArchived = true), patterns.observe(includeArchived = true)) { a, b -> a to b }
+        val people = combine(
+            persons.observe(includeArchived = true), patterns.observe(includeArchived = true),
+            photos.observeAllOfType(at.mtr.sewfar.domain.PhotoOwner.PERSON),
+        ) { a, b, c -> Triple(a, b, c) }
         val children = combine(
             projects.observeAllPatternLinks(),
             projects.observeAllFabrics(),
             photos.observeAllOfType(at.mtr.sewfar.domain.PhotoOwner.PROJECT),
         ) { links, fabrics, projectPhotos -> Triple(links, fabrics, projectPhotos) }
-        return combine(projects.observeAll(), people, children) { all, (personList, patternList), (links, fabrics, projectPhotos) ->
-            build(all, personList, patternList, links, fabrics, projectPhotos, zone)
+        return combine(projects.observeAll(), people, children) { all, (personList, patternList, personPhotos), (links, fabrics, projectPhotos) ->
+            build(all, personList, patternList, links, fabrics, projectPhotos, zone, personPhotos)
         }
     }
 }

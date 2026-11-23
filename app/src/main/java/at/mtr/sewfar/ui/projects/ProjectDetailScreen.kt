@@ -293,7 +293,7 @@ private fun Fabrics(state: ProjectDetailState, viewModel: ProjectDetailViewModel
         state.fabrics.forEach { fabric ->
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AutoSaveTextField(
-                    savedValue = fabric.description, onSave = { viewModel.updateFabric(fabric.copy(description = it)) },
+                    savedValue = fabric.description, onSave = { text -> viewModel.editFabric(fabric.id) { it.copy(description = text) } },
                     label = stringResource(R.string.project_fabric_description), key = "fabric-${fabric.id}",
                     modifier = Modifier.weight(1f),
                 )
@@ -301,7 +301,7 @@ private fun Fabrics(state: ProjectDetailState, viewModel: ProjectDetailViewModel
                     savedValue = fabric.amountCm?.let { Amounts.formatMeters(it, locale) }.orEmpty(),
                     onSave = { text ->
                         val amount = (Amounts.parseMeters(text) as? Amounts.ParseResult.Cm)?.cm
-                        viewModel.updateFabric(fabric.copy(amountCm = amount))
+                        viewModel.editFabric(fabric.id) { it.copy(amountCm = amount) }
                     },
                     label = stringResource(R.string.project_fabric_amount), key = "amount-${fabric.id}",
                     isValid = { Amounts.parseMeters(it) != Amounts.ParseResult.Invalid }, errorText = invalidText,

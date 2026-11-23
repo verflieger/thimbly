@@ -38,8 +38,16 @@ import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.Messages
 import at.mtr.sewfar.ui.machines.MachinesScreen
+import at.mtr.sewfar.data.ListKind
+import at.mtr.sewfar.ui.patterns.PatternDetailScreen
+import at.mtr.sewfar.ui.patterns.PatternDetailViewModel
 import at.mtr.sewfar.ui.patterns.PatternsScreen
+import at.mtr.sewfar.ui.patterns.PatternsViewModel
 import at.mtr.sewfar.ui.people.PeopleScreen
+import at.mtr.sewfar.ui.people.PeopleViewModel
+import at.mtr.sewfar.ui.people.PersonDetailScreen
+import at.mtr.sewfar.ui.people.PersonDetailViewModel
+import at.mtr.sewfar.ui.settings.ListEditScreen
 import at.mtr.sewfar.ui.photos.PhotoViewerScreen
 import at.mtr.sewfar.ui.projects.ProjectDetailScreen
 import at.mtr.sewfar.ui.projects.ProjectDetailViewModel
@@ -54,6 +62,10 @@ import kotlinx.serialization.Serializable
 @Serializable object MachinesRoute
 @Serializable object SettingsRoute
 @Serializable data class ProjectDetailRoute(val id: String)
+@Serializable data class PatternDetailRoute(val id: String)
+@Serializable data class PersonDetailRoute(val id: String)
+/** [kind] is a [ListKind] name. */
+@Serializable data class ListEditRoute(val kind: String)
 /** All photos of one owner, opened at [photoId] (SPEC 3.6). [ownerType] is a [PhotoOwner] name. */
 @Serializable data class PhotoViewerRoute(val ownerType: String, val ownerId: String, val photoId: String? = null)
 
@@ -109,11 +121,50 @@ fun SewFarRoot(container: AppContainer) {
                         onOpenProject = { id -> navController.navigate(ProjectDetailRoute(id)) },
                     )
                 }
-                composable<PatternsRoute> { PatternsScreen(onOpenSettings = openSettings) }
-                composable<PeopleRoute> { PeopleScreen(onOpenSettings = openSettings) }
+                composable<PatternsRoute> {
+                    PatternsScreen(
+                        viewModel = viewModel { PatternsViewModel(container) },
+                        onOpenSettings = openSettings,
+                        onOpenPattern = { id -> navController.navigate(PatternDetailRoute(id)) },
+                    )
+                }
+                composable<PeopleRoute> {
+                    PeopleScreen(
+                        viewModel = viewModel { PeopleViewModel(container) },
+                        onOpenSettings = openSettings,
+                        onOpenPerson = { id -> navController.navigate(PersonDetailRoute(id)) },
+                    )
+                }
+                composable<PatternDetailRoute> { entry ->
+                    val id = entry.toRoute<PatternDetailRoute>().id
+                    PatternDetailScreen(
+                        viewModel = viewModel { PatternDetailViewModel(container, id) },
+                        onBack = { navController.popBackStack() },
+                        onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
+                        onOpenPhoto = { photoId -> navController.navigate(PhotoViewerRoute(PhotoOwner.PATTERN.name, id, photoId)) },
+                    )
+                }
+                composable<PersonDetailRoute> { entry ->
+                    val id = entry.toRoute<PersonDetailRoute>().id
+                    PersonDetailScreen(
+                        viewModel = viewModel { PersonDetailViewModel(container, id) },
+                        onBack = { navController.popBackStack() },
+                        onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
+                        onOpenPhoto = { photoId -> navController.navigate(PhotoViewerRoute(PhotoOwner.PERSON.name, id, photoId)) },
+                    )
+                }
+                composable<ListEditRoute> { entry ->
+                    ListEditScreen(
+                        ListKind.valueOf(entry.toRoute<ListEditRoute>().kind), container.lists, container.appScope,
+                        onBack = { navController.popBackStack() },
+                    )
+                }
                 composable<MachinesRoute> { MachinesScreen(onOpenSettings = openSettings) }
                 composable<SettingsRoute> {
-                    SettingsScreen(container.settings, container.versionName, onBack = { navController.popBackStack() })
+                    SettingsScreen(
+                        container.settings, container.versionName, onBack = { navController.popBackStack() },
+                        onOpenList = { kind -> navController.navigate(ListEditRoute(kind.name)) },
+                    )
                 }
                 composable<ProjectDetailRoute> { entry ->
                     val id = entry.toRoute<ProjectDetailRoute>().id

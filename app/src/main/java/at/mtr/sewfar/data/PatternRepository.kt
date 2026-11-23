@@ -1,5 +1,6 @@
 package at.mtr.sewfar.data
 
+import androidx.room.withTransaction
 import at.mtr.sewfar.data.db.DeleteResult
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.PatternEntity
@@ -10,12 +11,14 @@ import at.mtr.sewfar.domain.Ids
 import kotlinx.coroutines.flow.Flow
 
 /** Pattern library (SPEC 4). */
-class PatternRepository(db: SewFarDatabase, private val deleter: SoftDeleter, private val time: TimeSource) {
+class PatternRepository(private val db: SewFarDatabase, private val deleter: SoftDeleter, private val time: TimeSource) {
     private val dao = db.patternDao()
 
     fun observe(includeArchived: Boolean = false): Flow<List<PatternEntity>> = dao.observe(includeArchived)
 
     suspend fun get(id: String): PatternEntity? = dao.get(id)
+
+    fun observeOne(id: String): Flow<PatternEntity?> = dao.observeOne(id)
 
     suspend fun create(name: String, designer: String = "", categoryId: String? = null): String {
         val id = Ids.random()
@@ -26,6 +29,14 @@ class PatternRepository(db: SewFarDatabase, private val deleter: SoftDeleter, pr
 
     /** Saves edited fields. */
     suspend fun update(pattern: PatternEntity) = dao.update(pattern.copy(name = pattern.name.trim(), updatedAt = time.nowMillis()))
+
+    /**
+     * Applies [change] to the current row in one transaction (transactions are serialized, so concurrent edits of
+     * different fields don't overwrite each other). Does nothing if the pattern is gone.
+     */
+    suspend fun edit(id: String, change: (PatternEntity) -> PatternEntity) = db.withTransaction {
+        dao.get(id)?.let { current -> val next = change(current); dao.update(next.copy(name = next.name.trim(), updatedAt = time.nowMillis())) }
+    }
 
     suspend fun setArchived(id: String, archived: Boolean) {
         val pattern = dao.get(id) ?: return
@@ -40,6 +51,10 @@ class PatternRepository(db: SewFarDatabase, private val deleter: SoftDeleter, pr
     }
 
     suspend fun isInUse(id: String): Boolean = dao.isInUse(id)
+
+    fun observeProjects(patternId: String) = dao.observeProjects(patternId)
+
+    fun observeLessonTagIds(patternId: String) = dao.observeLessonTagIds(patternId)
 
     // ---- Yardage table (SPEC 4.2) ----
 
@@ -57,7 +72,10 @@ class PatternRepository(db: SewFarDatabase, private val deleter: SoftDeleter, pr
         return id
     }
 
-    suspend fun updateYardage(row: PatternYardageEntity) = dao.updateYardage(row.copy(updatedAt = time.nowMillis()))
+    /** Edits a live yardage row atomically; a deleted row stays deleted (late saves from the UI are dropped). */
+    suspend fun editYardage(id: String, change: (PatternYardageEntity) -> PatternYardageEntity) = db.withTransaction {
+        dao.getYardage(id)?.let { current -> dao.updateYardage(change(current).copy(updatedAt = time.nowMillis())) }
+    }
 
     suspend fun deleteYardage(id: String): DeletionToken? = deleter.delete("pattern_yardage", id)
 

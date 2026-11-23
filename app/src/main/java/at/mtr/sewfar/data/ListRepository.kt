@@ -54,6 +54,11 @@ class ListRepository(private val db: SewFarDatabase, private val deleter: SoftDe
         exec("UPDATE ${kind.table} SET customName = ?, updatedAt = ? WHERE id = ?", name.trim(), time.nowMillis(), id)
     }
 
+    /** Back to the built-in name in the current language (clears [rename]). */
+    suspend fun resetName(kind: ListKind, id: String) = db.withTransaction {
+        exec("UPDATE ${kind.table} SET customName = NULL, updatedAt = ? WHERE id = ? AND builtinKey IS NOT NULL", time.nowMillis(), id)
+    }
+
     suspend fun setHidden(kind: ListKind, id: String, hidden: Boolean) = db.withTransaction {
         exec("UPDATE ${kind.table} SET hidden = ?, updatedAt = ? WHERE id = ?", if (hidden) 1 else 0, time.nowMillis(), id)
     }
@@ -76,6 +81,8 @@ class ListRepository(private val db: SewFarDatabase, private val deleter: SoftDe
         val token = deleter.delete(kind.table, id) ?: return DeleteResult.InUse
         return DeleteResult.Deleted(token)
     }
+
+    suspend fun undo(token: at.mtr.sewfar.data.db.DeletionToken) = deleter.undo(token)
 
     /** Raw write; call only inside [androidx.room.withTransaction] so it runs off the main thread and notifies observers. */
     private fun exec(sql: String, vararg args: Any) = db.openHelper.writableDatabase.execSQL(sql, args)

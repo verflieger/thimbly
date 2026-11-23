@@ -20,6 +20,9 @@ interface PersonDao {
     @Query("SELECT * FROM person WHERE id = :id AND deletedAt IS NULL")
     suspend fun get(id: String): PersonEntity?
 
+    @Query("SELECT * FROM person WHERE id = :id AND deletedAt IS NULL")
+    fun observeOne(id: String): Flow<PersonEntity?>
+
     @Query(
         "SELECT * FROM person WHERE deletedAt IS NULL AND (:includeArchived OR archivedAt IS NULL) " +
             "ORDER BY name COLLATE NOCASE",
@@ -38,6 +41,17 @@ interface PersonDao {
 
     @Query("SELECT * FROM measurement_session WHERE personId = :personId AND deletedAt IS NULL ORDER BY date DESC")
     fun observeSessions(personId: String): Flow<List<MeasurementSessionEntity>>
+
+    @Query("SELECT * FROM project WHERE personId = :personId AND deletedAt IS NULL ORDER BY lastActivityAt DESC")
+    fun observeProjects(personId: String): Flow<List<ProjectEntity>>
+
+    /** All live values of the person's live sessions, with the session date (SPEC 5.2 history). */
+    @Query(
+        "SELECT v.typeId AS typeId, v.valueMm AS valueMm, s.date AS date, s.id AS sessionId " +
+            "FROM measurement_value v JOIN measurement_session s ON s.id = v.sessionId " +
+            "WHERE s.personId = :personId AND v.deletedAt IS NULL AND s.deletedAt IS NULL ORDER BY s.date DESC, s.createdAt DESC",
+    )
+    fun observeMeasurements(personId: String): Flow<List<MeasurementRow>>
 
     @Insert suspend fun insertValue(value: MeasurementValueEntity)
     @Update suspend fun updateValue(value: MeasurementValueEntity)
@@ -58,6 +72,9 @@ interface PatternDao {
     @Query("SELECT * FROM pattern WHERE id = :id AND deletedAt IS NULL")
     suspend fun get(id: String): PatternEntity?
 
+    @Query("SELECT * FROM pattern WHERE id = :id AND deletedAt IS NULL")
+    fun observeOne(id: String): Flow<PatternEntity?>
+
     @Query(
         "SELECT * FROM pattern WHERE deletedAt IS NULL AND (:includeArchived OR archivedAt IS NULL) " +
             "ORDER BY name COLLATE NOCASE",
@@ -70,6 +87,23 @@ interface PatternDao {
             "WHERE pp.patternId = :id AND pp.deletedAt IS NULL AND p.deletedAt IS NULL)",
     )
     suspend fun isInUse(id: String): Boolean
+
+    /** Live projects linked to the pattern, with the link's size (SPEC 4.2, "Projects"). */
+    @Query(
+        "SELECT p.id AS projectId, p.name AS projectName, p.status AS status, p.personId AS personId, " +
+            "pp.sizeSewn AS sizeSewn, p.completionNotes AS completionNotes, p.lastActivityAt AS lastActivityAt " +
+            "FROM project_pattern pp JOIN project p ON p.id = pp.projectId " +
+            "WHERE pp.patternId = :patternId AND pp.deletedAt IS NULL AND p.deletedAt IS NULL ORDER BY p.lastActivityAt DESC",
+    )
+    fun observeProjects(patternId: String): Flow<List<PatternProjectRow>>
+
+    /** Lesson tags set on this pattern's links in live projects (SPEC 4.2, "Lessons"). */
+    @Query(
+        "SELECT l.tagId FROM project_lesson l JOIN project_pattern pp ON pp.id = l.projectPatternId " +
+            "JOIN project p ON p.id = l.projectId " +
+            "WHERE pp.patternId = :patternId AND l.deletedAt IS NULL AND pp.deletedAt IS NULL AND p.deletedAt IS NULL",
+    )
+    fun observeLessonTagIds(patternId: String): Flow<List<String>>
 
     @Insert suspend fun insertYardage(row: PatternYardageEntity)
     @Update suspend fun updateYardage(row: PatternYardageEntity)
@@ -180,6 +214,18 @@ interface ProjectDao {
     @Query("SELECT * FROM log_entry WHERE projectId = :projectId AND deletedAt IS NULL ORDER BY at DESC, createdAt DESC")
     suspend fun log(projectId: String): List<LogEntryEntity>
 }
+
+data class PatternProjectRow(
+    val projectId: String,
+    val projectName: String,
+    val status: at.mtr.sewfar.domain.ProjectStatus,
+    val personId: String?,
+    val sizeSewn: String,
+    val completionNotes: String,
+    val lastActivityAt: Long,
+)
+
+data class MeasurementRow(val typeId: String, val valueMm: Int, val date: java.time.LocalDate, val sessionId: String)
 
 /** Common shape of the editable lists (SPEC 1, "Built-in list entries"). */
 data class ListEntryRow(

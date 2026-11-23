@@ -44,10 +44,12 @@ fun EntityPicker(
     onCreate: (String) -> Unit,
     onDismiss: () -> Unit,
     noneLabel: String? = null,
+    /** Names of hidden entries: not offered, but typing one must not create a duplicate (SPEC 7). */
+    hiddenNames: List<String> = emptyList(),
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val matches = items.filter { SearchText.matches(query, listOfNotNull(it.title, it.subtitle)) }
-    val exact = items.any { SearchText.fold(it.title) == SearchText.fold(query.trim()) }
+    val exact = (items.map { it.title } + hiddenNames).any { SearchText.fold(it) == SearchText.fold(query.trim()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },

@@ -16,6 +16,7 @@ import at.mtr.sewfar.data.seed.Seeder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 /** Creates and owns long-lived objects (database, repositories, settings). */
@@ -43,6 +44,12 @@ class AppContainer(private val context: Context) {
     val versionName: String by lazy {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
     }
+
+    /**
+     * Runs [block] in [appScope] and waits for it: the write finishes even if the calling screen goes away
+     * (CLAUDE.md, "UI conventions").
+     */
+    suspend fun <T> runInApp(block: suspend () -> T): T = appScope.async { block() }.await()
 
     /** Adds missing built-in list entries (SPEC 1). Cheap when nothing is missing; called on start. */
     fun seedInBackground() {

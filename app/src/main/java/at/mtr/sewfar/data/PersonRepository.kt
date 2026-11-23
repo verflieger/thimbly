@@ -21,6 +21,8 @@ class PersonRepository(private val db: SewFarDatabase, private val deleter: Soft
 
     suspend fun get(id: String): PersonEntity? = dao.get(id)
 
+    fun observeOne(id: String): Flow<PersonEntity?> = dao.observeOne(id)
+
     suspend fun create(name: String, notes: String = "", avatarColor: Int? = null): String {
         val id = Ids.random()
         val now = time.nowMillis()
@@ -36,6 +38,11 @@ class PersonRepository(private val db: SewFarDatabase, private val deleter: Soft
     /** Saves edited fields (name, colour, notes). */
     suspend fun update(person: PersonEntity) = dao.update(person.copy(name = person.name.trim(), updatedAt = time.nowMillis()))
 
+    /** Applies [change] to the current row in one transaction; nothing if the person is gone. */
+    suspend fun edit(id: String, change: (PersonEntity) -> PersonEntity) = db.withTransaction {
+        dao.get(id)?.let { current -> val next = change(current); dao.update(next.copy(name = next.name.trim(), updatedAt = time.nowMillis())) }
+    }
+
     suspend fun setArchived(id: String, archived: Boolean) {
         val person = dao.get(id) ?: return
         val now = time.nowMillis()
@@ -48,7 +55,13 @@ class PersonRepository(private val db: SewFarDatabase, private val deleter: Soft
         return deleter.delete("person", id)?.let(DeleteResult::Deleted) ?: DeleteResult.InUse
     }
 
+    fun observeProjects(personId: String) = dao.observeProjects(personId)
+
     // ---- Measurements (SPEC 5.2) ----
+
+    fun observeMeasurements(personId: String) = dao.observeMeasurements(personId)
+
+    suspend fun getSession(id: String) = dao.getSession(id)
 
     fun observeSessions(personId: String): Flow<List<MeasurementSessionEntity>> = dao.observeSessions(personId)
 

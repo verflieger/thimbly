@@ -75,8 +75,9 @@ class ProjectDetailViewModel(private val container: AppContainer, val projectId:
     val patterns: StateFlow<List<PatternEntity>> =
         container.patterns.observe().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Atomic per-field edit (SPEC 3.3); see [at.mtr.sewfar.data.ProjectRepository.edit]. */
     private fun edit(change: (ProjectEntity) -> ProjectEntity) {
-        scope.launch { projects.get(projectId)?.let { projects.update(change(it)) } }
+        scope.launch { projects.edit(projectId, change) }
     }
 
     fun rename(name: String) { if (name.isNotBlank()) edit { it.copy(name = name) } }
@@ -96,11 +97,11 @@ class ProjectDetailViewModel(private val container: AppContainer, val projectId:
     suspend fun removePattern(linkId: String): DeletionToken? = projects.removePattern(linkId)
 
     fun addFabric() { scope.launch { projects.addFabric(projectId, "") } }
-    fun updateFabric(fabric: ProjectFabricEntity) { scope.launch { projects.updateFabric(fabric) } }
+    fun editFabric(fabricId: String, change: (ProjectFabricEntity) -> ProjectFabricEntity) { scope.launch { projects.editFabric(fabricId, change) } }
     suspend fun removeFabric(fabricId: String): DeletionToken? = projects.removeFabric(fabricId)
 
-    suspend fun createPerson(name: String): String = container.persons.create(name)
-    suspend fun createPattern(name: String): String = container.patterns.create(name)
+    suspend fun createPerson(name: String): String = container.runInApp { container.persons.create(name) }
+    suspend fun createPattern(name: String): String = container.runInApp { container.patterns.create(name) }
 
     /** Tag for photos added from the detail screen, by status: the user can change it afterwards. */
     fun defaultPhotoTag(): PhotoTag = when (state.value.project?.status) {
@@ -112,14 +113,16 @@ class ProjectDetailViewModel(private val container: AppContainer, val projectId:
     /** Adds photos; returns how many failed. */
     suspend fun addPhotos(sources: List<ImageSource>): Int {
         val tag = defaultPhotoTag()
-        return sources.count { source -> runCatching { container.photos.addProjectPhoto(projectId, tag, open = source) }.isFailure }
+        return container.runInApp {
+            sources.count { source -> runCatching { container.photos.addProjectPhoto(projectId, tag, open = source) }.isFailure }
+        }
     }
 
     fun setPhotoTag(photoId: String, tag: PhotoTag) { scope.launch { container.photos.setTag(photoId, tag) } }
     fun setCover(photoId: String?) { scope.launch { container.photos.setCover(projectId, photoId) } }
     suspend fun deletePhoto(photoId: String): DeletionToken? = container.photos.delete(photoId)
 
-    suspend fun delete(): DeletionToken? = projects.delete(projectId)
+    suspend fun delete(): DeletionToken? = container.runInApp { projects.delete(projectId) }
 
     /** Undo for any deletion made from this screen; runs after the screen may be gone. */
     fun undo(token: DeletionToken) { scope.launch { container.projects.undo(token) } }
