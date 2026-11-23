@@ -3,7 +3,13 @@ package at.mtr.sewfar.ui.projects
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.mtr.sewfar.AppContainer
+import at.mtr.sewfar.data.FieldLabel
 import at.mtr.sewfar.data.ListKind
+import at.mtr.sewfar.data.db.MachineEntity
+import at.mtr.sewfar.data.db.MachineFieldEntity
+import at.mtr.sewfar.data.db.SetupRow
+import at.mtr.sewfar.data.db.SetupUseRow
+import at.mtr.sewfar.data.db.SetupValueEntity
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.ListEntryRow
 import at.mtr.sewfar.data.db.LogEntryEntity
@@ -33,6 +39,16 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** Setup uses of the project and what is needed to show their diffs (SPEC 6.4). */
+data class SetupUsesData(
+    val uses: List<SetupUseRow> = emptyList(),
+    val setups: List<SetupRow> = emptyList(),
+    /** All fields incl. deleted/hidden ones: current state of each setup's machine. */
+    val fields: List<MachineFieldEntity> = emptyList(),
+    val values: List<SetupValueEntity> = emptyList(),
+    val machines: List<MachineEntity> = emptyList(),
+)
 
 /** A linked pattern with the pattern's own data. */
 data class LinkedPattern(val link: ProjectPatternEntity, val pattern: PatternEntity?)
@@ -130,6 +146,15 @@ class ProjectDetailViewModel(private val container: AppContainer, val projectId:
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProjectDetailState())
 
+    val setupUses: StateFlow<SetupUsesData> = combine(
+        container.setups.observeUses(projectId),
+        container.setups.observeAll(),
+        container.machines.observeAllFieldsAny(),
+        container.setups.observeAllValues(),
+        container.machines.observe(),
+    ) { uses, setups, fields, values, machines -> SetupUsesData(uses, setups, fields, values, machines) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SetupUsesData())
+
     /** Selectable (non-archived) persons and patterns for the pickers. */
     val persons: StateFlow<List<PersonEntity>> =
         container.persons.observe().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -198,6 +223,17 @@ class ProjectDetailViewModel(private val container: AppContainer, val projectId:
     fun setPhotoTag(photoId: String, tag: PhotoTag) { scope.launch { container.photos.setTag(photoId, tag) } }
     fun setCover(photoId: String?) { scope.launch { container.photos.setCover(projectId, photoId) } }
     suspend fun deletePhoto(photoId: String): DeletionToken? = container.runInApp { container.photos.delete(photoId) }
+
+    // ---- Machine setups (SPEC 6.4) ----
+
+    fun linkSetup(setupId: String, logEntryId: String?, label: FieldLabel) {
+        scope.launch { container.setups.link(setupId, projectId, logEntryId, label) }
+    }
+    fun tweak(useId: String, values: Map<String, String>) { scope.launch { container.setups.tweak(useId, values) } }
+    fun writeBack(useId: String) { scope.launch { container.setups.writeBack(useId) } }
+    suspend fun createSetupFromSnapshot(useId: String, title: String): String? = container.runInApp { container.setups.createFromSnapshot(useId, title) }
+    suspend fun createSetup(machineId: String, title: String): String = container.runInApp { container.setups.create(machineId, title) }
+    suspend fun unlinkSetup(useId: String): DeletionToken? = container.runInApp { container.setups.unlink(useId) }
 
     // ---- Project ----
 

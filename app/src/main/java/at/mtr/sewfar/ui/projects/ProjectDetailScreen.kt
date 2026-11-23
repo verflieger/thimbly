@@ -86,8 +86,10 @@ fun ProjectDetailScreen(
     onOpenPhoto: (String) -> Unit,
     onOpenProject: (String) -> Unit,
     onOpenCompletion: () -> Unit,
+    onOpenSetup: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val setupUses by viewModel.setupUses.collectAsStateWithLifecycle()
     val messages = LocalMessages.current
     val scope = rememberCoroutineScope()
     val deletedText = stringResource(R.string.project_deleted)
@@ -158,6 +160,8 @@ fun ProjectDetailScreen(
             HorizontalDivider()
             Fabrics(state, viewModel)
             HorizontalDivider()
+            SetupUsesSection(setupUses, viewModel, logEntryId = null, onOpenSetup = onOpenSetup)
+            HorizontalDivider()
             AutoSaveTextField(
                 savedValue = project.notes, onSave = viewModel::setNotes,
                 label = stringResource(R.string.project_notes), key = "notes-${project.id}",
@@ -179,7 +183,7 @@ fun ProjectDetailScreen(
                 }
             }
             HorizontalDivider()
-            ProjectLog(state, viewModel, onOpenPhoto)
+            ProjectLog(state, viewModel, setupUses, onOpenPhoto, onOpenSetup)
             Spacer(Modifier.size(24.dp))
         }
     }

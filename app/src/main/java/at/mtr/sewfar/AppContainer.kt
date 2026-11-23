@@ -2,6 +2,8 @@ package at.mtr.sewfar
 
 import android.content.Context
 import at.mtr.sewfar.data.ListRepository
+import at.mtr.sewfar.data.MachineRepository
+import at.mtr.sewfar.data.SetupRepository
 import at.mtr.sewfar.data.PatternRepository
 import at.mtr.sewfar.data.PersonRepository
 import at.mtr.sewfar.data.PhotoRepository
@@ -36,6 +38,8 @@ class AppContainer(private val context: Context) {
     val patterns: PatternRepository by lazy { PatternRepository(database, deleter, time) }
     val persons: PersonRepository by lazy { PersonRepository(database, deleter, time) }
     val lists: ListRepository by lazy { ListRepository(database, deleter, time) }
+    val machines: MachineRepository by lazy { MachineRepository(database, deleter, time) }
+    val setups: SetupRepository by lazy { SetupRepository(database, deleter, time) }
 
     private val photoFiles: PhotoFiles by lazy { PhotoFiles(context.filesDir) }
     val photos: PhotoRepository by lazy { PhotoRepository(database, deleter, photoFiles, time, appScope) }

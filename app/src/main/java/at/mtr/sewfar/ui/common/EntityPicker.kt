@@ -41,7 +41,8 @@ fun EntityPicker(
     title: String,
     items: List<PickerItem>,
     onPick: (String?) -> Unit,
-    onCreate: (String) -> Unit,
+    /** Null: no "Create …" row (items that can't be created from a name). */
+    onCreate: ((String) -> Unit)?,
     onDismiss: () -> Unit,
     noneLabel: String? = null,
     /** Names of hidden entries: not offered, but typing one must not create a duplicate (SPEC 7). */
@@ -63,7 +64,7 @@ fun EntityPicker(
                     modifier = Modifier.fillMaxWidth().testTag("pickerSearch"),
                 )
                 LazyColumn(Modifier.heightIn(max = 360.dp).padding(top = 8.dp)) {
-                    if (query.isNotBlank() && !exact) {
+                    if (onCreate != null && query.isNotBlank() && !exact) {
                         item {
                             ListItem(
                                 headlineContent = { Text(stringResource(R.string.picker_create_new, query.trim())) },

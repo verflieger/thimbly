@@ -292,3 +292,143 @@ interface PhotoDao {
     @Query("SELECT id FROM photo")
     suspend fun allIds(): List<String>
 }
+
+/** A setup with its machine's name, for lists. */
+data class SetupRow(
+    val id: String,
+    val machineId: String,
+    val machineName: String,
+    val purposeId: String?,
+    val title: String,
+    val fabric: String,
+    val result: at.mtr.sewfar.domain.SetupResult?,
+    val notes: String,
+    val updatedAt: Long,
+    val machineArchived: Boolean = false,
+)
+
+/** A setup use with the setup's title and machine (null if the setup was deleted: the snapshot stays, SPEC 6.4). */
+data class SetupUseRow(
+    val id: String,
+    val setupId: String,
+    val projectId: String,
+    val logEntryId: String?,
+    val snapshotAt: Long,
+    val tweaked: Boolean,
+    val snapshot: String,
+    val setupTitle: String?,
+    val machineName: String?,
+    val setupDeleted: Boolean,
+    val machineArchived: Boolean = false,
+)
+
+@Dao
+interface MachineDao {
+    @Insert suspend fun insertMachine(machine: MachineEntity)
+    @Update suspend fun updateMachine(machine: MachineEntity)
+
+    @Query("SELECT * FROM machine WHERE id = :id AND deletedAt IS NULL")
+    suspend fun getMachine(id: String): MachineEntity?
+
+    @Query("SELECT * FROM machine WHERE id = :id AND deletedAt IS NULL")
+    fun observeMachine(id: String): Flow<MachineEntity?>
+
+    @Query("SELECT * FROM machine WHERE deletedAt IS NULL AND (:includeArchived OR archivedAt IS NULL) ORDER BY name COLLATE NOCASE")
+    fun observeMachines(includeArchived: Boolean): Flow<List<MachineEntity>>
+
+    /** SPEC 7: a machine whose setups are used by a live project can only be archived. */
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM setup_use u JOIN setup s ON s.id = u.setupId " +
+            "WHERE s.machineId = :machineId AND u.deletedAt IS NULL AND s.deletedAt IS NULL)",
+    )
+    suspend fun isMachineInUse(machineId: String): Boolean
+
+    // machine_field
+
+    @Insert suspend fun insertField(field: MachineFieldEntity)
+    @Update suspend fun updateField(field: MachineFieldEntity)
+
+    @Query("SELECT * FROM machine_field WHERE id = :id AND deletedAt IS NULL")
+    suspend fun getField(id: String): MachineFieldEntity?
+
+    @Query("SELECT * FROM machine_field WHERE machineId = :machineId AND deletedAt IS NULL ORDER BY sortOrder")
+    fun observeFields(machineId: String): Flow<List<MachineFieldEntity>>
+
+    @Query("SELECT * FROM machine_field WHERE machineId = :machineId AND deletedAt IS NULL ORDER BY sortOrder")
+    suspend fun fields(machineId: String): List<MachineFieldEntity>
+
+    /** All fields of all machines incl. deleted ones, for diffs against old snapshots. */
+    @Query("SELECT * FROM machine_field ORDER BY sortOrder")
+    fun observeAllFieldsAny(): Flow<List<MachineFieldEntity>>
+
+    @Query("SELECT COALESCE(MAX(sortOrder) + 1, 0) FROM machine_field WHERE machineId = :machineId")
+    suspend fun nextFieldOrder(machineId: String): Int
+
+    @Query("SELECT EXISTS(SELECT 1 FROM setup_value v JOIN setup s ON s.id = v.setupId WHERE v.fieldId = :fieldId AND v.deletedAt IS NULL AND s.deletedAt IS NULL AND v.value != '')")
+    suspend fun isFieldInUse(fieldId: String): Boolean
+
+    // setup
+
+    @Insert suspend fun insertSetup(setup: SetupEntity)
+    @Update suspend fun updateSetup(setup: SetupEntity)
+
+    @Query("SELECT * FROM setup WHERE id = :id AND deletedAt IS NULL")
+    suspend fun getSetup(id: String): SetupEntity?
+
+    @Query("SELECT * FROM setup WHERE id = :id AND deletedAt IS NULL")
+    fun observeSetup(id: String): Flow<SetupEntity?>
+
+    /** Including a deleted setup (its snapshot can still be saved as a new setup, SPEC 6.4). */
+    @Query("SELECT * FROM setup WHERE id = :id")
+    suspend fun getSetupAny(id: String): SetupEntity?
+
+    @Query(
+        "SELECT s.id, s.machineId, m.name AS machineName, s.purposeId, s.title, s.fabric, s.result, s.notes, s.updatedAt, " +
+            "(m.archivedAt IS NOT NULL) AS machineArchived " +
+            "FROM setup s JOIN machine m ON m.id = s.machineId WHERE s.deletedAt IS NULL AND m.deletedAt IS NULL ORDER BY s.updatedAt DESC",
+    )
+    fun observeSetups(): Flow<List<SetupRow>>
+
+    // setup_value
+
+    @Insert suspend fun insertValue(value: SetupValueEntity)
+    @Update suspend fun updateValue(value: SetupValueEntity)
+
+    @Query("SELECT * FROM setup_value WHERE setupId = :setupId AND fieldId = :fieldId")
+    suspend fun getValueAny(setupId: String, fieldId: String): SetupValueEntity?
+
+    @Query("SELECT * FROM setup_value WHERE setupId = :setupId AND deletedAt IS NULL")
+    suspend fun values(setupId: String): List<SetupValueEntity>
+
+    @Query("SELECT * FROM setup_value WHERE setupId = :setupId AND deletedAt IS NULL")
+    fun observeValues(setupId: String): Flow<List<SetupValueEntity>>
+
+    /** Live values of all live setups, for diffs on the project page. */
+    @Query("SELECT v.* FROM setup_value v JOIN setup s ON s.id = v.setupId WHERE v.deletedAt IS NULL AND s.deletedAt IS NULL")
+    fun observeAllValues(): Flow<List<SetupValueEntity>>
+
+    // setup_use
+
+    @Insert suspend fun insertUse(use: SetupUseEntity)
+    @Update suspend fun updateUse(use: SetupUseEntity)
+
+    @Query("SELECT * FROM setup_use WHERE id = :id AND deletedAt IS NULL")
+    suspend fun getUse(id: String): SetupUseEntity?
+
+    @Query(
+        "SELECT u.id, u.setupId, u.projectId, u.logEntryId, u.snapshotAt, u.tweaked, u.snapshot, " +
+            "CASE WHEN s.deletedAt IS NULL THEN s.title END AS setupTitle, " +
+            "CASE WHEN s.deletedAt IS NULL THEN m.name END AS machineName, " +
+            "(s.deletedAt IS NOT NULL) AS setupDeleted, (m.archivedAt IS NOT NULL) AS machineArchived " +
+            "FROM setup_use u JOIN setup s ON s.id = u.setupId JOIN machine m ON m.id = s.machineId " +
+            "WHERE u.projectId = :projectId AND u.deletedAt IS NULL ORDER BY u.createdAt",
+    )
+    fun observeUses(projectId: String): Flow<List<SetupUseRow>>
+
+    /** Live projects that used a setup (SPEC 6.3 "Setup detail shows the projects that used it"). */
+    @Query(
+        "SELECT DISTINCT p.* FROM setup_use u JOIN project p ON p.id = u.projectId " +
+            "WHERE u.setupId = :setupId AND u.deletedAt IS NULL AND p.deletedAt IS NULL ORDER BY p.lastActivityAt DESC",
+    )
+    fun observeProjectsUsing(setupId: String): Flow<List<ProjectEntity>>
+}

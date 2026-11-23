@@ -40,7 +40,12 @@ import at.mtr.sewfar.R
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.Messages
+import at.mtr.sewfar.ui.machines.MachineDetailScreen
+import at.mtr.sewfar.ui.machines.MachineDetailViewModel
 import at.mtr.sewfar.ui.machines.MachinesScreen
+import at.mtr.sewfar.ui.machines.MachinesViewModel
+import at.mtr.sewfar.ui.machines.SetupDetailScreen
+import at.mtr.sewfar.ui.machines.SetupDetailViewModel
 import at.mtr.sewfar.data.ListKind
 import at.mtr.sewfar.ui.patterns.PatternDetailScreen
 import at.mtr.sewfar.ui.patterns.PatternDetailViewModel
@@ -68,6 +73,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class ProjectDetailRoute(val id: String)
 @Serializable data class PatternDetailRoute(val id: String)
 @Serializable data class CompletionRoute(val projectId: String)
+@Serializable data class MachineDetailRoute(val id: String)
+@Serializable data class SetupDetailRoute(val id: String)
 @Serializable data class PersonDetailRoute(val id: String)
 /** [kind] is a [ListKind] name. */
 @Serializable data class ListEditRoute(val kind: String)
@@ -172,7 +179,32 @@ fun SewFarRoot(container: AppContainer) {
                         onBack = { navController.popFrom(entry) },
                     )
                 }
-                composable<MachinesRoute> { MachinesScreen(onOpenSettings = openSettings) }
+                composable<MachinesRoute> {
+                    MachinesScreen(
+                        viewModel = viewModel { MachinesViewModel(container) },
+                        onOpenSettings = openSettings,
+                        onOpenMachine = { id -> navController.navigate(MachineDetailRoute(id)) },
+                        onOpenSetup = { id -> navController.navigate(SetupDetailRoute(id)) },
+                    )
+                }
+                composable<MachineDetailRoute> { entry ->
+                    val id = entry.toRoute<MachineDetailRoute>().id
+                    MachineDetailScreen(
+                        viewModel = viewModel { MachineDetailViewModel(container, id) },
+                        onBack = { navController.popFrom(entry) },
+                        onOpenSetup = { setupId -> navController.navigate(SetupDetailRoute(setupId)) },
+                        onOpenPhoto = { photoId -> navController.navigate(PhotoViewerRoute(PhotoOwner.MACHINE.name, id, photoId)) },
+                    )
+                }
+                composable<SetupDetailRoute> { entry ->
+                    val id = entry.toRoute<SetupDetailRoute>().id
+                    SetupDetailScreen(
+                        viewModel = viewModel { SetupDetailViewModel(container, id) },
+                        onBack = { navController.popFrom(entry) },
+                        onOpenMachine = { machineId -> navController.navigate(MachineDetailRoute(machineId)) },
+                        onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
+                    )
+                }
                 composable<SettingsRoute> { entry ->
                     SettingsScreen(
                         container, onBack = { navController.popFrom(entry) },
@@ -189,6 +221,7 @@ fun SewFarRoot(container: AppContainer) {
                         },
                         onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
                         onOpenCompletion = { navController.navigate(CompletionRoute(id)) },
+                        onOpenSetup = { setupId -> navController.navigate(SetupDetailRoute(setupId)) },
                     )
                 }
                 composable<CompletionRoute> { entry ->

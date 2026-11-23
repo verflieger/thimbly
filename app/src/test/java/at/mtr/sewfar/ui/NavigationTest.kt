@@ -26,7 +26,7 @@ class NavigationTest {
         compose.onNodeWithText("People").performClick()
         compose.onNodeWithText("No people yet.").assertIsDisplayed()
         compose.onNodeWithText("Machines").performClick()
-        compose.onNodeWithText("No machines yet.").assertIsDisplayed()
+        compose.onNodeWithText("Add your first machine to save its settings.").assertIsDisplayed()
     }
 
     @Test

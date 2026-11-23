@@ -49,7 +49,10 @@ import at.mtr.sewfar.R
 import at.mtr.sewfar.data.db.LogEntryEntity
 import at.mtr.sewfar.domain.LogKind
 import at.mtr.sewfar.domain.PhotoTag
+import at.mtr.sewfar.ui.common.EntityPicker
 import at.mtr.sewfar.ui.common.LocalMessages
+import at.mtr.sewfar.ui.common.NameDialog
+import at.mtr.sewfar.ui.common.PickerItem
 import at.mtr.sewfar.ui.common.currentLocale
 import at.mtr.sewfar.ui.common.label
 import at.mtr.sewfar.ui.photos.PhotoImage
@@ -69,7 +72,13 @@ private const val DayMillis = 86_400_000L
  * but not edited.
  */
 @Composable
-internal fun ProjectLog(state: ProjectDetailState, viewModel: ProjectDetailViewModel, onOpenPhoto: (String) -> Unit) {
+internal fun ProjectLog(
+    state: ProjectDetailState,
+    viewModel: ProjectDetailViewModel,
+    setupUses: SetupUsesData,
+    onOpenPhoto: (String) -> Unit,
+    onOpenSetup: (String) -> Unit,
+) {
     val messages = LocalMessages.current
     val scope = rememberCoroutineScope()
     val deletedText = stringResource(R.string.log_deleted)
@@ -107,7 +116,13 @@ internal fun ProjectLog(state: ProjectDetailState, viewModel: ProjectDetailViewM
                         scope.launch { viewModel.deleteLogEntry(entry.id)?.let { token -> messages.showUndo(deletedText) { viewModel.undo(token) } } }
                     }) { Icon(Icons.Outlined.Delete, stringResource(R.string.log_delete)) }
                 }
-                if (entry.kind == LogKind.NOTE) EntryPhotos(entry, state, viewModel, onOpenPhoto)
+                if (entry.kind == LogKind.NOTE) {
+                    EntryPhotos(entry, state, viewModel, onOpenPhoto)
+                    Column(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp)) {
+                        SetupUsesSection(setupUses, viewModel, entry.id, onOpenSetup, showTitle = false)
+                        SaveAsSetup(entry, setupUses, viewModel, onOpenSetup)
+                    }
+                }
             }
         }
     }
@@ -123,6 +138,53 @@ internal fun ProjectLog(state: ProjectDetailState, viewModel: ProjectDetailViewM
             },
             onDismiss = { editing = null },
         )
+    }
+}
+
+/**
+ * "Save as setup" from a note entry (SPEC 3.4): pre-filled from the entry's first linked snapshot, or an empty setup
+ * on a chosen machine if it has none.
+ */
+@Composable
+private fun SaveAsSetup(entry: LogEntryEntity, data: SetupUsesData, viewModel: ProjectDetailViewModel, onOpenSetup: (String) -> Unit) {
+    val scope = rememberCoroutineScope()
+    val messages = LocalMessages.current
+    val savedText = stringResource(R.string.setup_saved)
+    val failedText = stringResource(R.string.setup_save_failed)
+    var step by rememberSaveable { mutableStateOf<String?>(null) } // null, "machine", or "title:<machineId or use:id>"
+    val firstUse = data.uses.firstOrNull { it.logEntryId == entry.id }
+    TextButton(onClick = { step = if (firstUse != null) "title:use:${firstUse.id}" else "machine" }) {
+        Text(stringResource(R.string.log_save_as_setup))
+    }
+    when {
+        step == "machine" -> EntityPicker(
+            title = stringResource(R.string.setup_choose_machine),
+            items = data.machines.filter { it.archivedAt == null }.map { PickerItem(it.id, it.name) },
+            onPick = { id -> step = id?.let { "title:$it" } },
+            onCreate = null,
+            onDismiss = { step = null },
+        )
+        step?.startsWith("title:") == true -> {
+            val target = step!!.removePrefix("title:")
+            NameDialog(
+                title = stringResource(R.string.log_save_as_setup), label = stringResource(R.string.setup_title),
+                confirmLabel = stringResource(R.string.action_save), initial = firstUse?.setupTitle.orEmpty(),
+                onConfirm = { title ->
+                    step = null
+                    scope.launch {
+                        val id = if (target.startsWith("use:")) viewModel.createSetupFromSnapshot(target.removePrefix("use:"), title)
+                        else viewModel.createSetup(target, title)
+                        if (id == null) {
+                            messages.show(failedText)
+                        } else {
+                            messages.show(savedText)
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { onOpenSetup(id) }
+                        }
+                    }
+                },
+                onDismiss = { step = null },
+            )
+        }
     }
 }
 
