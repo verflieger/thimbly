@@ -132,6 +132,9 @@ interface ProjectDao {
     @Query("SELECT * FROM project WHERE deletedAt IS NULL ORDER BY lastActivityAt DESC")
     fun observeAll(): Flow<List<ProjectEntity>>
 
+    @Query("SELECT name FROM project WHERE deletedAt IS NULL")
+    suspend fun allNames(): List<String>
+
     /** SPEC 3.1: any change to a child row counts as activity on the project. */
     @Query("UPDATE project SET lastActivityAt = :now, updatedAt = :now WHERE id = :id")
     suspend fun touch(id: String, now: Long)

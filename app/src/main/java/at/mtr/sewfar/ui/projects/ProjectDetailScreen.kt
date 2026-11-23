@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.material.icons.outlined.Replay
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -79,7 +80,13 @@ private const val DayMillis = 86_400_000L
 /** Project detail, edited in place (SPEC 3.3). Lessons, log and sew again follow in M1.6. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectDetailScreen(viewModel: ProjectDetailViewModel, onBack: () -> Unit, onOpenPhoto: (String) -> Unit) {
+fun ProjectDetailScreen(
+    viewModel: ProjectDetailViewModel,
+    onBack: () -> Unit,
+    onOpenPhoto: (String) -> Unit,
+    onOpenProject: (String) -> Unit,
+    onOpenCompletion: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val messages = LocalMessages.current
     val scope = rememberCoroutineScope()
@@ -102,6 +109,14 @@ fun ProjectDetailScreen(viewModel: ProjectDetailViewModel, onBack: () -> Unit, o
                 actions = {
                     IconButton(onClick = { menuOpen = true }) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.action_more)) }
                     DropdownMenu(menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.sew_again)) },
+                            leadingIcon = { Icon(Icons.Outlined.Replay, null) },
+                            onClick = {
+                                menuOpen = false
+                                scope.launch { viewModel.sewAgain()?.let { id -> withContext(Dispatchers.Main) { onOpenProject(id) } } }
+                            },
+                        )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.project_delete)) },
                             leadingIcon = { Icon(Icons.Outlined.Delete, null) },
@@ -129,7 +144,13 @@ fun ProjectDetailScreen(viewModel: ProjectDetailViewModel, onBack: () -> Unit, o
                 label = stringResource(R.string.project_name), key = "name-${project.id}",
                 isValid = { it.isNotBlank() }, modifier = Modifier.fillMaxWidth().testTag("projectName"),
             )
-            StatusAndType(project, viewModel::setStatus, viewModel::setType)
+            val source = state.source
+            if (source != null && project.status != ProjectStatus.DONE) {
+                LastTimeCard(source, state.lessonTags, onOpenProject)
+            }
+            StatusAndType(project, { status ->
+                scope.launch { if (viewModel.setStatus(status)) withContext(Dispatchers.Main) { onOpenCompletion() } }
+            }, viewModel::setType)
             PersonRow(state, viewModel)
             ProjectPhotos(state, viewModel, onOpenPhoto)
             HorizontalDivider()
@@ -143,6 +164,22 @@ fun ProjectDetailScreen(viewModel: ProjectDetailViewModel, onBack: () -> Unit, o
                 singleLine = false, minLines = 3, modifier = Modifier.fillMaxWidth(),
             )
             Dates(project, viewModel::setStarted, viewModel::setFinished)
+            // SPEC 3.3: shown when Done or when there is already something to show.
+            if (project.status == ProjectStatus.DONE || state.lessons.isNotEmpty() || project.rating != null || project.completionNotes.isNotBlank()) {
+                HorizontalDivider()
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionLabel(stringResource(R.string.project_lessons))
+                    LessonTagRows(state.patterns, state.lessonTags, state.lessons.keys(), viewModel::setLesson)
+                    RatingBar(project.rating, viewModel::setRating)
+                    AutoSaveTextField(
+                        savedValue = project.completionNotes, onSave = viewModel::setCompletionNotes,
+                        label = stringResource(R.string.completion_notes), key = "cnotes-${project.id}",
+                        singleLine = false, minLines = 2, modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            HorizontalDivider()
+            ProjectLog(state, viewModel, onOpenPhoto)
             Spacer(Modifier.size(24.dp))
         }
     }
@@ -205,7 +242,7 @@ private fun PersonRow(state: ProjectDetailState, viewModel: ProjectDetailViewMod
                 )
             },
             leadingIcon = {
-                if (person != null) Avatar(person.name, person.avatarColor, size = 18.dp)
+                if (person != null) Avatar(person.name, person.avatarColor, size = 18.dp, photoId = state.personPhotoId)
                 else Icon(Icons.Outlined.PersonOutline, null, Modifier.size(18.dp))
             },
         )

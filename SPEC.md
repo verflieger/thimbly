@@ -114,8 +114,8 @@ type, person and patterns; everything else is filled in on the detail screen.
 
 A timeline per project, newest first:
 
-- **Note entries:** date/time (default now, editable), text, optional photos (tagged Progress), optional machine
-  setups used (§6.4, M2).
+- **Note entries:** date/time (default now, editable), text (required), optional photos (tagged Progress; added to an
+  entry once it exists), optional machine setups used (§6.4, M2).
 - **Status entries:** written automatically on each status change ("Planned → In progress"). They cannot be edited
   but can be deleted.
 - From a note entry (M2): "Save as setup" creates a new setup pre-filled from the entry's first linked setup
@@ -123,10 +123,12 @@ A timeline per project, newest first:
 
 ### 3.5 Completion sheet
 
-Opens when a project changes to Done. Every part is optional; "Skip" closes it, "Save" stores it.
+Opens when a project changes to Done. Every part is optional. Lessons, rating and notes are staged and written on
+"Save"; "Skip" (or system back) discards them. Photos taken in the sheet are stored right away and kept either way.
 
 1. Finished photos: take or pick (tagged Finished).
-2. **Lessons learned tags**, one tag row per linked pattern, or one project-level row if there is no pattern.
+2. **Lessons learned tags**, one tag row per linked pattern, plus a project-level row if there is no pattern or it
+   already has lessons (set before a pattern was linked).
    Default tags: Fit was good, Size up, Size down, Lengthen, Shorten, Fabric suited well, Fabric unsuitable.
    Tags are an editable list (Settings → Lesson tags: add, rename, hide, reorder). A tag can be set at most once per
    row.

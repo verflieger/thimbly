@@ -14,6 +14,7 @@ import at.mtr.sewfar.domain.LogKind
 import at.mtr.sewfar.domain.ProjectDates
 import at.mtr.sewfar.domain.ProjectStatus
 import at.mtr.sewfar.domain.ProjectType
+import at.mtr.sewfar.domain.SewAgain
 import at.mtr.sewfar.domain.StatusRules
 import kotlinx.coroutines.flow.Flow
 
@@ -97,6 +98,24 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
             ),
         )
         StatusChange(updated, StatusRules.opensCompletionSheet(current.status, status))
+    }
+
+    /**
+     * "Sew again" (SPEC 3.7): a new Planned project with the same type, person, patterns and sizes, named
+     * "<base> (n)", remembering its source. Archived patterns or person are copied as links too.
+     */
+    suspend fun sewAgain(sourceId: String): String? = db.withTransaction {
+        val source = dao.get(sourceId) ?: return@withTransaction null
+        val id = Ids.random()
+        val now = time.nowMillis()
+        dao.insert(
+            ProjectEntity(
+                id = id, name = SewAgain.nextName(source.name, dao.allNames()), type = source.type, personId = source.personId,
+                size = source.size, sourceProjectId = source.id, lastActivityAt = now, createdAt = now, updatedAt = now,
+            ),
+        )
+        dao.patterns(sourceId).forEach { link -> addPattern(id, link.patternId, link.sizeSewn) }
+        id
     }
 
     /** Soft-deletes the project with all its child rows (SPEC 7). */

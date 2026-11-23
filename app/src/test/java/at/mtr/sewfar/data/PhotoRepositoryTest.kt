@@ -121,4 +121,19 @@ class PhotoRepositoryTest {
         assertEquals(0, t.photos.forOwner(PhotoOwner.PROJECT, projectId).size)
         assertEquals(emptyMap<String, Long>(), t.photoFiles.stored())
     }
+
+    @Test
+    fun logEntryPhotoBelongsToEntryAndGoesWithIt() = runTest {
+        val projectId = t.projects.create("Dress")
+        val entry = t.projects.addNote(projectId, "hemmed")
+        val photo = t.photos.addProjectPhoto(projectId, PhotoTag.PROGRESS, logEntryId = entry) { image.inputStream() }
+
+        val row = t.photos.forOwner(PhotoOwner.PROJECT, projectId).single()
+        assertEquals(entry, row.logEntryId)
+        assertEquals(PhotoTag.PROGRESS, row.tag)
+
+        t.projects.deleteLogEntry(entry)
+        assertEquals(0, t.photos.forOwner(PhotoOwner.PROJECT, projectId).size)
+        assertNotNull(t.deletedAt("photo", photo))
+    }
 }

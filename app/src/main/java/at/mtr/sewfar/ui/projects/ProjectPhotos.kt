@@ -58,7 +58,7 @@ internal fun ProjectPhotos(state: ProjectDetailState, viewModel: ProjectDetailVi
     val messages = LocalMessages.current
     val failedText = stringResource(R.string.photo_import_failed)
     val add: suspend (List<() -> java.io.InputStream>) -> Unit = { sources ->
-        if (viewModel.addPhotos(sources) > 0) messages.show(failedText)
+        if (viewModel.addPhotos(sources).second > 0) messages.show(failedText)
     }
     val takePhoto = rememberTakePhoto { source -> add(listOf(source)) }
     val pickPhotos = rememberPickPhotos(multiple = true) { sources -> add(sources) }

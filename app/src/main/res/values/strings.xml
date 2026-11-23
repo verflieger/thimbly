@@ -182,4 +182,30 @@
     <string name="list_deleted">Entry deleted</string>
     <string name="people_search">Search people</string>
     <string name="action_reset_name">Reset name</string>
+
+    <!-- Log, completion, sew again (SPEC 3.4, 3.5, 3.7) -->
+    <string name="log_title">Progress log</string>
+    <string name="log_add_note">Add note</string>
+    <string name="log_note">Note</string>
+    <string name="log_status_change">%1$s → %2$s</string>
+    <string name="log_empty">No entries yet.</string>
+    <string name="log_delete">Delete entry</string>
+    <string name="log_deleted">Entry deleted</string>
+    <string name="log_edit">Edit note</string>
+    <string name="log_time">Time</string>
+    <string name="log_add_photo">Add photo</string>
+    <string name="completion_title">Finished!</string>
+    <string name="completion_photos">Photos of the finished piece</string>
+    <string name="completion_lessons">What I learned</string>
+    <string name="completion_rating">Rating</string>
+    <string name="completion_notes">What I\'d do differently</string>
+    <string name="completion_skip">Skip</string>
+    <string name="completion_project_level">This project</string>
+    <string name="rating_star">%1$d of 5 stars</string>
+    <string name="rating_clear">Remove rating</string>
+    <string name="project_lessons">Lessons &amp; rating</string>
+    <string name="sew_again">Sew again</string>
+    <string name="last_time">Last time</string>
+    <string name="last_time_open">Open previous project</string>
+    <string name="last_time_nothing">No lessons recorded.</string>
 </resources>

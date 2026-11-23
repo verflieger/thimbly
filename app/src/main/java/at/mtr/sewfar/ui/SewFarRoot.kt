@@ -25,7 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavHostController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -49,6 +52,7 @@ import at.mtr.sewfar.ui.people.PersonDetailScreen
 import at.mtr.sewfar.ui.people.PersonDetailViewModel
 import at.mtr.sewfar.ui.settings.ListEditScreen
 import at.mtr.sewfar.ui.photos.PhotoViewerScreen
+import at.mtr.sewfar.ui.projects.CompletionScreen
 import at.mtr.sewfar.ui.projects.ProjectDetailScreen
 import at.mtr.sewfar.ui.projects.ProjectDetailViewModel
 import at.mtr.sewfar.ui.projects.ProjectListViewModel
@@ -63,11 +67,20 @@ import kotlinx.serialization.Serializable
 @Serializable object SettingsRoute
 @Serializable data class ProjectDetailRoute(val id: String)
 @Serializable data class PatternDetailRoute(val id: String)
+@Serializable data class CompletionRoute(val projectId: String)
 @Serializable data class PersonDetailRoute(val id: String)
 /** [kind] is a [ListKind] name. */
 @Serializable data class ListEditRoute(val kind: String)
 /** All photos of one owner, opened at [photoId] (SPEC 3.6). [ownerType] is a [PhotoOwner] name. */
 @Serializable data class PhotoViewerRoute(val ownerType: String, val ownerId: String, val photoId: String? = null)
+
+/**
+ * Pops [entry] only while it is the resumed top destination, so a double tap (or tap + back) on a screen that is
+ * already leaving can't pop the screen below it too.
+ */
+private fun NavHostController.popFrom(entry: NavBackStackEntry) {
+    if (entry.lifecycle.currentState == Lifecycle.State.RESUMED) popBackStack()
+}
 
 private enum class Tab(val route: Any, @StringRes val label: Int, val icon: ImageVector) {
     PROJECTS(ProjectsRoute, R.string.tab_projects, Icons.Outlined.Checklist),
@@ -139,7 +152,7 @@ fun SewFarRoot(container: AppContainer) {
                     val id = entry.toRoute<PatternDetailRoute>().id
                     PatternDetailScreen(
                         viewModel = viewModel { PatternDetailViewModel(container, id) },
-                        onBack = { navController.popBackStack() },
+                        onBack = { navController.popFrom(entry) },
                         onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
                         onOpenPhoto = { photoId -> navController.navigate(PhotoViewerRoute(PhotoOwner.PATTERN.name, id, photoId)) },
                     )
@@ -148,7 +161,7 @@ fun SewFarRoot(container: AppContainer) {
                     val id = entry.toRoute<PersonDetailRoute>().id
                     PersonDetailScreen(
                         viewModel = viewModel { PersonDetailViewModel(container, id) },
-                        onBack = { navController.popBackStack() },
+                        onBack = { navController.popFrom(entry) },
                         onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
                         onOpenPhoto = { photoId -> navController.navigate(PhotoViewerRoute(PhotoOwner.PERSON.name, id, photoId)) },
                     )
@@ -156,13 +169,13 @@ fun SewFarRoot(container: AppContainer) {
                 composable<ListEditRoute> { entry ->
                     ListEditScreen(
                         ListKind.valueOf(entry.toRoute<ListEditRoute>().kind), container.lists, container.appScope,
-                        onBack = { navController.popBackStack() },
+                        onBack = { navController.popFrom(entry) },
                     )
                 }
                 composable<MachinesRoute> { MachinesScreen(onOpenSettings = openSettings) }
-                composable<SettingsRoute> {
+                composable<SettingsRoute> { entry ->
                     SettingsScreen(
-                        container.settings, container.versionName, onBack = { navController.popBackStack() },
+                        container.settings, container.versionName, onBack = { navController.popFrom(entry) },
                         onOpenList = { kind -> navController.navigate(ListEditRoute(kind.name)) },
                     )
                 }
@@ -170,10 +183,19 @@ fun SewFarRoot(container: AppContainer) {
                     val id = entry.toRoute<ProjectDetailRoute>().id
                     ProjectDetailScreen(
                         viewModel = viewModel { ProjectDetailViewModel(container, id) },
-                        onBack = { navController.popBackStack() },
+                        onBack = { navController.popFrom(entry) },
                         onOpenPhoto = { photoId ->
                             navController.navigate(PhotoViewerRoute(PhotoOwner.PROJECT.name, id, photoId))
                         },
+                        onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
+                        onOpenCompletion = { navController.navigate(CompletionRoute(id)) },
+                    )
+                }
+                composable<CompletionRoute> { entry ->
+                    val id = entry.toRoute<CompletionRoute>().projectId
+                    CompletionScreen(
+                        viewModel = viewModel { ProjectDetailViewModel(container, id) },
+                        onClose = { navController.popFrom(entry) },
                     )
                 }
                 composable<PhotoViewerRoute> { entry ->
@@ -181,7 +203,7 @@ fun SewFarRoot(container: AppContainer) {
                     val photos by container.photos.observe(PhotoOwner.valueOf(route.ownerType), route.ownerId)
                         .collectAsState(initial = null)
                     photos?.let { list ->
-                        PhotoViewerScreen(list.map { it.id }, route.photoId, onClose = { navController.popBackStack() })
+                        PhotoViewerScreen(list.map { it.id }, route.photoId, onClose = { navController.popFrom(entry) })
                     }
                 }
             }
