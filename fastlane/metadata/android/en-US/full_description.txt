@@ -1,0 +1,26 @@
+SewFar is a private diary for your sewing: what you sewed, for whom, with which pattern, what you learned, and which machine settings worked.
+
+<b>Projects</b>
+• Status from idea to planned, in progress, paused and done
+• Person, patterns with the size you sewed, fabrics, notes and dates
+• Photos tagged as inspiration, progress or finished, with an automatic cover
+• A dated progress log with notes and photos
+• When you finish: photos, lessons learned per pattern (size up, lengthen …), a star rating and notes
+• "Sew again" starts a new project and shows what you learned last time
+
+<b>Patterns</b>
+Designer, category, size range, format, shop link, suited fabrics and fabric needed per size. Every project and lesson for a pattern in one place.
+
+<b>People</b>
+Who you sew for, with dated measurements, so you can see children grow.
+
+<b>Machines & setups</b>
+Your sewing machine, overlocker or coverstitch with their own setting fields. Save setups (stitch, tensions, differential feed …) per purpose and fabric, use them in projects and see when a setup has changed since.
+
+<b>Backup</b>
+Save or share a backup file at any time, or let SewFar back up weekly into a folder of your choice.
+
+<b>Private by design</b>
+No internet permission, no ads, no tracking, no account. Your data stays on your phone until you export it yourself.
+
+Free software under the GNU GPL v3. Available in English and German.

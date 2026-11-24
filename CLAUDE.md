@@ -41,6 +41,10 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   SPEC 7 table and returns a `DeletionToken` for undo; add any new child table to its `cascade` map and `AllTables`.
   Re-adding a removed link/value revives its tombstone (unique indexes span deleted rows). Child-row changes must call
   `ProjectDao.touch` (`lastActivityAt`). Status changes only via `ProjectRepository.setStatus`.
+- **Frozen formats** (SPEC 8, 9): database schema 1 and backup format 1 are released. A schema change needs a new
+  `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and a migration test (`SchemaFreezeTest`
+  checks the frozen v1 hash and that every version step has an exported schema and a migration); a
+  backup format change needs a new `BackupRepository.FORMAT`, reading of all older formats, and a new fixture.
 - Raw SQL writes (`openHelper.writableDatabase.execSQL`) only inside `db.withTransaction`, so they run off the main
   thread and Room observers are notified.
 - **Photos** (SPEC 3.6): `PhotoRepository` stores the processed file first (`PhotoFiles`, `ImageProcessor`: EXIF

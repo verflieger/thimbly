@@ -89,8 +89,8 @@ fun SetupDetailScreen(viewModel: SetupDetailViewModel, onBack: () -> Unit, onOpe
             Modifier.padding(padding).fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Key includes the stored title so an automatic title (from purpose/fabric) shows up in the field.
-            AutoSaveTextField(setup.title, viewModel::setTitle, stringResource(R.string.setup_title), "stitle-${setup.id}-${setup.title}",
+            // The field follows the automatic title (from purpose/fabric) until the user types (AutoSaveTextField).
+            AutoSaveTextField(setup.title, viewModel::setTitle, stringResource(R.string.setup_title), "stitle-${setup.id}",
                 modifier = Modifier.fillMaxWidth())
             state.machine?.let { machine ->
                 ListItem(

@@ -311,9 +311,9 @@ circular). Dates without time (`startedOn`, `finishedOn`, session `date`,
 | `setup_value` | setupId, fieldId, value | setupId + fieldId |
 | `setup_use` | setupId, projectId, logEntryId?, snapshotAt, tweaked, snapshot (JSON: list of {fieldId, label, value}) | |
 
-Room schema export is on. **Schema version 1 and backup format 1 are frozen at the v1.0 release**; during
-development the version is raised on every schema change and debug builds drop the database instead of migrating. From v1.0 on, every schema change
-ships a migration and a test.
+Room schema export is on. **Schema version 1 and backup format 1 are frozen** (v1.0 release; `SchemaFreezeTest` pins
+schema 1's identity hash, `src/test/resources/backup/format1.zip` is the format-1 fixture). Every schema change raises
+the version and ships a migration and a migration test; the database is never dropped.
 
 ## 9. Backup
 
@@ -411,5 +411,5 @@ any kind.
 9. Setups library, setup detail.
 10. Linking setups to projects/log entries with snapshots, diff and write-back; "Save as setup" from a log entry.
 
-**Release v1.0** after M2: freeze schema v1 and backup format 1, fastlane metadata (en-US, de-DE), screenshots with
+**Release v1.0** after M2 (done 2026-11-24): freeze schema v1 and backup format 1, fastlane metadata (en-US, de-DE), screenshots with
 sample data, signed release APK.

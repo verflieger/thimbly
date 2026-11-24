@@ -18,7 +18,7 @@ android {
         targetSdk = 37
         // Raise versionCode for every APK given to others: Android only installs higher versions as updates.
         versionCode = 1
-        versionName = "0.1.0-dev"
+        versionName = "1.0.0"
     }
 
     // The release key lives outside the repository. Without it the release APK stays unsigned and can't be
@@ -44,8 +44,6 @@ android {
 
     buildFeatures {
         compose = true
-        // BuildConfig.DEBUG switches on destructive Room migrations during development (SPEC 8).
-        buildConfig = true
     }
 
     // The dependency list AGP embeds is encrypted with Google's key; F-Droid can't check it and flags it.
@@ -75,6 +73,10 @@ android {
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
+
+// Migration tests read the exported Room schemas as assets. Robolectric only sees merged debug assets, so they go
+// into debug builds; release builds don't contain them.
+android.sourceSets.getByName("debug").assets.directories.add("$projectDir/schemas")
 
 /**
  * SPEC 1 / 12: the merged manifest must contain neither INTERNET (offline promise) nor CAMERA

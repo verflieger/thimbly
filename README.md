@@ -6,9 +6,9 @@ learned, and which machine settings worked.
 The app is in English and German, following the phone's language or Android's per-app language setting.
 The full specification is in [SPEC.md](SPEC.md), later plans in [ROADMAP.md](ROADMAP.md).
 
-**Status:** early development (milestone M1.1: app skeleton).
+**Status:** v1.0 – all features of the [specification](SPEC.md) are in place.
 
-## Planned for v1
+## Features
 
 - **Projects:** status (idea → planned → in progress → paused → done), person, patterns with the size sewn,
   fabrics, notes, tagged photos, a dated progress log, and a completion step with lessons learned and a rating.
@@ -32,7 +32,10 @@ Requires the Android SDK (compileSdk 37) and a JDK 17+ (e.g. Android Studio's bu
 ```sh
 ./gradlew assembleDebug        # debug APK
 ./gradlew testDebugUnitTest    # unit and UI tests (JVM + Robolectric)
+./gradlew assembleRelease      # release APK, signed if ~/.config/sewfar/keystore.properties exists
 ```
+
+Store texts and screenshots (English and German) are in `fastlane/metadata/android/`.
 
 ## Licence
 

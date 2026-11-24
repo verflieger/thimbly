@@ -35,20 +35,30 @@ fun AutoSaveTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 ) {
     var text by rememberSaveable(key) { mutableStateOf(savedValue) }
+    // Only text the user typed is saved. Without this, a value changed elsewhere (e.g. by the completion sheet)
+    // would be overwritten with the stale text this field showed first, when the field leaves the screen.
+    var edited by rememberSaveable(key) { mutableStateOf(false) }
     val saved by rememberUpdatedState(savedValue)
     val save by rememberUpdatedState(onSave)
     val valid by rememberUpdatedState(isValid)
+    // Follow outside changes while not editing; an edit is done once the stored value caught up with it.
+    LaunchedEffect(key, savedValue) {
+        if (!edited || text == savedValue) {
+            text = savedValue
+            edited = false
+        }
+    }
     LaunchedEffect(key, text) {
         delay(SaveDelayMillis)
-        if (text != saved && valid(text)) save(text)
+        if (edited && text != saved && valid(text)) save(text)
     }
     DisposableEffect(key) {
-        onDispose { if (text != saved && valid(text)) save(text) }
+        onDispose { if (edited && text != saved && valid(text)) save(text) }
     }
     val invalid = !isValid(text)
     OutlinedTextField(
         value = text,
-        onValueChange = { text = it },
+        onValueChange = { text = it; edited = true },
         label = { Text(label) },
         singleLine = singleLine,
         minLines = minLines,

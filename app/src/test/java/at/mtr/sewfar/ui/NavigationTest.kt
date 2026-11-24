@@ -1,6 +1,7 @@
 package at.mtr.sewfar.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -20,21 +21,21 @@ class NavigationTest {
 
     @Test
     fun opensOnProjectsAndSwitchesTabs() {
-        compose.onNodeWithText("No projects yet.").assertIsDisplayed()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("No projects yet.")).fetchSemanticsNodes().isNotEmpty() }; compose.onNodeWithText("No projects yet.").assertIsDisplayed()
         compose.onNodeWithText("Patterns").performClick()
-        compose.onNodeWithText("No patterns yet.").assertIsDisplayed()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("No patterns yet.")).fetchSemanticsNodes().isNotEmpty() }; compose.onNodeWithText("No patterns yet.").assertIsDisplayed()
         compose.onNodeWithText("People").performClick()
-        compose.onNodeWithText("No people yet.").assertIsDisplayed()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("No people yet.")).fetchSemanticsNodes().isNotEmpty() }; compose.onNodeWithText("No people yet.").assertIsDisplayed()
         compose.onNodeWithText("Machines").performClick()
-        compose.onNodeWithText("Add your first machine to save its settings.").assertIsDisplayed()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Add your first machine to save its settings.")).fetchSemanticsNodes().isNotEmpty() }; compose.onNodeWithText("Add your first machine to save its settings.").assertIsDisplayed()
     }
 
     @Test
     fun settingsOpenFromGearAndBackReturns() {
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Wallpaper colours").assertIsDisplayed()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Wallpaper colours")).fetchSemanticsNodes().isNotEmpty() }; compose.onNodeWithText("Wallpaper colours").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.onNodeWithText("No projects yet.").assertIsDisplayed()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("No projects yet.")).fetchSemanticsNodes().isNotEmpty() }; compose.onNodeWithText("No projects yet.").assertIsDisplayed()
     }
 }
 
@@ -46,8 +47,8 @@ class GermanNavigationTest {
 
     @Test
     fun showsGermanTabs() {
-        compose.onNodeWithText("Noch keine Projekte.").assertIsDisplayed()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Noch keine Projekte.")).fetchSemanticsNodes().isNotEmpty() }; compose.onNodeWithText("Noch keine Projekte.").assertIsDisplayed()
         compose.onNodeWithText("Schnittmuster").performClick()
-        compose.onNodeWithText("Noch keine Schnittmuster.").assertIsDisplayed()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Noch keine Schnittmuster.")).fetchSemanticsNodes().isNotEmpty() }; compose.onNodeWithText("Noch keine Schnittmuster.").assertIsDisplayed()
     }
 }

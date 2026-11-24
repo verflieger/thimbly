@@ -111,6 +111,8 @@ fun CompletionScreen(viewModel: ProjectDetailViewModel, onClose: () -> Unit) {
             }
         },
     ) { padding ->
+        // Nothing can be edited before the stored values are loaded: loading would overwrite early input.
+        if (!initialized) return@Scaffold
         Column(
             Modifier.padding(padding).fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),

@@ -142,8 +142,24 @@ class BackupTest {
         assertEquals("Fixture pattern", t.patterns.get(t.projects.patterns(project.id).single().patternId)?.name)
         assertEquals("Fixture person", t.persons.get(project.personId!!)?.name)
         assertEquals(1, t.projects.log(project.id).size)
-        val photo = t.photos.forOwner(PhotoOwner.PROJECT, project.id).single()
-        assertTrue(t.photoFiles.file(photo.id).exists())
+        val photos = t.photos.forOwner(PhotoOwner.PROJECT, project.id)
+        assertEquals(2, photos.size)
+        assertTrue(photos.all { t.photoFiles.file(it.id).exists() })
+        assertEquals(1, photos.count { it.logEntryId != null })
+        // Every table of format 1 has rows in the fixture; spot-check what the core tables don't cover.
+        assertEquals(1, t.count("measurement_value"))
+        assertEquals(1, t.count("pattern_yardage"))
+        assertEquals(1, t.count("project_fabric"))
+        assertEquals(1, t.count("project_fabric", live = false) - 1)
+        assertEquals(1, t.projects.lessons(project.id).size)
+        assertEquals(1, t.count("machine"))
+        assertEquals(10, t.count("machine_field"))
+        assertEquals("1.3", SetupRepository(t.db, t.deleter, t.time).observeAll().first().single().let { setup ->
+            SetupRepository(t.db, t.deleter, t.time).values(setup.id).values.single()
+        })
+        val use = SetupRepository(t.db, t.deleter, t.time).observeUses(project.id).first().single()
+        assertEquals("1.3", at.mtr.sewfar.domain.Snapshots.decode(use.snapshot).first { it.value.isNotEmpty() }.value)
+        assertEquals(1, t.photos.forOwner(PhotoOwner.PATTERN, project.let { t.projects.patterns(it.id).single().patternId }).size)
     }
 
     @Test
