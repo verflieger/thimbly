@@ -20,8 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.PhotoCamera
-import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Stop
@@ -32,7 +30,6 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,6 +63,7 @@ import at.mtr.sewfar.ui.common.SectionLabel
 import at.mtr.sewfar.ui.common.format
 import at.mtr.sewfar.ui.common.formatDuration
 import at.mtr.sewfar.ui.common.rememberNow
+import at.mtr.sewfar.ui.photos.AddPhotoTile
 import at.mtr.sewfar.ui.photos.PhotoImage
 import at.mtr.sewfar.ui.photos.rememberPickPhotos
 import at.mtr.sewfar.ui.photos.rememberTakePhoto
@@ -184,12 +182,7 @@ internal fun ProjectPhotos(state: ProjectDetailState, viewModel: ProjectDetailVi
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         SectionLabel(stringResource(R.string.project_photos))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledTonalIconButton(onClick = takePhoto) { Icon(Icons.Outlined.PhotoCamera, stringResource(R.string.action_take_photo)) }
-                    FilledTonalIconButton(onClick = pickPhotos) { Icon(Icons.Outlined.PhotoLibrary, stringResource(R.string.action_pick_photos)) }
-                }
-            }
+            item { AddPhotoTile(takePhoto, pickPhotos) }
             items(state.photos.reversed(), key = { it.id }) { photo ->
                 PhotoThumb(
                     photo, isCover = photo.id == state.coverPhotoId, isPinned = photo.id == state.project?.coverPhotoId,

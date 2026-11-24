@@ -3,8 +3,8 @@
 SewFar is a private, offline Android tracker for sewing projects: what you are sewing, how long it takes, which
 pattern and machine settings you used, and how it turned out.
 
-**Guiding rule: keep it simple.** One home screen, one page per project, no dialog before you can start typing,
-everything a project needs can be added from the project itself. New features must not crowd the project page;
+**Guiding rule: keep it simple.** One home screen, one page per project, everything a project needs can be added
+from the project itself. New features must not crowd the project page;
 the data model stays generic so they can be added later (see [ROADMAP.md](ROADMAP.md)).
 
 First designed on 2026-11-23; radically simplified on 2026-11-24 after using the first prototype (it had too many
@@ -35,10 +35,13 @@ screens, fields and tabs).
 - **Library:** one screen with three tabs (Patterns, Machines, People), each a list with a "+" button. Patterns,
   machines, settings and people can also be created right from a project, so the Library is only needed to edit or
   delete them.
-- **Creating never starts with a dialog:** "+" creates the record and opens its page with the cursor in the name
-  field. Leaving a new record without entering anything discards it again (only records just created this way;
-  clearing an existing record never deletes it). A screen's saves run in order, and the empty check runs after the
-  last of them, so text typed just before leaving is never lost.
+- **Creating:** "+" asks only for the name (dialog with Save), creates the record and opens its page.
+- **Editing (2026-11-24):** real edits use an explicit form; state changes apply at once.
+  - Texts (names, notes, a pattern's designer, a setting's values) are shown read-only. ✎ opens the edit form (or a
+    text dialog for a project's name, notes and "What I learned"); **Save** stores, ✕ or back discards, asking
+    "Discard changes?" first if something was changed.
+  - Status, timer, photos, linking or unlinking patterns, person and settings, stars and a machine's type apply
+    immediately.
 - Pickers (pattern, person, machine setting, machine) have a search field and a "Create “…”" row that creates the
   item from the typed name.
 - Back: the system back gesture or the arrow in the top bar.
@@ -51,26 +54,24 @@ screens, fields and tabs).
   running timer comes first, then by last activity (any change to the project or its links, time or photos).
 - A card shows the cover photo, name, first pattern and person, total time, and a start/stop timer button.
 - Search matches name, person and pattern names.
-- "New project" creates a Planned project with an empty name and opens it. It is discarded on leaving if it still
-  has no name, notes, person, links, time or photos and is still Planned.
+- "New project" asks for the name, creates a Planned project and opens it.
 
 ### 3.2 Project page
 
-One scrolling page, edited in place (saves while typing):
+One scrolling page. The top bar shows the name with ✎ (rename dialog) and delete (with Undo).
 
-1. Name.
-2. Status: Planned · In progress · Done (segmented buttons).
-3. Time (§3.3).
-4. Photos (§3.5).
-5. Patterns (chips; tap opens the pattern, × removes, "+ Pattern" picks or creates).
-6. Sewn for (one person, same chip pattern).
-7. Machine settings (chips "Setting · Machine"; tap opens it, × unlinks, "+ Machine setting" picks or creates one,
+1. Status: Planned · In progress · Done (segmented buttons).
+2. Time (§3.3).
+3. Photos (§3.5).
+4. Patterns (chips; tap opens the pattern, × removes, "+ Pattern" picks or creates).
+5. Sewn for (one person, same chip pattern).
+6. Machine settings (chips "Setting · Machine"; tap opens it, × unlinks, "+ Machine setting" picks or creates one,
    §5.2).
-8. Notes.
-9. When Done: rating (1–5 stars, tap the same star again to clear) and "What I learned".
-10. Started / finished dates (read-only).
+7. Notes (shown as text; "Add notes" or ✎ opens a text dialog).
+8. When Done: rating (1–5 stars, tap the same star again to clear) and "What I learned" (like notes).
+9. Started / finished dates (read-only).
 
-The top bar has back and delete (with Undo). Removing a link or a time entry also offers Undo.
+Removing a link, the person or a time entry offers Undo.
 
 **Status effects:** In progress or Done sets the start date if missing; Done sets the finish date and stops a running
 timer; leaving Done clears the finish date.
@@ -90,8 +91,8 @@ No separate completion screen: setting Done shows rating and "What I learned" on
 
 ### 3.5 Photos
 
-- Projects and patterns have any number of photos; camera and gallery buttons sit at the start of the photo row,
-  newest photo first. Tap opens the full-screen viewer (swipe, pinch zoom); long-press offers "Use as cover" (project)
+- Projects and patterns have any number of photos. The photo row starts with one "Add photo" tile, which offers
+  "Take photo" or "From gallery"; newest photo first. Tap opens the full-screen viewer (swipe, pinch zoom); long-press offers "Use as cover" (project)
   and delete (with Undo).
 - Cover: the pinned photo, otherwise the newest one.
 - Pipeline: decode, apply EXIF orientation, downscale to at most 2048 px on the long edge, re-encode as JPEG 85 (drops
@@ -115,7 +116,7 @@ Name, notes, "Used in". A deleted person no longer shows on projects.
 ### 5.1 Machines
 
 Name, type (sewing machine, overlocker, coverstitch, embroidery, other), notes, and the list of its settings with
-"+ New setting". Deleting a machine deletes its settings and their project links (with Undo).
+"+ New setting" (asks for the name, then opens the setting's form). Deleting a machine deletes its settings and their project links (with Undo).
 
 ### 5.2 Machine settings ("setups")
 
@@ -134,8 +135,7 @@ Name, type (sewing machine, overlocker, coverstitch, embroidery, other), notes, 
 - Plus notes and "Used in".
 - From a project: "+ Machine setting" → pick a setting, or type a name and "New setting “…”". With exactly one
   machine it is used directly; otherwise a machine picker follows (with "Create “…”" for a new machine). The new
-  setting is linked and its page opens for the values.
-- A new setting left without name, notes or values is discarded.
+  setting is linked and its page opens with the form, ready for the values.
 
 ## 6. Delete and undo
 

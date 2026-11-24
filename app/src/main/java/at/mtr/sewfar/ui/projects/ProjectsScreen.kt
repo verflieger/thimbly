@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.mtr.sewfar.R
 import at.mtr.sewfar.ui.common.EmptyState
+import at.mtr.sewfar.ui.common.TextDialog
 import at.mtr.sewfar.ui.common.formatDuration
 import at.mtr.sewfar.ui.common.label
 import at.mtr.sewfar.ui.common.rememberNow
@@ -68,7 +69,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ProjectsScreen(
     viewModel: ProjectListViewModel,
-    onOpenProject: (id: String, isNew: Boolean) -> Unit,
+    onOpenProject: (id: String) -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -76,6 +77,7 @@ fun ProjectsScreen(
     val query by viewModel.query.collectAsStateWithLifecycle()
     var searching by rememberSaveable { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
+    var naming by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val anyRunning = state.sections.values.any { list -> list.any { it.runningSince != null } }
     val now = rememberNow(anyRunning)
@@ -121,7 +123,7 @@ fun ProjectsScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { scope.launch { val id = viewModel.create(); withContext(Dispatchers.Main) { onOpenProject(id, true) } } },
+                onClick = { naming = true },
                 icon = { Icon(Icons.Outlined.Add, null) },
                 text = { Text(stringResource(R.string.project_new)) },
                 modifier = Modifier.testTag("newProject"),
@@ -157,7 +159,7 @@ fun ProjectsScreen(
                     items(projects, key = { it.id }) { project ->
                         ProjectCard(
                             project, now,
-                            onOpen = { onOpenProject(project.id, false) },
+                            onOpen = { onOpenProject(project.id) },
                             onTimer = { if (project.runningSince != null) viewModel.stopTimer(project.id) else viewModel.startTimer(project.id) },
                         )
                     }
@@ -165,6 +167,20 @@ fun ProjectsScreen(
             }
         }
     }
+    if (naming) {
+        NewProjectDialog(
+            onCreate = { name ->
+                naming = false
+                scope.launch { val id = viewModel.create(name); withContext(Dispatchers.Main) { onOpenProject(id) } }
+            },
+            onDismiss = { naming = false },
+        )
+    }
+}
+
+@Composable
+private fun NewProjectDialog(onCreate: (String) -> Unit, onDismiss: () -> Unit) {
+    TextDialog(stringResource(R.string.project_new), stringResource(R.string.project_name), onSave = onCreate, onDismiss = onDismiss)
 }
 
 @Composable

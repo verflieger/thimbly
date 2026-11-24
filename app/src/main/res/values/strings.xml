@@ -148,4 +148,14 @@
         <item quantity="other">%1$d settings</item>
     </plurals>
     <string name="backup_error_prototype">This backup is from SewFar 1.0, whose data can\'t be restored in this version.</string>
+    <string name="action_save">Save</string>
+    <string name="action_edit">Edit</string>
+    <string name="discard_title">Discard changes?</string>
+    <string name="action_discard">Discard</string>
+    <string name="keep_editing">Keep editing</string>
+    <string name="setup_no_values">No values yet. Tap ✎ to fill them in.</string>
+    <string name="photo_add">Add photo</string>
+    <string name="notes_add">Add notes</string>
+    <string name="learned_add">Add what you learned</string>
+    <string name="project_rename">Rename project</string>
 </resources>

@@ -38,12 +38,6 @@ class MachineRepository(private val db: SewFarDatabase, private val deleter: Sof
 
     suspend fun undo(token: DeletionToken) = deleter.undo(token)
 
-    suspend fun discardIfEmpty(id: String) = db.withTransaction {
-        val m = dao.get(id) ?: return@withTransaction
-        val hasSetups = db.query("SELECT 1 FROM setup WHERE machineId = ? AND deletedAt IS NULL", arrayOf(id)).use { it.moveToFirst() }
-        if (m.name.isBlank() && m.notes.isBlank() && !hasSetups) deleter.delete("machine", id)
-    }
-
     // ---- Setups (SPEC 5.2) ----
 
     fun observeSetups(): Flow<List<SetupRow>> = dao.observeSetups()
@@ -79,13 +73,6 @@ class MachineRepository(private val db: SewFarDatabase, private val deleter: Sof
                 dao.updateValue(existing.copy(value = text, deletedAt = null, updatedAt = now))
         }
         dao.updateSetup(setup.copy(updatedAt = now))
-    }
-
-    /** Drops a new setting left without title, notes or values (SPEC 5.2). */
-    suspend fun discardSetupIfEmpty(id: String) = db.withTransaction {
-        val setup = dao.getSetup(id) ?: return@withTransaction
-        val hasValues = db.query("SELECT 1 FROM setup_value WHERE setupId = ? AND deletedAt IS NULL", arrayOf(id)).use { it.moveToFirst() }
-        if (setup.title.isBlank() && setup.notes.isBlank() && !hasValues) deleter.delete("setup", id)
     }
 
     suspend fun deleteSetup(id: String): DeletionToken? = deleter.delete("setup", id)

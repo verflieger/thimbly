@@ -16,14 +16,11 @@ import at.mtr.sewfar.data.db.SetupRow
 import at.mtr.sewfar.data.db.TimeEntryEntity
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.domain.ProjectStatus
-import at.mtr.sewfar.ui.common.EditableName
-import at.mtr.sewfar.ui.common.SerialWriter
 import java.io.InputStream
 import java.time.LocalDate
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -50,12 +47,9 @@ data class Choices(
 )
 
 /** One project, edited in place (SPEC 3). Writes run in the app scope so they finish after leaving the screen. */
-class ProjectDetailViewModel(private val container: AppContainer, val id: String, private val isNew: Boolean = false) : ViewModel() {
+class ProjectDetailViewModel(private val container: AppContainer, val id: String) : ViewModel() {
     private val projects = container.projects
     private val app = container.appScope
-    private val writer = SerialWriter(app)
-
-    val name = EditableName(app, writer) { text -> projects.edit(id) { it.copy(name = text.trim()) } }
 
     val state: StateFlow<ProjectDetailState> = combine(
         projects.observe(id),
@@ -76,21 +70,13 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     ) { persons, patterns, setups, machines -> Choices(persons, patterns, setups, machines) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Choices())
 
-    init {
-        viewModelScope.launch { projects.observe(id).filterNotNull().collect { name.load(it.name) } }
+    private fun write(block: suspend () -> Unit) {
+        app.launch { block() }
     }
 
-    /** Saves the name; leaving a new project without entering anything discards it (SPEC 3.1). */
-    override fun onCleared() {
-        writer.launchLast {
-            name.flushInLock()
-            if (isNew) projects.discardIfEmpty(id)
-        }
-    }
+    private suspend fun <T> run(block: suspend () -> T): T = container.runInApp(block)
 
-    private fun write(block: suspend () -> Unit) = writer.launch(block)
-
-    private suspend fun <T> run(block: suspend () -> T): T = writer.run(block)
+    fun rename(name: String) = write { projects.edit(id) { it.copy(name = name.trim()) } }
 
     fun setStatus(status: ProjectStatus) = write { projects.setStatus(id, status) }
     fun setNotes(text: String) = write { projects.edit(id) { it.copy(notes = text) } }

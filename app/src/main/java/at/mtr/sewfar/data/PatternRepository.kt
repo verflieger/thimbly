@@ -33,14 +33,4 @@ class PatternRepository(private val db: SewFarDatabase, private val deleter: Sof
     suspend fun delete(id: String): DeletionToken? = deleter.delete("pattern", id)
 
     suspend fun undo(token: DeletionToken) = deleter.undo(token)
-
-    /** Removes a new pattern the user left without entering anything. */
-    suspend fun discardIfEmpty(id: String) = db.withTransaction {
-        val p = dao.get(id) ?: return@withTransaction
-        if (p.name.isBlank() && p.designer.isBlank() && p.notes.isBlank() &&
-            db.photoDao().nextOrder(at.mtr.sewfar.domain.PhotoOwner.PATTERN, id) == 0
-        ) {
-            deleter.delete("pattern", id)
-        }
-    }
 }

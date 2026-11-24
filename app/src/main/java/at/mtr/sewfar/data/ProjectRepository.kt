@@ -27,8 +27,8 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
 
     suspend fun get(id: String): ProjectEntity? = dao.get(id)
 
-    /** Creates a Planned project; the name may still be blank (SPEC 3.1). */
-    suspend fun create(name: String = ""): String {
+    /** Creates a Planned project (SPEC 3.1). */
+    suspend fun create(name: String): String {
         val id = Ids.random()
         val now = time.nowMillis()
         dao.insert(ProjectEntity(id = id, name = name.trim(), lastActivityAt = now, createdAt = now, updatedAt = now))
@@ -78,15 +78,6 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
     }
 
     suspend fun undo(token: DeletionToken) = deleter.undo(token)
-
-    /** Removes a new project the user left without entering anything (SPEC 3.1). True if it was removed. */
-    suspend fun discardIfEmpty(id: String): Boolean = db.withTransaction {
-        val p = dao.get(id) ?: return@withTransaction false
-        val empty = p.name.isBlank() && p.notes.isBlank() && p.personId == null && p.status == ProjectStatus.PLANNED &&
-            !dao.hasChildren(id)
-        if (empty) deleter.delete("project", id)
-        empty
-    }
 
     // ---- Patterns (SPEC 3.1) ----
 

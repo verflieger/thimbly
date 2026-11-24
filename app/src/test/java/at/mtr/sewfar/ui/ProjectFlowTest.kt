@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import at.mtr.sewfar.MainActivity
 import org.junit.Rule
 import org.junit.Test
@@ -14,7 +15,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** SPEC 3: new project without a dialog, pattern and machine setting created inline, timer, delete and undo. */
+/** SPEC 2, 3: name dialog, pattern and machine setting created inline, edit form, timer, delete and undo. */
 @RunWith(RobolectricTestRunner::class)
 // Default Robolectric screen (320x470dp): a larger qualifier made dialogs with text fields never go idle.
 // Off-screen controls are reached with performScrollTo.
@@ -25,28 +26,31 @@ class ProjectFlowTest {
     private fun waitFor(text: String) =
         compose.waitUntil(5_000) { compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty() }
 
-    private fun waitGone(text: String) =
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isEmpty() }
-
     private fun back() = compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
 
     @Test
     fun createWithPatternSettingAndTimerThenDeleteAndUndo() {
         compose.onNodeWithTag("newProject").performClick()
-        compose.onNodeWithTag("name").performTextInput("Hoodie")
+        compose.onNodeWithTag("dialogText").performTextInput("Hoodie")
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("Sewn for")
 
         compose.onNodeWithTag("addPattern").performScrollTo().performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Raglan")
         compose.onNodeWithText("Create “Raglan”").performClick()
         waitFor("Raglan")
 
-        // A machine setting with a new machine, straight from the project.
+        // A machine setting with a new machine, straight from the project; its form opens for the values.
         compose.onNodeWithTag("addSetup").performScrollTo().performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Jersey seam")
         compose.onNodeWithText("New setting “Jersey seam”").performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Overlock")
         compose.onNodeWithText("Create “Overlock”").performClick()
-        waitFor("Stitch length") // setup screen of a sewing machine (default type)
+        waitFor("Stitch length")
+        compose.onNodeWithTag("field-stitch_length").performTextInput("3")
+        compose.onNodeWithTag("save").performClick()
+        waitFor("Overlock") // view mode: machine chip
+        compose.onNodeWithText("3").assertExists()
         back()
         waitFor("Jersey seam · Overlock")
 
@@ -63,11 +67,21 @@ class ProjectFlowTest {
     }
 
     @Test
-    fun leavingAnEmptyNewProjectDiscardsIt() {
-        compose.onNodeWithTag("newProject").performClick()
-        waitFor("Sewn for")
+    fun cancellingAnEditFormAsksBeforeDiscarding() {
+        compose.onNodeWithTag("menu").performClick()
+        compose.onNodeWithText("Library").performClick()
+        compose.onNodeWithTag("add").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Raglan")
+        compose.onNodeWithTag("dialogSave").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Raglan")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("edit").performClick()
+        compose.onNodeWithText("Designer").performTextReplacement("Studio X")
+        compose.waitForIdle() // on a phone there is always a frame between typing and back
         back()
-        waitFor("No projects yet.")
-        waitGone("Untitled project")
+        compose.waitForIdle()
+        compose.onNodeWithText("Discard changes?").assertExists()
+        compose.onNodeWithText("Keep editing").performClick()
+        compose.onNodeWithTag("save").performClick()
+        waitFor("Studio X")
     }
 }

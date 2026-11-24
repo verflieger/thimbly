@@ -52,12 +52,12 @@ import kotlinx.serialization.Serializable
 @Serializable object SettingsRoute
 /** [tab] is a [LibraryTab] name. */
 @Serializable data class LibraryRoute(val tab: String = LibraryTab.PATTERNS.name)
-/** [isNew]: just created, so the name field gets the cursor. */
-@Serializable data class ProjectRoute(val id: String, val isNew: Boolean = false)
-@Serializable data class PatternRoute(val id: String, val isNew: Boolean = false)
-@Serializable data class PersonRoute(val id: String, val isNew: Boolean = false)
-@Serializable data class MachineRoute(val id: String, val isNew: Boolean = false)
-@Serializable data class SetupRoute(val id: String, val isNew: Boolean = false)
+@Serializable data class ProjectRoute(val id: String)
+@Serializable data class PatternRoute(val id: String)
+@Serializable data class PersonRoute(val id: String)
+@Serializable data class MachineRoute(val id: String)
+/** [edit]: just created, so the form opens right away for the values. */
+@Serializable data class SetupRoute(val id: String, val edit: Boolean = false)
 /** All photos of one owner, opened at [photoId] (SPEC 3.5). [ownerType] is a [PhotoOwner] name. */
 @Serializable data class PhotoViewerRoute(val ownerType: String, val ownerId: String, val photoId: String? = null)
 
@@ -98,7 +98,7 @@ fun SewFarRoot(container: AppContainer) {
                 composable<ProjectsRoute> {
                     ProjectsScreen(
                         viewModel = viewModel { ProjectListViewModel(container) },
-                        onOpenProject = { id, isNew -> nav.navigate(ProjectRoute(id, isNew)) },
+                        onOpenProject = { id -> nav.navigate(ProjectRoute(id)) },
                         onOpenLibrary = { nav.navigate(LibraryRoute()) },
                         onOpenSettings = { nav.navigate(SettingsRoute) { launchSingleTop = true } },
                     )
@@ -106,13 +106,13 @@ fun SewFarRoot(container: AppContainer) {
                 composable<ProjectRoute> { entry ->
                     val route = entry.toRoute<ProjectRoute>()
                     ProjectDetailScreen(
-                        viewModel = viewModel { ProjectDetailViewModel(container, route.id, route.isNew) },
-                        isNew = route.isNew,
+                        viewModel = viewModel { ProjectDetailViewModel(container, route.id) },
                         onBack = { nav.popFrom(entry) },
                         onOpenPhoto = { photoId -> nav.navigate(PhotoViewerRoute(PhotoOwner.PROJECT.name, route.id, photoId)) },
                         onOpenPattern = { nav.navigate(PatternRoute(it)) },
                         onOpenPerson = { nav.navigate(PersonRoute(it)) },
                         onOpenSetup = { nav.navigate(SetupRoute(it)) },
+                        onOpenNewSetup = { nav.navigate(SetupRoute(it, edit = true)) },
                     )
                 }
                 composable<LibraryRoute> { entry ->
@@ -120,12 +120,12 @@ fun SewFarRoot(container: AppContainer) {
                     LibraryScreen(
                         viewModel = viewModel { LibraryViewModel(container, tab) },
                         onBack = { nav.popFrom(entry) },
-                        onOpen = { t, id, isNew ->
+                        onOpen = { t, id ->
                             nav.navigate(
                                 when (t) {
-                                    LibraryTab.PATTERNS -> PatternRoute(id, isNew)
-                                    LibraryTab.MACHINES -> MachineRoute(id, isNew)
-                                    LibraryTab.PEOPLE -> PersonRoute(id, isNew)
+                                    LibraryTab.PATTERNS -> PatternRoute(id)
+                                    LibraryTab.MACHINES -> MachineRoute(id)
+                                    LibraryTab.PEOPLE -> PersonRoute(id)
                                 },
                             )
                         },
@@ -134,7 +134,7 @@ fun SewFarRoot(container: AppContainer) {
                 composable<PatternRoute> { entry ->
                     val route = entry.toRoute<PatternRoute>()
                     PatternScreen(
-                        viewModel = viewModel { PatternViewModel(container, route.id, route.isNew) }, isNew = route.isNew,
+                        viewModel = viewModel { PatternViewModel(container, route.id) },
                         onBack = { nav.popFrom(entry) }, onOpenProject = openProject,
                         onOpenPhoto = { photoId -> nav.navigate(PhotoViewerRoute(PhotoOwner.PATTERN.name, route.id, photoId)) },
                     )
@@ -142,22 +142,22 @@ fun SewFarRoot(container: AppContainer) {
                 composable<PersonRoute> { entry ->
                     val route = entry.toRoute<PersonRoute>()
                     PersonScreen(
-                        viewModel = viewModel { PersonViewModel(container, route.id, route.isNew) }, isNew = route.isNew,
+                        viewModel = viewModel { PersonViewModel(container, route.id) },
                         onBack = { nav.popFrom(entry) }, onOpenProject = openProject,
                     )
                 }
                 composable<MachineRoute> { entry ->
                     val route = entry.toRoute<MachineRoute>()
                     MachineScreen(
-                        viewModel = viewModel { MachineViewModel(container, route.id, route.isNew) }, isNew = route.isNew,
+                        viewModel = viewModel { MachineViewModel(container, route.id) },
                         onBack = { nav.popFrom(entry) },
-                        onOpenSetup = { id, isNew -> nav.navigate(SetupRoute(id, isNew)) },
+                        onOpenSetup = { id, edit -> nav.navigate(SetupRoute(id, edit)) },
                     )
                 }
                 composable<SetupRoute> { entry ->
                     val route = entry.toRoute<SetupRoute>()
                     SetupScreen(
-                        viewModel = viewModel { SetupViewModel(container, route.id, route.isNew) }, isNew = route.isNew,
+                        viewModel = viewModel { SetupViewModel(container, route.id) }, startEditing = route.edit,
                         onBack = { nav.popFrom(entry) }, onOpenProject = openProject,
                         onOpenMachine = { nav.navigate(MachineRoute(it)) },
                     )

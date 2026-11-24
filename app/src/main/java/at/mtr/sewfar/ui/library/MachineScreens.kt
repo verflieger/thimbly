@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -23,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,15 +39,17 @@ import at.mtr.sewfar.data.db.SetupEntity
 import at.mtr.sewfar.data.db.SetupRow
 import at.mtr.sewfar.domain.MachineTemplates
 import at.mtr.sewfar.domain.MachineType
-import at.mtr.sewfar.ui.common.AutoSaveTextField
+import at.mtr.sewfar.ui.common.FormField
+import at.mtr.sewfar.ui.common.ReadOnlyField
 import at.mtr.sewfar.ui.common.SectionLabel
+import at.mtr.sewfar.ui.common.TextDialog
 import at.mtr.sewfar.ui.common.fieldLabel
 import at.mtr.sewfar.ui.common.label
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -55,31 +57,37 @@ import kotlinx.coroutines.withContext
 
 // ---- Machine (SPEC 5.1) ----
 
-class MachineViewModel(container: AppContainer, private val id: String, isNew: Boolean) : RecordViewModel<MachineEntity>(container, isNew) {
+class MachineViewModel(container: AppContainer, private val id: String) : RecordViewModel<MachineEntity>(container) {
     private val repo = container.machines
     override val record = repo.observe(id)
     override val projectsFlow = emptyFlow<List<ProjectRef>>()
     val setups: StateFlow<List<SetupRow>> = repo.observeSetups().map { all -> all.filter { it.machineId == id } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    init { start() }
+    override suspend fun delete() = container.runInApp { repo.delete(id) }
 
-    override fun nameOf(record: MachineEntity) = record.name
-    override suspend fun saveName(name: String) = repo.edit(id) { it.copy(name = name) }
-    override suspend fun discardIfEmpty() = repo.discardIfEmpty(id)
-    override suspend fun delete() = run { repo.delete(id) }
-
+    fun save(f: Map<String, String>) = write { repo.edit(id) { it.copy(name = f.getValue("name").trim(), notes = f.getValue("notes").trim()) } }
     fun setType(type: MachineType) = write { repo.edit(id) { it.copy(type = type) } }
-    fun setNotes(text: String) = write { repo.edit(id) { it.copy(notes = text) } }
-    suspend fun createSetup(): String = run { repo.createSetup(id) }
+    suspend fun createSetup(title: String): String = container.runInApp { repo.createSetup(id, title) }
 }
 
 @Composable
-fun MachineScreen(viewModel: MachineViewModel, isNew: Boolean, onBack: () -> Unit, onOpenSetup: (String, Boolean) -> Unit) {
+fun MachineScreen(viewModel: MachineViewModel, onBack: () -> Unit, onOpenSetup: (String, Boolean) -> Unit) {
     val setups by viewModel.setups.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    RecordScreen(viewModel, isNew, stringResource(R.string.machine_name), stringResource(R.string.machine_deleted), onBack, onOpenProject = {}) { machine ->
+    var naming by rememberSaveable { mutableStateOf(false) }
+    RecordScreen(
+        viewModel, startEditing = false, stringResource(R.string.machine_deleted), onBack, onOpenProject = {},
+        titleOf = { it.name },
+        fieldsOf = { mapOf("name" to it.name, "notes" to it.notes) },
+        onSave = viewModel::save,
+        edit = { _, d, set ->
+            FormField(d.getValue("name"), { set("name", it) }, stringResource(R.string.machine_name))
+            FormField(d.getValue("notes"), { set("notes", it) }, stringResource(R.string.machine_notes), singleLine = false)
+        },
+    ) { machine ->
         MachineTypeChip(machine.type, viewModel::setType)
+        ReadOnlyField(stringResource(R.string.machine_notes), machine.notes)
         Column {
             SectionLabel(stringResource(R.string.machine_setups))
             setups.forEach { setup ->
@@ -90,78 +98,106 @@ fun MachineScreen(viewModel: MachineViewModel, isNew: Boolean, onBack: () -> Uni
                 )
             }
             AssistChip(
-                onClick = { scope.launch { val sid = viewModel.createSetup(); withContext(Dispatchers.Main) { onOpenSetup(sid, true) } } },
+                onClick = { naming = true },
                 label = { Text(stringResource(R.string.setup_new)) },
                 leadingIcon = { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)) },
                 modifier = Modifier.testTag("newSetup"),
             )
         }
-        AutoSaveTextField(
-            machine.notes, viewModel::setNotes, stringResource(R.string.machine_notes), "notes-${machine.id}",
-            Modifier.fillMaxWidth(), singleLine = false, minLines = 2,
+    }
+    if (naming) {
+        TextDialog(
+            stringResource(R.string.setup_new), stringResource(R.string.setup_title),
+            onSave = { title ->
+                naming = false
+                scope.launch { val id = viewModel.createSetup(title); withContext(Dispatchers.Main) { onOpenSetup(id, true) } }
+            },
+            onDismiss = { naming = false },
         )
     }
 }
 
-// ---- Setup (SPEC 5.2) ----
+// ---- Setting (SPEC 5.2) ----
 
 data class SetupDetail(val setup: SetupEntity, val machine: MachineEntity?, val values: Map<String, String>)
 
-class SetupViewModel(container: AppContainer, private val id: String, isNew: Boolean) : RecordViewModel<SetupDetail>(container, isNew) {
+class SetupViewModel(container: AppContainer, private val id: String) : RecordViewModel<SetupDetail>(container) {
     private val repo = container.machines
     override val record = combine(repo.observeSetup(id), repo.observeAll(), repo.observeValues(id)) { setup, machines, values ->
         setup?.let { s -> SetupDetail(s, machines.firstOrNull { it.id == s.machineId }, values.associate { it.key to it.value }) }
     }
     override val projectsFlow = repo.observeSetupProjects(id)
 
-    init { start() }
+    override suspend fun delete() = container.runInApp { repo.deleteSetup(id) }
 
-    override fun nameOf(record: SetupDetail) = record.setup.title
-    override suspend fun saveName(name: String) = repo.editSetup(id) { it.copy(title = name) }
-    override suspend fun discardIfEmpty() = repo.discardSetupIfEmpty(id)
-    override suspend fun delete() = run { repo.deleteSetup(id) }
-
-    fun setValue(key: String, value: String) = write { repo.setValue(id, key, value) }
+    /** Stores the form: title, notes and every `v:<key>` value (a blank value is removed). */
+    fun save(f: Map<String, String>) = write {
+        repo.editSetup(id) { it.copy(title = f.getValue("name").trim(), notes = f.getValue("notes").trim()) }
+        f.filterKeys { it.startsWith(ValuePrefix) }.forEach { (k, v) -> repo.setValue(id, k.removePrefix(ValuePrefix), v) }
+    }
 
     /** Changes the machine's type, e.g. right after creating it from a project (SPEC 5.2). */
     fun setMachineType(machineId: String, type: MachineType) = write { repo.edit(machineId) { it.copy(type = type) } }
-    fun setNotes(text: String) = write { repo.editSetup(id) { it.copy(notes = text) } }
 }
+
+private const val ValuePrefix = "v:"
 
 @Composable
 fun SetupScreen(
     viewModel: SetupViewModel,
-    isNew: Boolean,
+    startEditing: Boolean,
     onBack: () -> Unit,
     onOpenProject: (String) -> Unit,
     onOpenMachine: (String) -> Unit,
 ) {
-    RecordScreen(viewModel, isNew, stringResource(R.string.setup_title), stringResource(R.string.setup_deleted), onBack, onOpenProject) { detail ->
+    RecordScreen(
+        viewModel, startEditing, stringResource(R.string.setup_deleted), onBack, onOpenProject,
+        titleOf = { it.setup.title.ifBlank { stringResource(R.string.setup_untitled) } },
+        fieldsOf = { d ->
+            val keys = d.machine?.let { MachineTemplates.of(it.type) }.orEmpty()
+            mapOf("name" to d.setup.title, "notes" to d.setup.notes) + keys.associate { "$ValuePrefix$it" to d.values[it].orEmpty() }
+        },
+        onSave = viewModel::save,
+        edit = { detail, d, set ->
+            FormField(d.getValue("name"), { set("name", it) }, stringResource(R.string.setup_title))
+            // The type decides the fields, so it can be fixed here too (e.g. a machine just created from a project).
+            detail.machine?.let { m -> MachineTypeChip(m.type) { viewModel.setMachineType(m.id, it) } }
+            // The fields of the machine's type, two per row: most values are short numbers.
+            detail.machine?.let { MachineTemplates.of(it.type) }.orEmpty().filter { "$ValuePrefix$it" in d }
+                .chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { key ->
+                            FormField(
+                                d.getValue("$ValuePrefix$key"), { set("$ValuePrefix$key", it) }, stringResource(fieldLabel(key)),
+                                Modifier.weight(1f).testTag("field-$key"),
+                            )
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            FormField(d.getValue("notes"), { set("notes", it) }, stringResource(R.string.setup_notes), singleLine = false)
+        },
+    ) { detail ->
         val machine = detail.machine
         if (machine != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AssistChip(onClick = { onOpenMachine(machine.id) }, label = { Text(machine.name.ifBlank { stringResource(R.string.untitled) }) })
                 MachineTypeChip(machine.type) { viewModel.setMachineType(machine.id, it) }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Two per row: most values are short numbers.
-                MachineTemplates.of(machine.type).chunked(2).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        row.forEach { key ->
-                            AutoSaveTextField(
-                                detail.values[key].orEmpty(), { viewModel.setValue(key, it) }, stringResource(fieldLabel(key)),
-                                "value-${detail.setup.id}-$key", Modifier.weight(1f).testTag("field-$key"),
-                            )
-                        }
-                        if (row.size == 1) Spacer(Modifier.weight(1f))
+            val filled = MachineTemplates.of(machine.type).filter { !detail.values[it].isNullOrBlank() }
+            if (filled.isEmpty() && MachineTemplates.of(machine.type).isNotEmpty()) {
+                Text(stringResource(R.string.setup_no_values), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            filled.chunked(2).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { key ->
+                        Column(Modifier.weight(1f)) { ReadOnlyField(stringResource(fieldLabel(key)), detail.values.getValue(key)) }
                     }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
         }
-        AutoSaveTextField(
-            detail.setup.notes, viewModel::setNotes, stringResource(R.string.setup_notes), "notes-${detail.setup.id}",
-            Modifier.fillMaxWidth(), singleLine = false, minLines = 2,
-        )
+        ReadOnlyField(stringResource(R.string.setup_notes), detail.setup.notes)
     }
 }
 

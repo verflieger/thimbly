@@ -33,9 +33,4 @@ class PersonRepository(private val db: SewFarDatabase, private val deleter: Soft
     suspend fun delete(id: String): DeletionToken? = deleter.delete("person", id)
 
     suspend fun undo(token: DeletionToken) = deleter.undo(token)
-
-    suspend fun discardIfEmpty(id: String) = db.withTransaction {
-        val p = dao.get(id) ?: return@withTransaction
-        if (p.name.isBlank() && p.notes.isBlank()) deleter.delete("person", id)
-    }
 }

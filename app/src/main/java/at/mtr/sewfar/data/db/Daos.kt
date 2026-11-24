@@ -82,15 +82,6 @@ interface ProjectDao {
     @Query("UPDATE project SET lastActivityAt = :now, updatedAt = :now WHERE id = :id")
     suspend fun touch(id: String, now: Long)
 
-    /** True if the project has any live child row (used to discard an untouched new project, SPEC 3.1). */
-    @Query(
-        "SELECT EXISTS(SELECT 1 FROM project_pattern WHERE projectId = :id AND deletedAt IS NULL) " +
-            "OR EXISTS(SELECT 1 FROM project_setup WHERE projectId = :id AND deletedAt IS NULL) " +
-            "OR EXISTS(SELECT 1 FROM time_entry WHERE projectId = :id AND deletedAt IS NULL) " +
-            "OR EXISTS(SELECT 1 FROM photo WHERE ownerType = 'PROJECT' AND ownerId = :id AND deletedAt IS NULL)",
-    )
-    suspend fun hasChildren(id: String): Boolean
-
     // ---- Patterns ----
 
     @Insert suspend fun insertPattern(link: ProjectPatternEntity)

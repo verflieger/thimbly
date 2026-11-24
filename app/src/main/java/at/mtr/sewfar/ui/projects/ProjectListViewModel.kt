@@ -79,7 +79,7 @@ class ProjectListViewModel(private val container: AppContainer) : ViewModel() {
         container.appScope.launch { container.settings.setSectionCollapsed(status, collapsed) }
     }
 
-    suspend fun create(): String = container.runInApp { container.projects.create() }
+    suspend fun create(name: String): String = container.runInApp { container.projects.create(name) }
 
     fun startTimer(id: String) {
         container.appScope.launch { container.projects.startTimer(id) }

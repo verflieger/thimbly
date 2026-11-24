@@ -53,6 +53,7 @@ class GermanNavigationTest {
     fun showsGermanTexts() {
         compose.waitFor("Noch keine Projekte.")
         compose.onNodeWithTag("newProject").performClick()
-        compose.waitFor("Genäht für")
+        compose.waitFor("Neues Projekt")
+        compose.waitFor("Speichern")
     }
 }

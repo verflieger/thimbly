@@ -1,13 +1,19 @@
 package at.mtr.sewfar.ui.common
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -15,11 +21,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,17 +37,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import at.mtr.sewfar.R
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.async
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /** Centered hint shown while a list is empty. */
 @Composable
@@ -53,107 +54,150 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = modifier)
 }
 
-/** Frame of a detail screen: back arrow and a delete action; the name field below says what it is. */
+/** A stored value shown read-only: small label, the value below (nothing if blank and [placeholder] is null). */
+@Composable
+fun ReadOnlyField(label: String, value: String, placeholder: String? = null) {
+    if (value.isBlank() && placeholder == null) return
+    Column {
+        SectionLabel(label)
+        Text(
+            value.ifBlank { placeholder.orEmpty() },
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (value.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+/**
+ * Frame of a detail page (SPEC 2). Viewing: back, [title], edit (if [onEdit]) and delete. Editing: ✕ and Save; back
+ * or ✕ discards, asking first when [dirty].
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScaffold(onBack: () -> Unit, onDelete: () -> Unit, content: @Composable (PaddingValues) -> Unit) {
+fun DetailScaffold(
+    title: String,
+    onBack: () -> Unit,
+    onDelete: () -> Unit,
+    onEdit: (() -> Unit)? = null,
+    editing: Boolean = false,
+    dirty: Boolean = false,
+    canSave: Boolean = true,
+    onSave: () -> Unit = {},
+    onCancel: () -> Unit = {},
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    var confirmDiscard by remember { mutableStateOf(false) }
+    val cancel = { if (dirty) confirmDiscard = true else onCancel() }
+    BackHandler(enabled = editing) { cancel() }
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {},
+                title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back)) }
+                    if (editing) {
+                        IconButton(onClick = cancel, modifier = Modifier.testTag("cancel")) {
+                            Icon(Icons.Outlined.Close, stringResource(R.string.action_cancel))
+                        }
+                    } else {
+                        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back)) }
+                    }
                 },
                 actions = {
-                    IconButton(onClick = onDelete, modifier = Modifier.testTag("delete")) {
-                        Icon(Icons.Outlined.Delete, stringResource(R.string.action_delete))
+                    if (editing) {
+                        TextButton(onClick = onSave, enabled = canSave, modifier = Modifier.testTag("save")) {
+                            Text(stringResource(R.string.action_save))
+                        }
+                    } else {
+                        if (onEdit != null) {
+                            IconButton(onClick = onEdit, modifier = Modifier.testTag("edit")) {
+                                Icon(Icons.Outlined.Edit, stringResource(R.string.action_edit))
+                            }
+                        }
+                        IconButton(onClick = onDelete, modifier = Modifier.testTag("delete")) {
+                            Icon(Icons.Outlined.Delete, stringResource(R.string.action_delete))
+                        }
                     }
                 },
             )
         },
         content = content,
     )
+    if (confirmDiscard) DiscardDialog(onDiscard = { confirmDiscard = false; onCancel() }, onKeep = { confirmDiscard = false })
 }
 
 /**
- * Runs a screen's writes one after another in [scope] (which must outlive the screen, `AppContainer.appScope`), in
- * the order they were requested. Without this, a field's last save and the "discard if empty" check on leaving could
- * run in either order and lose the text (SPEC 2).
+ * Asks for one text (a name, notes) with Save and Cancel (SPEC 2). Save is disabled while [required] text is blank.
  */
-class SerialWriter(private val scope: CoroutineScope) {
-    private val mutex = Mutex()
-
-    // UNDISPATCHED: the lock is requested right away on the calling thread, so the (fair) mutex keeps call order.
-    fun launch(block: suspend () -> Unit) {
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { mutex.withLock { block() } }
-    }
-
-    suspend fun <T> run(block: suspend () -> T): T =
-        scope.async(start = CoroutineStart.UNDISPATCHED) { mutex.withLock { block() } }.await()
-
-    /**
-     * Runs [block] after every write requested so far and within [graceMillis] from now: fields save when their
-     * screen leaves the composition, which may happen just after the ViewModel is cleared.
-     */
-    fun launchLast(graceMillis: Long = 1_000, block: suspend () -> Unit) {
-        scope.launch {
-            delay(graceMillis)
-            mutex.withLock { block() }
-        }
-    }
-}
-
-/**
- * The name of a record being edited, held by its ViewModel (SPEC 2): typing saves after a short pause through
- * [writer]; [flushInLock] saves what is left (call it from inside a [SerialWriter] block, e.g. when the screen
- * closes, before an untouched new record is discarded).
- */
-class EditableName(private val scope: CoroutineScope, private val writer: SerialWriter, private val save: suspend (String) -> Unit) {
-    var text by mutableStateOf("")
-        private set
-    @Volatile private var edited = false
-    private var job: Job? = null
-
-    /** Follows the stored name while the user isn't typing. */
-    fun load(saved: String) {
-        if (!edited) text = saved
-    }
-
-    fun change(value: String) {
-        text = value
-        edited = true
-        job?.cancel()
-        job = scope.launch {
-            delay(500)
-            writer.run {
-                save(value)
-                if (text == value) edited = false
-            }
-        }
-    }
-
-    suspend fun flushInLock() {
-        job?.cancel()
-        if (edited) {
-            save(text)
-            edited = false
-        }
-    }
-}
-
-/** Name field of a detail screen; [focus] puts the cursor in it (new records). */
 @Composable
-fun NameField(name: EditableName, label: String, focus: Boolean, modifier: Modifier = Modifier) {
-    val focusRequester = androidx.compose.runtime.remember { FocusRequester() }
-    OutlinedTextField(
-        value = name.text,
-        onValueChange = name::change,
-        label = { Text(label) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-        modifier = modifier.fillMaxWidth().focusRequester(focusRequester).testTag("name"),
+fun TextDialog(
+    title: String,
+    label: String,
+    initial: String = "",
+    singleLine: Boolean = true,
+    required: Boolean = true,
+    onSave: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by rememberSaveable { mutableStateOf(initial) }
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    val focus = remember { FocusRequester() }
+    // Typed text is never dropped silently (SPEC 2): Cancel, back and tapping outside ask first.
+    val cancel = { if (text != initial) confirmDiscard = true else onDismiss() }
+    if (confirmDiscard) {
+        DiscardDialog(onDiscard = onDismiss, onKeep = { confirmDiscard = false })
+        return
+    }
+    AlertDialog(
+        onDismissRequest = cancel,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                text, { text = it },
+                label = { Text(label) },
+                singleLine = singleLine,
+                minLines = if (singleLine) 1 else 4,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag("dialogText"),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(text.trim()) }, enabled = !required || text.isNotBlank(), modifier = Modifier.testTag("dialogSave")) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = { TextButton(onClick = cancel) { Text(stringResource(R.string.action_cancel)) } },
     )
-    if (focus) LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+}
+
+/** "Discard changes?" with Discard and Keep editing. */
+@Composable
+fun DiscardDialog(onDiscard: () -> Unit, onKeep: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onKeep,
+        title = { Text(stringResource(R.string.discard_title)) },
+        confirmButton = { TextButton(onClick = onDiscard) { Text(stringResource(R.string.action_discard)) } },
+        dismissButton = { TextButton(onClick = onKeep) { Text(stringResource(R.string.keep_editing)) } },
+    )
+}
+
+/** Text field of an edit form. */
+@Composable
+fun FormField(
+    value: String,
+    onChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    singleLine: Boolean = true,
+) {
+    OutlinedTextField(
+        value, onChange,
+        label = { Text(label) },
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else 3,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        modifier = modifier,
+    )
 }
 
 /** "3 h 20 min", "45 min" (SPEC 3.3). */

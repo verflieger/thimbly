@@ -19,7 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-/** SPEC 3: status dates, timer, manual time, links, discarding untouched new projects. */
+/** SPEC 3, 5.2: status dates, timer, manual time, links, setting values. */
 @RunWith(RobolectricTestRunner::class)
 class ProjectRepositoryTest {
     private lateinit var t: TestDb
@@ -109,20 +109,6 @@ class ProjectRepositoryTest {
     }
 
     @Test
-    fun untouchedNewProjectIsDiscardedButNotOneWithContent() = runTest {
-        val empty = t.projects.create()
-        assertTrue(t.projects.discardIfEmpty(empty))
-        assertNull(t.projects.get(empty))
-
-        val withTime = t.projects.create()
-        t.projects.addTime(withTime, t.time.day, 10)
-        assertFalse(t.projects.discardIfEmpty(withTime))
-
-        val named = t.projects.create("Bag")
-        assertFalse(t.projects.discardIfEmpty(named))
-    }
-
-    @Test
     fun concurrentEditsOfDifferentFieldsAreAllKept() = runBlocking {
         val id = t.projects.create("A")
         listOf(
@@ -144,9 +130,5 @@ class ProjectRepositoryTest {
         assertTrue(t.machines.observeValues(setup).first().isEmpty())
         t.machines.setValue(setup, "differential_feed", "1.5")
         assertEquals(1, t.count("setup_value", live = false))
-
-        val blank = t.machines.createSetup(machine)
-        t.machines.discardSetupIfEmpty(blank)
-        assertEquals(1, t.count("setup"))
     }
 }

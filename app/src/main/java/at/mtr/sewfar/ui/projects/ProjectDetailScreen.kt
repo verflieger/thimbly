@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.AssistChip
@@ -36,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -44,11 +46,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.mtr.sewfar.R
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.domain.ProjectStatus
-import at.mtr.sewfar.ui.common.AutoSaveTextField
 import at.mtr.sewfar.ui.common.DetailScaffold
 import at.mtr.sewfar.ui.common.EntityPicker
 import at.mtr.sewfar.ui.common.LocalMessages
-import at.mtr.sewfar.ui.common.NameField
+import at.mtr.sewfar.ui.common.TextDialog
 import at.mtr.sewfar.ui.common.PickerItem
 import at.mtr.sewfar.ui.common.SectionLabel
 import at.mtr.sewfar.ui.common.format
@@ -64,6 +65,9 @@ private sealed interface Picking {
     data object Setup : Picking
     /** A new setup named [title] needs a machine. */
     data class SetupMachine(val title: String) : Picking
+    data object Rename : Picking
+    data object Notes : Picking
+    data object Learned : Picking
 }
 
 /** One project on one screen, edited in place (SPEC 3). */
@@ -71,12 +75,13 @@ private sealed interface Picking {
 @Composable
 fun ProjectDetailScreen(
     viewModel: ProjectDetailViewModel,
-    isNew: Boolean,
     onBack: () -> Unit,
     onOpenPhoto: (String) -> Unit,
     onOpenPattern: (String) -> Unit,
     onOpenPerson: (String) -> Unit,
     onOpenSetup: (String) -> Unit,
+    /** A setting just created here: opens with its form for the values. */
+    onOpenNewSetup: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val choices by viewModel.choices.collectAsStateWithLifecycle()
@@ -95,7 +100,9 @@ fun ProjectDetailScreen(
     }
 
     DetailScaffold(
+        title = project.name.ifBlank { stringResource(R.string.project_untitled) },
         onBack = onBack,
+        onEdit = { picking = Picking.Rename },
         onDelete = {
             scope.launch {
                 val token = viewModel.delete()
@@ -109,8 +116,6 @@ fun ProjectDetailScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            NameField(viewModel.name, stringResource(R.string.project_name), focus = isNew)
-
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 ProjectStatus.entries.forEachIndexed { i, status ->
                     SegmentedButton(
@@ -145,11 +150,7 @@ fun ProjectDetailScreen(
                 onOpen = onOpenSetup, onRemove = { link -> removeWithUndo { viewModel.removeSetup(link) } },
                 onAdd = { picking = Picking.Setup })
 
-            AutoSaveTextField(
-                savedValue = project.notes, onSave = viewModel::setNotes,
-                label = stringResource(R.string.project_notes), key = "notes-${project.id}",
-                singleLine = false, minLines = 3, modifier = Modifier.fillMaxWidth(),
-            )
+            TextBlock(stringResource(R.string.project_notes), project.notes, stringResource(R.string.notes_add), "notes") { picking = Picking.Notes }
 
             if (project.status == ProjectStatus.DONE) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -165,11 +166,9 @@ fun ProjectDetailScreen(
                             }
                         }
                     }
-                    AutoSaveTextField(
-                        savedValue = project.learned, onSave = viewModel::setLearned,
-                        label = stringResource(R.string.project_learned), key = "learned-${project.id}",
-                        singleLine = false, minLines = 2, modifier = Modifier.fillMaxWidth(),
-                    )
+                    TextBlock(stringResource(R.string.project_learned), project.learned, stringResource(R.string.learned_add), "learned") {
+                        picking = Picking.Learned
+                    }
                 }
             }
 
@@ -216,7 +215,7 @@ fun ProjectDetailScreen(
                         picking = null
                         scope.launch {
                             val id = viewModel.createSetup(title, only.id, null)
-                            withContext(Dispatchers.Main) { onOpenSetup(id) }
+                            withContext(Dispatchers.Main) { onOpenNewSetup(id) }
                         }
                     } else {
                         picking = Picking.SetupMachine(title)
@@ -235,19 +234,56 @@ fun ProjectDetailScreen(
                 picking = null
                 if (machineId != null) scope.launch {
                     val id = viewModel.createSetup(p.title, machineId, null)
-                    withContext(Dispatchers.Main) { onOpenSetup(id) }
+                    withContext(Dispatchers.Main) { onOpenNewSetup(id) }
                 }
             },
             onCreate = { machineName ->
                 picking = null
                 scope.launch {
                     val id = viewModel.createSetup(p.title, null, machineName)
-                    withContext(Dispatchers.Main) { onOpenSetup(id) }
+                    withContext(Dispatchers.Main) { onOpenNewSetup(id) }
                 }
             },
             onDismiss = { picking = null },
         )
+        Picking.Rename -> TextDialog(
+            stringResource(R.string.project_rename), stringResource(R.string.project_name), initial = project.name,
+            onSave = { viewModel.rename(it); picking = null }, onDismiss = { picking = null },
+        )
+        Picking.Notes -> TextDialog(
+            stringResource(R.string.project_notes), stringResource(R.string.project_notes), initial = project.notes,
+            singleLine = false, required = false, onSave = { viewModel.setNotes(it); picking = null }, onDismiss = { picking = null },
+        )
+        Picking.Learned -> TextDialog(
+            stringResource(R.string.project_learned), stringResource(R.string.project_learned), initial = project.learned,
+            singleLine = false, required = false, onSave = { viewModel.setLearned(it); picking = null }, onDismiss = { picking = null },
+        )
         null -> Unit
+    }
+}
+
+/** A text of the project shown read-only with an edit button; [addLabel] while it is empty. */
+@Composable
+private fun TextBlock(title: String, text: String, addLabel: String, tag: String, onEdit: () -> Unit) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SectionLabel(title, Modifier.weight(1f))
+            if (text.isNotBlank()) {
+                IconButton(onClick = onEdit, modifier = Modifier.testTag("edit-$tag")) {
+                    Icon(Icons.Outlined.Edit, stringResource(R.string.action_edit), Modifier.size(20.dp))
+                }
+            }
+        }
+        if (text.isNotBlank()) {
+            Text(text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit))
+        } else {
+            AssistChip(
+                onClick = onEdit,
+                label = { Text(addLabel) },
+                leadingIcon = { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)) },
+                modifier = Modifier.testTag("edit-$tag"),
+            )
+        }
     }
 }
 

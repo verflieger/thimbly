@@ -23,6 +23,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -35,6 +39,7 @@ import androidx.lifecycle.viewModelScope
 import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
 import at.mtr.sewfar.ui.common.EmptyState
+import at.mtr.sewfar.ui.common.TextDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -63,11 +68,11 @@ class LibraryViewModel(private val container: AppContainer, initialTab: LibraryT
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    suspend fun create(tab: LibraryTab): String = container.runInApp {
+    suspend fun create(tab: LibraryTab, name: String): String = container.runInApp {
         when (tab) {
-            LibraryTab.PATTERNS -> container.patterns.create()
-            LibraryTab.MACHINES -> container.machines.create()
-            LibraryTab.PEOPLE -> container.persons.create()
+            LibraryTab.PATTERNS -> container.patterns.create(name)
+            LibraryTab.MACHINES -> container.machines.create(name)
+            LibraryTab.PEOPLE -> container.persons.create(name)
         }
     }
 }
@@ -75,10 +80,11 @@ class LibraryViewModel(private val container: AppContainer, initialTab: LibraryT
 /** Patterns, machines (with their settings) and people (SPEC 2, 4, 5). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (LibraryTab, String, Boolean) -> Unit) {
+fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (LibraryTab, String) -> Unit) {
     val tab by viewModel.tab.collectAsState()
     val items by viewModel.items.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    var naming by rememberSaveable { mutableStateOf(false) }
     Scaffold(
         topBar = {
             Column {
@@ -98,7 +104,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { scope.launch { val id = viewModel.create(tab); withContext(Dispatchers.Main) { onOpen(tab, id, true) } } },
+                onClick = { naming = true },
                 modifier = Modifier.testTag("add"),
             ) { Icon(Icons.Outlined.Add, stringResource(tab.addLabel)) }
         },
@@ -117,12 +123,30 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
                         item.subtitle.isNotBlank() -> ({ Text(item.subtitle) })
                         else -> null
                     },
-                    modifier = Modifier.clickable { onOpen(tab, item.id, false) },
+                    modifier = Modifier.clickable { onOpen(tab, item.id) },
                 )
             }
         }
     }
+    if (naming) {
+        TextDialog(
+            stringResource(tab.addLabel), stringResource(tab.nameLabel),
+            onSave = { name ->
+                naming = false
+                val t = tab
+                scope.launch { val id = viewModel.create(t, name); withContext(Dispatchers.Main) { onOpen(t, id) } }
+            },
+            onDismiss = { naming = false },
+        )
+    }
 }
+
+private val LibraryTab.nameLabel: Int
+    get() = when (this) {
+        LibraryTab.PATTERNS -> R.string.pattern_name
+        LibraryTab.MACHINES -> R.string.machine_name
+        LibraryTab.PEOPLE -> R.string.person_name
+    }
 
 private val LibraryTab.title: Int
     get() = when (this) {

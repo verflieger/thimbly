@@ -7,7 +7,7 @@ SewFar is a private, fully offline Android sewing project tracker (Kotlin, Jetpa
 "SPEC 3.2" etc. Update SPEC.md alongside behaviour changes.
 
 **Keep it simple** (the user's explicit wish after a cluttered first prototype): no feature or field that wasn't asked
-for, no dialog before typing, everything a project needs is reachable from the project page. Prefer one screen over
+for, everything a project needs is reachable from the project page. Prefer one screen over
 two and keep the data model generic enough for later additions (ROADMAP.md).
 
 Code, identifiers and SPEC are English. The UI is **English** (default, `res/values/`) and **standard German**
@@ -45,11 +45,9 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   has a parent, to the `cascade` map. Re-adding a removed link/value revives its tombstone (unique indexes span
   deleted rows). Child-row changes must call `ProjectDao.touch` (`lastActivityAt`). Status changes only via
   `ProjectRepository.setStatus`.
-- **New records** (SPEC 2): "+" creates the row and opens its page with `isNew = true`; the name lives in the
-  ViewModel (`EditableName`), and `onCleared` flushes it and, only for `isNew`, calls the repository's
-  `discardIfEmpty`. All writes of a detail ViewModel go through its `SerialWriter` (ordered; `launchLast` runs the
-  flush/discard after the fields' last saves) — never launch writes directly in `appScope` there. Library detail
-  ViewModels extend `RecordViewModel`, screens use `RecordScreen`.
+- **Creating and editing** (SPEC 2): "+" asks for the name (`TextDialog`), creates the row, opens the page. Texts are
+  shown read-only and edited in a form with Save (`DetailScaffold` editing mode; library pages via `RecordScreen`
+  with a draft map) or a `TextDialog`; state changes (status, timer, links, photos, stars) are written at once.
 - **Frozen formats** (SPEC 7, 8): database schema 1 and backup format 1 are released. A schema change needs a new
   `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and a migration test (`SchemaFreezeTest`
   checks the frozen v1 hash and that every version step has an exported schema and a migration); a
@@ -63,7 +61,7 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   `rememberPickPhotos` (Photo Picker), `PhotoImage` (via `LocalPhotoLoader`), `PhotoStrip`, `PhotoViewerRoute`.
   Photo tests need `@GraphicsMode(NATIVE)`.
 - **UI conventions**: ViewModels are created with `viewModel { XViewModel(container) }`; their writes run in
-  `container.appScope` (via `SerialWriter` on detail screens) so edits saved while leaving a screen survive. In-place editing uses `AutoSaveTextField`.
+  `container.appScope` so edits saved while leaving a screen survive.
   Snackbars (incl. Undo) go through `LocalMessages`. Pickers are `EntityPicker` (search + "Create …" from the typed
   name, no extra form); show only one dialog at a time. After a suspend call, navigate inside `withContext(Dispatchers.Main)`.
 - Tests use `TestDb` (in-memory Room + `FakeTime`) under Robolectric. UI flow tests keep Robolectric's default screen
