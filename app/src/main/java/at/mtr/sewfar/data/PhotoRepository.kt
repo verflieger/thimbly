@@ -6,11 +6,8 @@ import at.mtr.sewfar.data.db.PhotoEntity
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
 import at.mtr.sewfar.data.photos.PhotoFiles
-import at.mtr.sewfar.domain.CoverCandidate
-import at.mtr.sewfar.domain.CoverRules
 import at.mtr.sewfar.domain.Ids
 import at.mtr.sewfar.domain.PhotoOwner
-import at.mtr.sewfar.domain.PhotoTag
 import java.io.InputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Photos of projects, patterns, persons and machines (SPEC 3.6). The image is processed and stored first, then the
+ * Photos of projects and patterns (SPEC 3.5). The image is processed and stored first, then the
  * row is inserted; a crash in between leaves only an orphan file, which [purgeFiles] removes.
  *
  * @param cleanupScope runs the delayed file cleanup after a deletion (outlives screens).
@@ -38,49 +35,15 @@ class PhotoRepository(
 
     fun observeAllOfType(ownerType: PhotoOwner): Flow<List<PhotoEntity>> = dao.observeAllOfType(ownerType)
 
-    suspend fun forOwner(ownerType: PhotoOwner, ownerId: String): List<PhotoEntity> = dao.forOwner(ownerType, ownerId)
-
-    /** Adds a project photo (tag required); [logEntryId] attaches it to a progress log entry (SPEC 3.4). */
-    suspend fun addProjectPhoto(projectId: String, tag: PhotoTag, logEntryId: String? = null, open: () -> InputStream): String {
+    /** Adds a photo to a project or pattern (SPEC 3.5). */
+    suspend fun add(ownerType: PhotoOwner, ownerId: String, open: () -> InputStream): String {
         val id = store(open)
         db.withTransaction {
             val now = time.nowMillis()
-            dao.insert(
-                PhotoEntity(
-                    id, PhotoOwner.PROJECT, projectId, logEntryId, tag, dao.nextOrder(PhotoOwner.PROJECT, projectId),
-                    createdAt = now, updatedAt = now,
-                ),
-            )
-            db.projectDao().touch(projectId, now)
+            dao.insert(PhotoEntity(id, ownerType, ownerId, dao.nextOrder(ownerType, ownerId), createdAt = now, updatedAt = now))
+            if (ownerType == PhotoOwner.PROJECT) db.projectDao().touch(ownerId, now)
         }
         return id
-    }
-
-    /**
-     * Sets the single photo of a pattern, person or machine. Photos are immutable (SPEC 1), so a replacement is a
-     * new row and the old one is deleted.
-     */
-    suspend fun setEntityPhoto(ownerType: PhotoOwner, ownerId: String, open: () -> InputStream): String {
-        require(ownerType != PhotoOwner.PROJECT) { "Project photos use addProjectPhoto" }
-        val id = store(open)
-        val replaced = db.withTransaction {
-            val now = time.nowMillis()
-            val old = dao.forOwner(ownerType, ownerId)
-            old.forEach { deleter.delete("photo", it.id) }
-            dao.insert(PhotoEntity(id, ownerType, ownerId, sortOrder = 0, createdAt = now, updatedAt = now))
-            old.isNotEmpty()
-        }
-        if (replaced) scheduleCleanup()
-        return id
-    }
-
-    /** Changes a project photo's tag (metadata only; the file stays). */
-    suspend fun setTag(photoId: String, tag: PhotoTag) = db.withTransaction {
-        val photo = dao.get(photoId) ?: return@withTransaction
-        require(photo.ownerType == PhotoOwner.PROJECT) { "Only project photos have tags" }
-        val now = time.nowMillis()
-        dao.update(photo.copy(tag = tag, updatedAt = now))
-        db.projectDao().touch(photo.ownerId, now)
     }
 
     /** Deletes a photo; its file goes once the Undo window has passed. */
@@ -97,23 +60,16 @@ class PhotoRepository(
 
     suspend fun undo(token: DeletionToken) = deleter.undo(token)
 
-    /** Pins a cover (SPEC 3.6); null returns to the automatic cover. */
+    /** Pins a cover (SPEC 3.5); null returns to the automatic cover. */
     suspend fun setCover(projectId: String, photoId: String?) = db.withTransaction {
         val project = db.projectDao().get(projectId) ?: return@withTransaction
         val now = time.nowMillis()
         db.projectDao().update(project.copy(coverPhotoId = photoId, updatedAt = now, lastActivityAt = now))
     }
 
-    /** The project's cover photo ID (pinned, else automatic), or null if it has no photos. */
-    suspend fun coverOf(projectId: String): String? {
-        val project = db.projectDao().get(projectId) ?: return null
-        val photos = dao.forOwner(PhotoOwner.PROJECT, projectId).map { CoverCandidate(it.id, it.tag, it.sortOrder) }
-        return CoverRules.cover(photos, project.coverPhotoId)
-    }
-
     /**
      * Removes files of photos deleted longer than [UndoWindowMillis] ago (including photos deleted by a cascade) and
-     * orphan files without any row (SPEC 7). Called on start and after deletions.
+     * orphan files without any row (SPEC 6). Called on start and after deletions.
      */
     suspend fun purgeFiles() = withContext(Dispatchers.IO) {
         val cutoff = time.nowMillis() - UndoWindowMillis
@@ -138,3 +94,7 @@ class PhotoRepository(
         const val UndoWindowMillis = 60_000L
     }
 }
+
+/** The cover of a project (SPEC 3.5): the pinned photo if it still exists, else the newest one. */
+fun coverOf(photos: List<PhotoEntity>, pinnedId: String?): String? =
+    photos.firstOrNull { it.id == pinnedId }?.id ?: photos.maxByOrNull { it.sortOrder }?.id

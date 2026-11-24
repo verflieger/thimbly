@@ -1,0 +1,1 @@
+Radikal vereinfacht: Projekte auf einer Seite mit Zeitmessung, keine Tabs, Schnittmuster und Maschineneinstellungen direkt im Projekt anlegen. Daten aus 1.0 werden nicht übernommen.

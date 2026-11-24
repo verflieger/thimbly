@@ -1,82 +1,92 @@
 package at.mtr.sewfar.data
 
 import androidx.room.withTransaction
-import at.mtr.sewfar.data.db.DeleteResult
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.MachineEntity
-import at.mtr.sewfar.data.db.MachineFieldEntity
+import at.mtr.sewfar.data.db.ProjectRef
+import at.mtr.sewfar.data.db.SetupEntity
+import at.mtr.sewfar.data.db.SetupRow
+import at.mtr.sewfar.data.db.SetupValueEntity
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
 import at.mtr.sewfar.domain.Ids
-import at.mtr.sewfar.domain.MachineTemplates
 import at.mtr.sewfar.domain.MachineType
 import kotlinx.coroutines.flow.Flow
 
-/** Machines and their setting fields (SPEC 6.1, 6.2). */
+/** Machines and their reusable settings ("setups", SPEC 5). */
 class MachineRepository(private val db: SewFarDatabase, private val deleter: SoftDeleter, private val time: TimeSource) {
     private val dao = db.machineDao()
 
-    fun observe(includeArchived: Boolean = false): Flow<List<MachineEntity>> = dao.observeMachines(includeArchived)
-    fun observeOne(id: String): Flow<MachineEntity?> = dao.observeMachine(id)
-    suspend fun get(id: String): MachineEntity? = dao.getMachine(id)
+    fun observeAll(): Flow<List<MachineEntity>> = dao.observeAll()
+    fun observe(id: String): Flow<MachineEntity?> = dao.observeOne(id)
 
-    /** Creates a machine with the field list of its type's template (SPEC 6.2). */
-    suspend fun create(name: String, type: MachineType): String = db.withTransaction {
+    suspend fun create(name: String = "", type: MachineType = MachineType.SEWING_MACHINE): String {
         val id = Ids.random()
         val now = time.nowMillis()
-        dao.insertMachine(MachineEntity(id, name.trim(), type = type, createdAt = now, updatedAt = now))
-        MachineTemplates.fields.getValue(type).forEachIndexed { index, key ->
-            dao.insertField(MachineFieldEntity(Ids.random(), id, builtinKey = key, sortOrder = index, createdAt = now, updatedAt = now))
-        }
-        id
+        dao.insert(MachineEntity(id, name.trim(), type, createdAt = now, updatedAt = now))
+        return id
     }
 
-    /** Atomic edit; changing the type does not change existing fields (SPEC 6.2). */
     suspend fun edit(id: String, change: (MachineEntity) -> MachineEntity) = db.withTransaction {
-        dao.getMachine(id)?.let { current -> val next = change(current); dao.updateMachine(next.copy(name = next.name.trim(), updatedAt = time.nowMillis())) }
+        val current = dao.get(id) ?: return@withTransaction
+        val next = change(current)
+        if (next != current) dao.update(next.copy(updatedAt = time.nowMillis()))
     }
 
-    suspend fun setArchived(id: String, archived: Boolean) = edit(id) { it.copy(archivedAt = if (archived) time.nowMillis() else null) }
-
-    /** SPEC 7: a machine whose setups are used by live projects can only be archived. */
-    suspend fun delete(id: String): DeleteResult = db.withTransaction {
-        // Check and delete in one transaction, so a link committed in between can't be cascaded away.
-        if (dao.isMachineInUse(id)) return@withTransaction DeleteResult.InUse
-        deleter.delete("machine", id)?.let(DeleteResult::Deleted) ?: DeleteResult.InUse
-    }
+    /** Deletes the machine with its settings; projects lose the links (undo restores everything). */
+    suspend fun delete(id: String): DeletionToken? = deleter.delete("machine", id)
 
     suspend fun undo(token: DeletionToken) = deleter.undo(token)
 
-    // ---- Fields (SPEC 6.2) ----
+    suspend fun discardIfEmpty(id: String) = db.withTransaction {
+        val m = dao.get(id) ?: return@withTransaction
+        val hasSetups = db.query("SELECT 1 FROM setup WHERE machineId = ? AND deletedAt IS NULL", arrayOf(id)).use { it.moveToFirst() }
+        if (m.name.isBlank() && m.notes.isBlank() && !hasSetups) deleter.delete("machine", id)
+    }
 
-    fun observeFields(machineId: String): Flow<List<MachineFieldEntity>> = dao.observeFields(machineId)
-    suspend fun fields(machineId: String): List<MachineFieldEntity> = dao.fields(machineId)
-    fun observeAllFieldsAny(): Flow<List<MachineFieldEntity>> = dao.observeAllFieldsAny()
+    // ---- Setups (SPEC 5.2) ----
 
-    suspend fun addField(machineId: String, name: String): String = db.withTransaction {
+    fun observeSetups(): Flow<List<SetupRow>> = dao.observeSetups()
+    fun observeSetup(id: String): Flow<SetupEntity?> = dao.observeSetup(id)
+    fun observeValues(setupId: String): Flow<List<SetupValueEntity>> = dao.observeValues(setupId)
+    fun observeSetupProjects(setupId: String): Flow<List<ProjectRef>> = dao.observeProjects(setupId)
+
+    suspend fun createSetup(machineId: String, title: String = ""): String {
         val id = Ids.random()
         val now = time.nowMillis()
-        dao.insertField(MachineFieldEntity(id, machineId, customName = name.trim(), sortOrder = dao.nextFieldOrder(machineId), createdAt = now, updatedAt = now))
-        id
+        dao.insertSetup(SetupEntity(id, machineId, title.trim(), createdAt = now, updatedAt = now))
+        return id
     }
 
-    private suspend fun editField(id: String, change: (MachineFieldEntity) -> MachineFieldEntity) = db.withTransaction {
-        dao.getField(id)?.let { dao.updateField(change(it).copy(updatedAt = time.nowMillis())) }
+    suspend fun editSetup(id: String, change: (SetupEntity) -> SetupEntity) = db.withTransaction {
+        val current = dao.getSetup(id) ?: return@withTransaction
+        val next = change(current)
+        if (next != current) dao.updateSetup(next.copy(updatedAt = time.nowMillis()))
     }
 
-    suspend fun renameField(id: String, name: String) = editField(id) { it.copy(customName = name.trim()) }
-    suspend fun resetFieldName(id: String) = editField(id) { if (it.builtinKey != null) it.copy(customName = null) else it }
-    suspend fun setFieldHidden(id: String, hidden: Boolean) = editField(id) { it.copy(hidden = hidden) }
-
-    suspend fun reorderFields(orderedIds: List<String>) = db.withTransaction {
-        orderedIds.forEachIndexed { index, id -> editField(id) { if (it.sortOrder == index) it else it.copy(sortOrder = index) } }
+    /** Sets one value; blank removes it. A removed value comes back in its old row (SPEC 1). */
+    suspend fun setValue(setupId: String, key: String, value: String) = db.withTransaction {
+        val setup = dao.getSetup(setupId) ?: return@withTransaction
+        val now = time.nowMillis()
+        val text = value.trim()
+        val existing = dao.getValueAny(setupId, key)
+        when {
+            existing == null -> if (text.isNotEmpty()) {
+                dao.insertValue(SetupValueEntity(Ids.random(), setupId, key, text, createdAt = now, updatedAt = now))
+            }
+            text.isEmpty() -> if (existing.deletedAt == null) dao.updateValue(existing.copy(deletedAt = now, updatedAt = now))
+            existing.value != text || existing.deletedAt != null ->
+                dao.updateValue(existing.copy(value = text, deletedAt = null, updatedAt = now))
+        }
+        dao.updateSetup(setup.copy(updatedAt = now))
     }
 
-    /** Built-in fields and fields with values in live setups can only be hidden (SPEC 7). */
-    suspend fun deleteField(id: String): DeleteResult {
-        val field = dao.getField(id) ?: return DeleteResult.InUse
-        if (field.builtinKey != null) return DeleteResult.BuiltIn
-        if (dao.isFieldInUse(id)) return DeleteResult.InUse
-        return deleter.delete("machine_field", id)?.let(DeleteResult::Deleted) ?: DeleteResult.InUse
+    /** Drops a new setting left without title, notes or values (SPEC 5.2). */
+    suspend fun discardSetupIfEmpty(id: String) = db.withTransaction {
+        val setup = dao.getSetup(id) ?: return@withTransaction
+        val hasValues = db.query("SELECT 1 FROM setup_value WHERE setupId = ? AND deletedAt IS NULL", arrayOf(id)).use { it.moveToFirst() }
+        if (setup.title.isBlank() && setup.notes.isBlank() && !hasValues) deleter.delete("setup", id)
     }
+
+    suspend fun deleteSetup(id: String): DeletionToken? = deleter.delete("setup", id)
 }

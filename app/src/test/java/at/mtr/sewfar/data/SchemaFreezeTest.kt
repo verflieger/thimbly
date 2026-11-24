@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * SPEC 8: schema version 1 is frozen. Room re-exports `schemas/.../1.json` on every build, so a schema change
+ * SPEC 7: schema version 1 is frozen. Room re-exports `schemas/.../1.json` on every build, so a schema change
  * without a version bump changes its identity hash and fails here. Changing the schema means: raise the version,
  * add a migration to [SewFarDatabase.MIGRATIONS] and a migration test; never edit this hash.
  */
@@ -36,6 +36,6 @@ class SchemaFreezeTest {
     }
 
     private companion object {
-        const val FROZEN_V1 = "56ec251fcf6d6bfb781f02ca680cf971"
+        const val FROZEN_V1 = "809c1b9d6bf8f0a3bdb91849be14f6cb"
     }
 }

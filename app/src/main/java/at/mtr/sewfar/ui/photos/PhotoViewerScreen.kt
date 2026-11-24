@@ -39,7 +39,7 @@ private const val MaxZoom = 5f
 private const val DoubleTapZoom = 2.5f
 
 /**
- * Full-screen viewer (SPEC 3.6): swipe between [photoIds], pinch or double-tap to zoom.
+ * Full-screen viewer (SPEC 3.5): swipe between [photoIds], pinch or double-tap to zoom.
  * Panning is only active while zoomed, so swipes at normal size go to the pager.
  */
 @OptIn(ExperimentalFoundationApi::class)

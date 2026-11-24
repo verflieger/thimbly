@@ -1,101 +1,41 @@
 package at.mtr.sewfar.data
 
 import androidx.room.withTransaction
-import at.mtr.sewfar.data.db.DeleteResult
 import at.mtr.sewfar.data.db.DeletionToken
-import at.mtr.sewfar.data.db.MeasurementSessionEntity
-import at.mtr.sewfar.data.db.MeasurementValueEntity
 import at.mtr.sewfar.data.db.PersonEntity
+import at.mtr.sewfar.data.db.ProjectRef
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
-import at.mtr.sewfar.domain.AvatarColors
 import at.mtr.sewfar.domain.Ids
-import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 
-/** Persons and their measurements (SPEC 5). */
+/** People projects are sewn for (SPEC 4.2). A deleted person no longer shows on their projects. */
 class PersonRepository(private val db: SewFarDatabase, private val deleter: SoftDeleter, private val time: TimeSource) {
     private val dao = db.personDao()
 
-    fun observe(includeArchived: Boolean = false): Flow<List<PersonEntity>> = dao.observe(includeArchived)
+    fun observeAll(): Flow<List<PersonEntity>> = dao.observeAll()
+    fun observe(id: String): Flow<PersonEntity?> = dao.observeOne(id)
+    fun observeProjects(id: String): Flow<List<ProjectRef>> = dao.observeProjects(id)
 
-    suspend fun get(id: String): PersonEntity? = dao.get(id)
-
-    fun observeOne(id: String): Flow<PersonEntity?> = dao.observeOne(id)
-
-    suspend fun create(name: String, notes: String = "", avatarColor: Int? = null): String {
+    suspend fun create(name: String = ""): String {
         val id = Ids.random()
         val now = time.nowMillis()
-        dao.insert(
-            PersonEntity(
-                id = id, name = name.trim(), avatarColor = avatarColor ?: AvatarColors.forId(id), notes = notes,
-                createdAt = now, updatedAt = now,
-            ),
-        )
+        dao.insert(PersonEntity(id, name.trim(), createdAt = now, updatedAt = now))
         return id
     }
 
-    /** Saves edited fields (name, colour, notes). */
-    suspend fun update(person: PersonEntity) = dao.update(person.copy(name = person.name.trim(), updatedAt = time.nowMillis()))
-
-    /** Applies [change] to the current row in one transaction; nothing if the person is gone. */
     suspend fun edit(id: String, change: (PersonEntity) -> PersonEntity) = db.withTransaction {
-        dao.get(id)?.let { current -> val next = change(current); dao.update(next.copy(name = next.name.trim(), updatedAt = time.nowMillis())) }
+        val current = dao.get(id) ?: return@withTransaction
+        val next = change(current)
+        if (next != current) dao.update(next.copy(updatedAt = time.nowMillis()))
     }
 
-    suspend fun setArchived(id: String, archived: Boolean) {
-        val person = dao.get(id) ?: return
-        val now = time.nowMillis()
-        dao.update(person.copy(archivedAt = if (archived) now else null, updatedAt = now))
-    }
-
-    /** SPEC 7: only a person no live project refers to can be deleted; measurements go with it. */
-    suspend fun delete(id: String): DeleteResult {
-        if (dao.isInUse(id)) return DeleteResult.InUse
-        return deleter.delete("person", id)?.let(DeleteResult::Deleted) ?: DeleteResult.InUse
-    }
-
-    fun observeProjects(personId: String) = dao.observeProjects(personId)
-
-    // ---- Measurements (SPEC 5.2) ----
-
-    fun observeMeasurements(personId: String) = dao.observeMeasurements(personId)
-
-    suspend fun getSession(id: String) = dao.getSession(id)
-
-    fun observeSessions(personId: String): Flow<List<MeasurementSessionEntity>> = dao.observeSessions(personId)
-
-    suspend fun values(sessionId: String): List<MeasurementValueEntity> = dao.values(sessionId)
-
-    /** Creates a session with values in millimetres per measurement type ID. */
-    suspend fun createSession(personId: String, date: LocalDate, valuesMm: Map<String, Int>, note: String = ""): String =
-        db.withTransaction {
-            val id = Ids.random()
-            val now = time.nowMillis()
-            dao.insertSession(MeasurementSessionEntity(id, personId, date, note, createdAt = now, updatedAt = now))
-            valuesMm.forEach { (typeId, mm) -> setValue(id, typeId, mm) }
-            id
-        }
-
-    suspend fun updateSession(session: MeasurementSessionEntity) = dao.updateSession(session.copy(updatedAt = time.nowMillis()))
-
-    /** Sets or (with null) removes one value. Re-entering a removed value revives its row (SPEC 1). */
-    suspend fun setValue(sessionId: String, typeId: String, valueMm: Int?) = db.withTransaction {
-        val now = time.nowMillis()
-        val existing = dao.getValueAny(sessionId, typeId)
-        when {
-            valueMm == null -> if (existing != null && existing.deletedAt == null) {
-                dao.updateValue(existing.copy(deletedAt = now, updatedAt = now))
-            }
-            existing == null -> dao.insertValue(
-                MeasurementValueEntity(Ids.random(), sessionId, typeId, valueMm, createdAt = now, updatedAt = now),
-            )
-            existing.valueMm != valueMm || existing.deletedAt != null ->
-                dao.updateValue(existing.copy(valueMm = valueMm, deletedAt = null, updatedAt = now))
-        }
-    }
-
-    suspend fun deleteSession(sessionId: String): DeletionToken? = deleter.delete("measurement_session", sessionId)
+    suspend fun delete(id: String): DeletionToken? = deleter.delete("person", id)
 
     suspend fun undo(token: DeletionToken) = deleter.undo(token)
+
+    suspend fun discardIfEmpty(id: String) = db.withTransaction {
+        val p = dao.get(id) ?: return@withTransaction
+        if (p.name.isBlank() && p.notes.isBlank()) deleter.delete("person", id)
+    }
 }

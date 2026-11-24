@@ -5,48 +5,26 @@ import at.mtr.sewfar.data.TimeSource
 
 /**
  * Identifies one deletion. Every row it removed (the root and its cascade) carries [stamp] as `deletedAt`,
- * and no other deletion uses the same stamp, so [SoftDeleter.undo] restores exactly these rows (SPEC 7).
+ * and no other deletion uses the same stamp, so [SoftDeleter.undo] restores exactly these rows (SPEC 6).
  */
 @JvmInline
 value class DeletionToken(val stamp: Long)
 
-/** Outcome of deleting an item that may be referenced elsewhere (SPEC 7). */
-sealed interface DeleteResult {
-    data class Deleted(val token: DeletionToken) : DeleteResult
-
-    /** Still referenced: patterns, persons and machines must be archived, list entries hidden. */
-    data object InUse : DeleteResult
-
-    /** Built-in list entries can only be hidden. */
-    data object BuiltIn : DeleteResult
-}
-
-/** Soft delete with cascade and undo (SPEC 7). Rows are never removed from the database. */
+/** Soft delete with cascade and undo (SPEC 6). Rows are never removed from the database. */
 class SoftDeleter(private val db: SewFarDatabase, private val time: TimeSource) {
     private var lastStamp = 0L
 
-    /** Child rows that a deletion of a row in the key table also deletes (SPEC 7, cascade table). */
+    /** Child rows that a deletion of a row in the key table also deletes (SPEC 6, cascade table). */
     private val cascade: Map<String, List<Child>> = mapOf(
         "project" to listOf(
             Child("project_pattern", "projectId"),
-            Child("project_fabric", "projectId"),
-            Child("project_lesson", "projectId"),
-            Child("log_entry", "projectId"),
-            Child("setup_use", "projectId"),
+            Child("project_setup", "projectId"),
+            Child("time_entry", "projectId"),
             Child("photo", "ownerId", ownerType = "PROJECT"),
         ),
-        "log_entry" to listOf(Child("photo", "logEntryId"), Child("setup_use", "logEntryId")),
-        "project_pattern" to listOf(Child("project_lesson", "projectPatternId")),
-        "person" to listOf(Child("measurement_session", "personId"), Child("photo", "ownerId", ownerType = "PERSON")),
-        "measurement_session" to listOf(Child("measurement_value", "sessionId")),
-        "pattern" to listOf(Child("pattern_yardage", "patternId"), Child("photo", "ownerId", ownerType = "PATTERN")),
-        "machine" to listOf(
-            Child("machine_field", "machineId"),
-            Child("setup", "machineId"),
-            Child("photo", "ownerId", ownerType = "MACHINE"),
-        ),
-        // Not setup_use: snapshots outlive their setup (SPEC 6.4).
-        "setup" to listOf(Child("setup_value", "setupId")),
+        "pattern" to listOf(Child("project_pattern", "patternId"), Child("photo", "ownerId", ownerType = "PATTERN")),
+        "machine" to listOf(Child("setup", "machineId")),
+        "setup" to listOf(Child("setup_value", "setupId"), Child("project_setup", "setupId")),
     )
 
     private data class Child(val table: String, val column: String, val ownerType: String? = null)
@@ -70,7 +48,7 @@ class SoftDeleter(private val db: SewFarDatabase, private val time: TimeSource) 
             }
             if (changed == 0) return@withTransaction null
             // Walk the cascade breadth-first: each step deletes the live children of all rows this deletion has
-            // stamped so far in the parent table. A table may be reached twice (project_lesson); that is harmless.
+            // stamped so far in the parent table.
             val queue = ArrayDeque(listOf(table))
             while (queue.isNotEmpty()) {
                 val parent = queue.removeFirst()
@@ -112,11 +90,10 @@ class SoftDeleter(private val db: SewFarDatabase, private val time: TimeSource) 
     }
 
     companion object {
+        /** Every table; a new table must be added here (backup, undo) and to the cascade if it has a parent. */
         val AllTables = listOf(
-            "person", "measurement_type", "measurement_session", "measurement_value",
-            "pattern_category", "pattern", "pattern_yardage",
-            "project", "project_pattern", "project_fabric", "lesson_tag", "project_lesson", "log_entry", "photo",
-            "machine", "machine_field", "purpose", "setup", "setup_value", "setup_use",
+            "person", "pattern", "project", "project_pattern", "time_entry", "photo",
+            "machine", "setup", "setup_value", "project_setup",
         )
     }
 }

@@ -1,21 +1,17 @@
-SewFar is a private diary for your sewing: what you sewed, for whom, with which pattern, what you learned, and which machine settings worked.
+SewFar is a simple, private tracker for your sewing projects: what you are sewing, how long it takes, which pattern and machine settings you used, and how it turned out.
 
-<b>Projects</b>
-• Status from idea to planned, in progress, paused and done
-• Person, patterns with the size you sewed, fabrics, notes and dates
-• Photos tagged as inspiration, progress or finished, with an automatic cover
-• A dated progress log with notes and photos
-• When you finish: photos, lessons learned per pattern (size up, lengthen …), a star rating and notes
-• "Sew again" starts a new project and shows what you learned last time
+<b>One page per project</b>
+• Status: planned, in progress, done
+• Timer with one tap, or add time by hand
+• Photos from the camera or gallery
+• Patterns, who it is for, machine settings and notes
+• When it is done: a star rating and what you learned
 
-<b>Patterns</b>
-Designer, category, size range, format, shop link, suited fabrics and fabric needed per size. Every project and lesson for a pattern in one place.
+<b>No detours</b>
+"New project" opens the project right away. Patterns, people, machines and their settings are created from the project by typing a name.
 
-<b>People</b>
-Who you sew for, with dated measurements, so you can see children grow.
-
-<b>Machines & setups</b>
-Your sewing machine, overlocker or coverstitch with their own setting fields. Save setups (stitch, tensions, differential feed …) per purpose and fabric, use them in projects and see when a setup has changed since.
+<b>Library</b>
+Patterns with photos, people, and your machines with reusable settings (stitch, tensions, differential feed …), each showing the projects that used them.
 
 <b>Backup</b>
 Save or share a backup file at any time, or let SewFar back up weekly into a folder of your choice.

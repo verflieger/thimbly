@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
 private const val Loading = "\u0000loading"
 private const val NoFolder = "\u0000none"
 
-/** Settings → Backup (SPEC 9.2, 10). */
+/** Settings → Backup (SPEC 8.2, 9). */
 @Composable
 fun BackupSection(container: AppContainer) {
     val context = LocalContext.current
@@ -76,6 +76,7 @@ fun BackupSection(container: AppContainer) {
         BackupException.Reason.NOT_A_BACKUP to stringResource(R.string.backup_error_not_backup),
         BackupException.Reason.NEWER_FORMAT to stringResource(R.string.backup_error_newer),
         BackupException.Reason.UNSAFE_PATH to stringResource(R.string.backup_error_unsafe),
+        BackupException.Reason.PROTOTYPE to stringResource(R.string.backup_error_prototype),
     )
     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(currentLocale)
 

@@ -3,7 +3,7 @@ package at.mtr.sewfar.data.photos
 import java.io.File
 import java.io.InputStream
 
-/** Photo files: `<filesDir>/photos/<photoId>.jpg` (SPEC 3.6). Files are immutable once written. */
+/** Photo files: `<filesDir>/photos/<photoId>.jpg` (SPEC 3.5). Files are immutable once written. */
 class PhotoFiles(filesDir: File) {
     val dir: File = File(filesDir, "photos")
 

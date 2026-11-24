@@ -28,7 +28,7 @@ interface BackupFolder {
     fun delete(name: String)
 }
 
-/** Weekly automatic backup (SPEC 9.2): write, then keep the newest [Keep] `sewfar-auto-*.zip` files. */
+/** Weekly automatic backup (SPEC 8.2): write, then keep the newest [Keep] `sewfar-auto-*.zip` files. */
 class AutoBackup(private val backups: BackupRepository) {
     /** Runs one backup into [folder]; throws [IOException] with a user-facing reason on failure. */
     suspend fun run(folder: BackupFolder, now: LocalDateTime) {
@@ -137,7 +137,7 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
         private const val Weekly = "auto-backup-weekly"
         private const val Now = "auto-backup-now"
 
-        /** Weekly, no idle or charging constraint (SPEC 9.2). */
+        /** Weekly, no idle or charging constraint (SPEC 8.2). */
         fun schedule(context: Context, enabled: Boolean) {
             val work = WorkManager.getInstance(context)
             if (enabled) {

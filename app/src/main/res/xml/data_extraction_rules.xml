@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Exclude everything from cloud backup and device-to-device transfer. Backups are manual exports only (SPEC 9). -->
+<!-- Exclude everything from cloud backup and device-to-device transfer. Backups are manual exports only (SPEC 8). -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" />

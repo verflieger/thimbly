@@ -1,0 +1,1 @@
+Radically simplified: projects on one page with a timer, no tabs, patterns and machine settings created right from the project. Data from 1.0 is not carried over.

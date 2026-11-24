@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "56ec251fcf6d6bfb781f02ca680cf971",
+    "identityHash": "809c1b9d6bf8f0a3bdb91849be14f6cb",
     "entities": [
       {
         "tableName": "person",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `avatarColor` INTEGER NOT NULL, `notes` TEXT NOT NULL, `archivedAt` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `notes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -21,21 +21,10 @@
             "notNull": true
           },
           {
-            "fieldPath": "avatarColor",
-            "columnName": "avatarColor",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
             "fieldPath": "notes",
             "columnName": "notes",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "archivedAt",
-            "columnName": "archivedAt",
-            "affinity": "INTEGER"
           },
           {
             "fieldPath": "createdAt",
@@ -63,319 +52,8 @@
         }
       },
       {
-        "tableName": "measurement_type",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `builtinKey` TEXT, `customName` TEXT, `sortOrder` INTEGER NOT NULL, `hidden` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "builtinKey",
-            "columnName": "builtinKey",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "customName",
-            "columnName": "customName",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "sortOrder",
-            "columnName": "sortOrder",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "hidden",
-            "columnName": "hidden",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_measurement_type_builtinKey",
-            "unique": true,
-            "columnNames": [
-              "builtinKey"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_measurement_type_builtinKey` ON `${TABLE_NAME}` (`builtinKey`)"
-          }
-        ]
-      },
-      {
-        "tableName": "measurement_session",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `personId` TEXT NOT NULL, `date` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`personId`) REFERENCES `person`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "personId",
-            "columnName": "personId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "date",
-            "columnName": "date",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "note",
-            "columnName": "note",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_measurement_session_personId",
-            "unique": false,
-            "columnNames": [
-              "personId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_measurement_session_personId` ON `${TABLE_NAME}` (`personId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "person",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "personId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
-      },
-      {
-        "tableName": "measurement_value",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sessionId` TEXT NOT NULL, `typeId` TEXT NOT NULL, `valueMm` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`sessionId`) REFERENCES `measurement_session`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`typeId`) REFERENCES `measurement_type`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "sessionId",
-            "columnName": "sessionId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "typeId",
-            "columnName": "typeId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "valueMm",
-            "columnName": "valueMm",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_measurement_value_sessionId_typeId",
-            "unique": true,
-            "columnNames": [
-              "sessionId",
-              "typeId"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_measurement_value_sessionId_typeId` ON `${TABLE_NAME}` (`sessionId`, `typeId`)"
-          },
-          {
-            "name": "index_measurement_value_typeId",
-            "unique": false,
-            "columnNames": [
-              "typeId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_measurement_value_typeId` ON `${TABLE_NAME}` (`typeId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "measurement_session",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "sessionId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          },
-          {
-            "table": "measurement_type",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "typeId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
-      },
-      {
-        "tableName": "pattern_category",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `builtinKey` TEXT, `customName` TEXT, `sortOrder` INTEGER NOT NULL, `hidden` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "builtinKey",
-            "columnName": "builtinKey",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "customName",
-            "columnName": "customName",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "sortOrder",
-            "columnName": "sortOrder",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "hidden",
-            "columnName": "hidden",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_pattern_category_builtinKey",
-            "unique": true,
-            "columnNames": [
-              "builtinKey"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_pattern_category_builtinKey` ON `${TABLE_NAME}` (`builtinKey`)"
-          }
-        ]
-      },
-      {
         "tableName": "pattern",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `designer` TEXT NOT NULL, `categoryId` TEXT, `sizeRange` TEXT NOT NULL, `format` TEXT, `sourceUrl` TEXT NOT NULL, `suitedFabrics` TEXT NOT NULL, `notes` TEXT NOT NULL, `archivedAt` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`categoryId`) REFERENCES `pattern_category`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `designer` TEXT NOT NULL, `notes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -396,45 +74,12 @@
             "notNull": true
           },
           {
-            "fieldPath": "categoryId",
-            "columnName": "categoryId",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "sizeRange",
-            "columnName": "sizeRange",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "format",
-            "columnName": "format",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "sourceUrl",
-            "columnName": "sourceUrl",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "suitedFabrics",
-            "columnName": "suitedFabrics",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
             "fieldPath": "notes",
             "columnName": "notes",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "archivedAt",
-            "columnName": "archivedAt",
-            "affinity": "INTEGER"
-          },
-          {
             "fieldPath": "createdAt",
             "columnName": "createdAt",
             "affinity": "INTEGER",
@@ -457,129 +102,11 @@
           "columnNames": [
             "id"
           ]
-        },
-        "indices": [
-          {
-            "name": "index_pattern_categoryId",
-            "unique": false,
-            "columnNames": [
-              "categoryId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_pattern_categoryId` ON `${TABLE_NAME}` (`categoryId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "pattern_category",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "categoryId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
-      },
-      {
-        "tableName": "pattern_yardage",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `patternId` TEXT NOT NULL, `size` TEXT NOT NULL, `amountCm` INTEGER NOT NULL, `fabricWidthCm` INTEGER, `note` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`patternId`) REFERENCES `pattern`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "patternId",
-            "columnName": "patternId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "size",
-            "columnName": "size",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "amountCm",
-            "columnName": "amountCm",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "fabricWidthCm",
-            "columnName": "fabricWidthCm",
-            "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "note",
-            "columnName": "note",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "sortOrder",
-            "columnName": "sortOrder",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_pattern_yardage_patternId",
-            "unique": false,
-            "columnNames": [
-              "patternId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_pattern_yardage_patternId` ON `${TABLE_NAME}` (`patternId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "pattern",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "patternId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
+        }
       },
       {
         "tableName": "project",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `personId` TEXT, `size` TEXT NOT NULL, `notes` TEXT NOT NULL, `startedOn` TEXT, `finishedOn` TEXT, `rating` INTEGER, `completionNotes` TEXT NOT NULL, `coverPhotoId` TEXT, `sourceProjectId` TEXT, `lastActivityAt` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`personId`) REFERENCES `person`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`sourceProjectId`) REFERENCES `project`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `status` TEXT NOT NULL, `personId` TEXT, `notes` TEXT NOT NULL, `startedOn` TEXT, `finishedOn` TEXT, `rating` INTEGER, `learned` TEXT NOT NULL, `coverPhotoId` TEXT, `lastActivityAt` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`personId`) REFERENCES `person`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
         "fields": [
           {
             "fieldPath": "id",
@@ -594,12 +121,6 @@
             "notNull": true
           },
           {
-            "fieldPath": "type",
-            "columnName": "type",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
             "fieldPath": "status",
             "columnName": "status",
             "affinity": "TEXT",
@@ -609,12 +130,6 @@
             "fieldPath": "personId",
             "columnName": "personId",
             "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "size",
-            "columnName": "size",
-            "affinity": "TEXT",
-            "notNull": true
           },
           {
             "fieldPath": "notes",
@@ -638,19 +153,14 @@
             "affinity": "INTEGER"
           },
           {
-            "fieldPath": "completionNotes",
-            "columnName": "completionNotes",
+            "fieldPath": "learned",
+            "columnName": "learned",
             "affinity": "TEXT",
             "notNull": true
           },
           {
             "fieldPath": "coverPhotoId",
             "columnName": "coverPhotoId",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "sourceProjectId",
-            "columnName": "sourceProjectId",
             "affinity": "TEXT"
           },
           {
@@ -692,24 +202,6 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_project_personId` ON `${TABLE_NAME}` (`personId`)"
-          },
-          {
-            "name": "index_project_sourceProjectId",
-            "unique": false,
-            "columnNames": [
-              "sourceProjectId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_project_sourceProjectId` ON `${TABLE_NAME}` (`sourceProjectId`)"
-          },
-          {
-            "name": "index_project_coverPhotoId",
-            "unique": false,
-            "columnNames": [
-              "coverPhotoId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_project_coverPhotoId` ON `${TABLE_NAME}` (`coverPhotoId`)"
           }
         ],
         "foreignKeys": [
@@ -723,23 +215,12 @@
             "referencedColumns": [
               "id"
             ]
-          },
-          {
-            "table": "project",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "sourceProjectId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
           }
         ]
       },
       {
         "tableName": "project_pattern",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `patternId` TEXT NOT NULL, `sizeSewn` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `project`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`patternId`) REFERENCES `pattern`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `patternId` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `project`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`patternId`) REFERENCES `pattern`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
         "fields": [
           {
             "fieldPath": "id",
@@ -756,12 +237,6 @@
           {
             "fieldPath": "patternId",
             "columnName": "patternId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "sizeSewn",
-            "columnName": "sizeSewn",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -842,8 +317,8 @@
         ]
       },
       {
-        "tableName": "project_fabric",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `description` TEXT NOT NULL, `amountCm` INTEGER, `sortOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `project`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "tableName": "time_entry",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `project`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
         "fields": [
           {
             "fieldPath": "id",
@@ -858,21 +333,15 @@
             "notNull": true
           },
           {
-            "fieldPath": "description",
-            "columnName": "description",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "amountCm",
-            "columnName": "amountCm",
-            "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "sortOrder",
-            "columnName": "sortOrder",
+            "fieldPath": "startedAt",
+            "columnName": "startedAt",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "endedAt",
+            "columnName": "endedAt",
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "createdAt",
@@ -900,292 +369,13 @@
         },
         "indices": [
           {
-            "name": "index_project_fabric_projectId",
+            "name": "index_time_entry_projectId",
             "unique": false,
             "columnNames": [
               "projectId"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_project_fabric_projectId` ON `${TABLE_NAME}` (`projectId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "project",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "projectId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
-      },
-      {
-        "tableName": "lesson_tag",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `builtinKey` TEXT, `customName` TEXT, `sortOrder` INTEGER NOT NULL, `hidden` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "builtinKey",
-            "columnName": "builtinKey",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "customName",
-            "columnName": "customName",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "sortOrder",
-            "columnName": "sortOrder",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "hidden",
-            "columnName": "hidden",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_lesson_tag_builtinKey",
-            "unique": true,
-            "columnNames": [
-              "builtinKey"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_lesson_tag_builtinKey` ON `${TABLE_NAME}` (`builtinKey`)"
-          }
-        ]
-      },
-      {
-        "tableName": "project_lesson",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `projectPatternId` TEXT, `tagId` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `project`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`projectPatternId`) REFERENCES `project_pattern`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`tagId`) REFERENCES `lesson_tag`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "projectId",
-            "columnName": "projectId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "projectPatternId",
-            "columnName": "projectPatternId",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "tagId",
-            "columnName": "tagId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_project_lesson_projectId_projectPatternId_tagId",
-            "unique": true,
-            "columnNames": [
-              "projectId",
-              "projectPatternId",
-              "tagId"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_project_lesson_projectId_projectPatternId_tagId` ON `${TABLE_NAME}` (`projectId`, `projectPatternId`, `tagId`)"
-          },
-          {
-            "name": "index_project_lesson_projectPatternId",
-            "unique": false,
-            "columnNames": [
-              "projectPatternId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_project_lesson_projectPatternId` ON `${TABLE_NAME}` (`projectPatternId`)"
-          },
-          {
-            "name": "index_project_lesson_tagId",
-            "unique": false,
-            "columnNames": [
-              "tagId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_project_lesson_tagId` ON `${TABLE_NAME}` (`tagId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "project",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "projectId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          },
-          {
-            "table": "project_pattern",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "projectPatternId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          },
-          {
-            "table": "lesson_tag",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "tagId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
-      },
-      {
-        "tableName": "log_entry",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `at` INTEGER NOT NULL, `kind` TEXT NOT NULL, `text` TEXT NOT NULL, `fromStatus` TEXT, `toStatus` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `project`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "projectId",
-            "columnName": "projectId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "at",
-            "columnName": "at",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "kind",
-            "columnName": "kind",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "text",
-            "columnName": "text",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "fromStatus",
-            "columnName": "fromStatus",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "toStatus",
-            "columnName": "toStatus",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_log_entry_projectId",
-            "unique": false,
-            "columnNames": [
-              "projectId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_log_entry_projectId` ON `${TABLE_NAME}` (`projectId`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_time_entry_projectId` ON `${TABLE_NAME}` (`projectId`)"
           }
         ],
         "foreignKeys": [
@@ -1204,7 +394,7 @@
       },
       {
         "tableName": "photo",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerType` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `logEntryId` TEXT, `tag` TEXT, `sortOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`logEntryId`) REFERENCES `log_entry`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerType` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -1223,16 +413,6 @@
             "columnName": "ownerId",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "logEntryId",
-            "columnName": "logEntryId",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "tag",
-            "columnName": "tag",
-            "affinity": "TEXT"
           },
           {
             "fieldPath": "sortOrder",
@@ -1274,34 +454,12 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_photo_ownerType_ownerId` ON `${TABLE_NAME}` (`ownerType`, `ownerId`)"
-          },
-          {
-            "name": "index_photo_logEntryId",
-            "unique": false,
-            "columnNames": [
-              "logEntryId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_photo_logEntryId` ON `${TABLE_NAME}` (`logEntryId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "log_entry",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "logEntryId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
           }
         ]
       },
       {
         "tableName": "machine",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `brand` TEXT NOT NULL, `model` TEXT NOT NULL, `type` TEXT NOT NULL, `notes` TEXT NOT NULL, `lastServicedOn` TEXT, `archivedAt` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `notes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -1316,18 +474,6 @@
             "notNull": true
           },
           {
-            "fieldPath": "brand",
-            "columnName": "brand",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "model",
-            "columnName": "model",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
             "fieldPath": "type",
             "columnName": "type",
             "affinity": "TEXT",
@@ -1338,16 +484,6 @@
             "columnName": "notes",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "lastServicedOn",
-            "columnName": "lastServicedOn",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "archivedAt",
-            "columnName": "archivedAt",
-            "affinity": "INTEGER"
           },
           {
             "fieldPath": "createdAt",
@@ -1375,164 +511,8 @@
         }
       },
       {
-        "tableName": "machine_field",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `machineId` TEXT NOT NULL, `builtinKey` TEXT, `customName` TEXT, `sortOrder` INTEGER NOT NULL, `hidden` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`machineId`) REFERENCES `machine`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "machineId",
-            "columnName": "machineId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "builtinKey",
-            "columnName": "builtinKey",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "customName",
-            "columnName": "customName",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "sortOrder",
-            "columnName": "sortOrder",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "hidden",
-            "columnName": "hidden",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_machine_field_machineId_builtinKey",
-            "unique": true,
-            "columnNames": [
-              "machineId",
-              "builtinKey"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_machine_field_machineId_builtinKey` ON `${TABLE_NAME}` (`machineId`, `builtinKey`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "machine",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "machineId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
-      },
-      {
-        "tableName": "purpose",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `builtinKey` TEXT, `customName` TEXT, `sortOrder` INTEGER NOT NULL, `hidden` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "builtinKey",
-            "columnName": "builtinKey",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "customName",
-            "columnName": "customName",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "sortOrder",
-            "columnName": "sortOrder",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "hidden",
-            "columnName": "hidden",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_purpose_builtinKey",
-            "unique": true,
-            "columnNames": [
-              "builtinKey"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_purpose_builtinKey` ON `${TABLE_NAME}` (`builtinKey`)"
-          }
-        ]
-      },
-      {
         "tableName": "setup",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `machineId` TEXT NOT NULL, `purposeId` TEXT, `title` TEXT NOT NULL, `fabric` TEXT NOT NULL, `result` TEXT, `notes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`machineId`) REFERENCES `machine`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`purposeId`) REFERENCES `purpose`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `machineId` TEXT NOT NULL, `title` TEXT NOT NULL, `notes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`machineId`) REFERENCES `machine`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
         "fields": [
           {
             "fieldPath": "id",
@@ -1545,28 +525,12 @@
             "columnName": "machineId",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "purposeId",
-            "columnName": "purposeId",
-            "affinity": "TEXT"
           },
           {
             "fieldPath": "title",
             "columnName": "title",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "fabric",
-            "columnName": "fabric",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "result",
-            "columnName": "result",
-            "affinity": "TEXT"
           },
           {
             "fieldPath": "notes",
@@ -1607,15 +571,6 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_setup_machineId` ON `${TABLE_NAME}` (`machineId`)"
-          },
-          {
-            "name": "index_setup_purposeId",
-            "unique": false,
-            "columnNames": [
-              "purposeId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_setup_purposeId` ON `${TABLE_NAME}` (`purposeId`)"
           }
         ],
         "foreignKeys": [
@@ -1629,23 +584,12 @@
             "referencedColumns": [
               "id"
             ]
-          },
-          {
-            "table": "purpose",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "purposeId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
           }
         ]
       },
       {
         "tableName": "setup_value",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `setupId` TEXT NOT NULL, `fieldId` TEXT NOT NULL, `value` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`setupId`) REFERENCES `setup`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`fieldId`) REFERENCES `machine_field`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `setupId` TEXT NOT NULL, `key` TEXT NOT NULL, `value` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`setupId`) REFERENCES `setup`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
         "fields": [
           {
             "fieldPath": "id",
@@ -1660,8 +604,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "fieldId",
-            "columnName": "fieldId",
+            "fieldPath": "key",
+            "columnName": "key",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -1697,23 +641,14 @@
         },
         "indices": [
           {
-            "name": "index_setup_value_setupId_fieldId",
+            "name": "index_setup_value_setupId_key",
             "unique": true,
             "columnNames": [
               "setupId",
-              "fieldId"
+              "key"
             ],
             "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_setup_value_setupId_fieldId` ON `${TABLE_NAME}` (`setupId`, `fieldId`)"
-          },
-          {
-            "name": "index_setup_value_fieldId",
-            "unique": false,
-            "columnNames": [
-              "fieldId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_setup_value_fieldId` ON `${TABLE_NAME}` (`fieldId`)"
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_setup_value_setupId_key` ON `${TABLE_NAME}` (`setupId`, `key`)"
           }
         ],
         "foreignKeys": [
@@ -1727,33 +662,16 @@
             "referencedColumns": [
               "id"
             ]
-          },
-          {
-            "table": "machine_field",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "fieldId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
           }
         ]
       },
       {
-        "tableName": "setup_use",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `setupId` TEXT NOT NULL, `projectId` TEXT NOT NULL, `logEntryId` TEXT, `snapshotAt` INTEGER NOT NULL, `tweaked` INTEGER NOT NULL, `snapshot` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`setupId`) REFERENCES `setup`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`projectId`) REFERENCES `project`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`logEntryId`) REFERENCES `log_entry`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "tableName": "project_setup",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `setupId` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `project`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`setupId`) REFERENCES `setup`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "setupId",
-            "columnName": "setupId",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -1764,26 +682,15 @@
             "notNull": true
           },
           {
-            "fieldPath": "logEntryId",
-            "columnName": "logEntryId",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "snapshotAt",
-            "columnName": "snapshotAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "tweaked",
-            "columnName": "tweaked",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "snapshot",
-            "columnName": "snapshot",
+            "fieldPath": "setupId",
+            "columnName": "setupId",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -1812,45 +719,26 @@
         },
         "indices": [
           {
-            "name": "index_setup_use_setupId",
+            "name": "index_project_setup_projectId_setupId",
+            "unique": true,
+            "columnNames": [
+              "projectId",
+              "setupId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_project_setup_projectId_setupId` ON `${TABLE_NAME}` (`projectId`, `setupId`)"
+          },
+          {
+            "name": "index_project_setup_setupId",
             "unique": false,
             "columnNames": [
               "setupId"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_setup_use_setupId` ON `${TABLE_NAME}` (`setupId`)"
-          },
-          {
-            "name": "index_setup_use_projectId",
-            "unique": false,
-            "columnNames": [
-              "projectId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_setup_use_projectId` ON `${TABLE_NAME}` (`projectId`)"
-          },
-          {
-            "name": "index_setup_use_logEntryId",
-            "unique": false,
-            "columnNames": [
-              "logEntryId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_setup_use_logEntryId` ON `${TABLE_NAME}` (`logEntryId`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_project_setup_setupId` ON `${TABLE_NAME}` (`setupId`)"
           }
         ],
         "foreignKeys": [
-          {
-            "table": "setup",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "setupId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          },
           {
             "table": "project",
             "onDelete": "NO ACTION",
@@ -1863,11 +751,11 @@
             ]
           },
           {
-            "table": "log_entry",
+            "table": "setup",
             "onDelete": "NO ACTION",
             "onUpdate": "NO ACTION",
             "columns": [
-              "logEntryId"
+              "setupId"
             ],
             "referencedColumns": [
               "id"
@@ -1878,7 +766,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '56ec251fcf6d6bfb781f02ca680cf971')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '809c1b9d6bf8f0a3bdb91849be14f6cb')"
     ]
   }
 }

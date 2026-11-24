@@ -1,12 +1,11 @@
 package at.mtr.sewfar.data
 
 import at.mtr.sewfar.domain.PhotoOwner
-import at.mtr.sewfar.domain.PhotoTag
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -24,12 +23,15 @@ class PhotoRepositoryTest {
         t = TestDb()
         // Real time: orphan cleanup compares against file modification times.
         t.time.now = System.currentTimeMillis()
-        t.seed()
     }
 
     @After fun tearDown() = t.close()
 
-    private suspend fun addPhoto(projectId: String, tag: PhotoTag) = t.photos.addProjectPhoto(projectId, tag) { image.inputStream() }
+    private suspend fun addPhoto(projectId: String) = t.photos.add(PhotoOwner.PROJECT, projectId) { image.inputStream() }
+
+    private suspend fun photosOf(owner: PhotoOwner, id: String) = t.photos.observe(owner, id).first()
+
+    private suspend fun cover(projectId: String) = coverOf(photosOf(PhotoOwner.PROJECT, projectId), t.projects.get(projectId)!!.coverPhotoId)
 
     @Test
     fun projectPhotosAreStoredInOrderAndTouchProject() = runTest {
@@ -37,50 +39,39 @@ class PhotoRepositoryTest {
         val before = t.projects.get(projectId)!!.lastActivityAt
         t.time.advance()
 
-        val a = addPhoto(projectId, PhotoTag.INSPIRATION)
-        val b = addPhoto(projectId, PhotoTag.PROGRESS)
+        val a = addPhoto(projectId)
+        val b = addPhoto(projectId)
 
-        assertEquals(listOf(a, b), t.photos.forOwner(PhotoOwner.PROJECT, projectId).map { it.id })
+        assertEquals(listOf(a, b), photosOf(PhotoOwner.PROJECT, projectId).map { it.id })
         assertTrue(t.photoFiles.file(a).exists())
         assertTrue(t.projects.get(projectId)!!.lastActivityAt > before)
     }
 
     @Test
-    fun coverIsAutomaticUntilPinned() = runTest {
+    fun coverIsNewestPhotoUntilPinned() = runTest {
         val projectId = t.projects.create("Dress")
-        val inspiration = addPhoto(projectId, PhotoTag.INSPIRATION)
-        assertEquals(inspiration, t.photos.coverOf(projectId))
+        val first = addPhoto(projectId)
+        assertEquals(first, cover(projectId))
+        val newest = addPhoto(projectId)
+        assertEquals(newest, cover(projectId))
 
-        val finished = addPhoto(projectId, PhotoTag.FINISHED)
-        assertEquals(finished, t.photos.coverOf(projectId))
+        t.photos.setCover(projectId, first)
+        assertEquals(first, cover(projectId))
 
-        t.photos.setCover(projectId, inspiration)
-        assertEquals(inspiration, t.photos.coverOf(projectId))
-
-        t.photos.delete(inspiration)
-        assertEquals("pinned photo deleted: automatic again", finished, t.photos.coverOf(projectId))
-    }
-
-    @Test
-    fun entityPhotoIsReplacedNotEdited() = runTest {
-        val patternId = t.patterns.create("Raglan")
-        val first = t.photos.setEntityPhoto(PhotoOwner.PATTERN, patternId) { image.inputStream() }
-        val second = t.photos.setEntityPhoto(PhotoOwner.PATTERN, patternId) { image.inputStream() }
-
-        assertEquals(listOf(second), t.photos.forOwner(PhotoOwner.PATTERN, patternId).map { it.id })
-        assertNotNull(t.deletedAt("photo", first))
+        t.photos.delete(first)
+        assertEquals("pinned photo deleted: automatic again", newest, cover(projectId))
     }
 
     @Test
     fun filesOfDeletedPhotosGoOnlyAfterUndoWindow() = runTest {
         val projectId = t.projects.create("Dress")
-        val photo = addPhoto(projectId, PhotoTag.PROGRESS)
+        val photo = addPhoto(projectId)
         val token = t.photos.delete(photo)!!
 
         t.photos.purgeFiles()
         assertTrue("still inside the Undo window", t.photoFiles.file(photo).exists())
         t.photos.undo(token)
-        assertEquals(listOf(photo), t.photos.forOwner(PhotoOwner.PROJECT, projectId).map { it.id })
+        assertEquals(listOf(photo), photosOf(PhotoOwner.PROJECT, projectId).map { it.id })
 
         t.photos.delete(photo)
         t.time.advance(PhotoRepository.UndoWindowMillis + 1_000)
@@ -91,7 +82,7 @@ class PhotoRepositoryTest {
     @Test
     fun cascadeDeletedPhotoFilesArePurgedToo() = runTest {
         val projectId = t.projects.create("Dress")
-        val photo = addPhoto(projectId, PhotoTag.FINISHED)
+        val photo = addPhoto(projectId)
         t.projects.delete(projectId)
 
         t.time.advance(PhotoRepository.UndoWindowMillis + 1_000)
@@ -115,25 +106,10 @@ class PhotoRepositoryTest {
     @Test
     fun failedImportStoresNothing() = runTest {
         val projectId = t.projects.create("Dress")
-        val result = runCatching { t.photos.addProjectPhoto(projectId, PhotoTag.PROGRESS) { "nope".byteInputStream() } }
+        val result = runCatching { t.photos.add(PhotoOwner.PROJECT, projectId) { "nope".byteInputStream() } }
 
         assertTrue(result.isFailure)
-        assertEquals(0, t.photos.forOwner(PhotoOwner.PROJECT, projectId).size)
+        assertEquals(0, photosOf(PhotoOwner.PROJECT, projectId).size)
         assertEquals(emptyMap<String, Long>(), t.photoFiles.stored())
-    }
-
-    @Test
-    fun logEntryPhotoBelongsToEntryAndGoesWithIt() = runTest {
-        val projectId = t.projects.create("Dress")
-        val entry = t.projects.addNote(projectId, "hemmed")
-        val photo = t.photos.addProjectPhoto(projectId, PhotoTag.PROGRESS, logEntryId = entry) { image.inputStream() }
-
-        val row = t.photos.forOwner(PhotoOwner.PROJECT, projectId).single()
-        assertEquals(entry, row.logEntryId)
-        assertEquals(PhotoTag.PROGRESS, row.tag)
-
-        t.projects.deleteLogEntry(entry)
-        assertEquals(0, t.photos.forOwner(PhotoOwner.PROJECT, projectId).size)
-        assertNotNull(t.deletedAt("photo", photo))
     }
 }

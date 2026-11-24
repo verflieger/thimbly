@@ -1,38 +1,27 @@
 package at.mtr.sewfar.ui
 
-import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.ContentCut
-import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import at.mtr.sewfar.AppContainer
@@ -40,24 +29,18 @@ import at.mtr.sewfar.R
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.Messages
-import at.mtr.sewfar.ui.machines.MachineDetailScreen
-import at.mtr.sewfar.ui.machines.MachineDetailViewModel
-import at.mtr.sewfar.ui.machines.MachinesScreen
-import at.mtr.sewfar.ui.machines.MachinesViewModel
-import at.mtr.sewfar.ui.machines.SetupDetailScreen
-import at.mtr.sewfar.ui.machines.SetupDetailViewModel
-import at.mtr.sewfar.data.ListKind
-import at.mtr.sewfar.ui.patterns.PatternDetailScreen
-import at.mtr.sewfar.ui.patterns.PatternDetailViewModel
-import at.mtr.sewfar.ui.patterns.PatternsScreen
-import at.mtr.sewfar.ui.patterns.PatternsViewModel
-import at.mtr.sewfar.ui.people.PeopleScreen
-import at.mtr.sewfar.ui.people.PeopleViewModel
-import at.mtr.sewfar.ui.people.PersonDetailScreen
-import at.mtr.sewfar.ui.people.PersonDetailViewModel
-import at.mtr.sewfar.ui.settings.ListEditScreen
+import at.mtr.sewfar.ui.library.LibraryScreen
+import at.mtr.sewfar.ui.library.LibraryTab
+import at.mtr.sewfar.ui.library.LibraryViewModel
+import at.mtr.sewfar.ui.library.MachineScreen
+import at.mtr.sewfar.ui.library.MachineViewModel
+import at.mtr.sewfar.ui.library.PatternScreen
+import at.mtr.sewfar.ui.library.PatternViewModel
+import at.mtr.sewfar.ui.library.PersonScreen
+import at.mtr.sewfar.ui.library.PersonViewModel
+import at.mtr.sewfar.ui.library.SetupScreen
+import at.mtr.sewfar.ui.library.SetupViewModel
 import at.mtr.sewfar.ui.photos.PhotoViewerScreen
-import at.mtr.sewfar.ui.projects.CompletionScreen
 import at.mtr.sewfar.ui.projects.ProjectDetailScreen
 import at.mtr.sewfar.ui.projects.ProjectDetailViewModel
 import at.mtr.sewfar.ui.projects.ProjectListViewModel
@@ -66,20 +49,20 @@ import at.mtr.sewfar.ui.settings.SettingsScreen
 import kotlinx.serialization.Serializable
 
 @Serializable object ProjectsRoute
-@Serializable object PatternsRoute
-@Serializable object PeopleRoute
-@Serializable object MachinesRoute
 @Serializable object SettingsRoute
-@Serializable data class ProjectDetailRoute(val id: String)
-@Serializable data class PatternDetailRoute(val id: String)
-@Serializable data class CompletionRoute(val projectId: String)
-@Serializable data class MachineDetailRoute(val id: String)
-@Serializable data class SetupDetailRoute(val id: String)
-@Serializable data class PersonDetailRoute(val id: String)
-/** [kind] is a [ListKind] name. */
-@Serializable data class ListEditRoute(val kind: String)
-/** All photos of one owner, opened at [photoId] (SPEC 3.6). [ownerType] is a [PhotoOwner] name. */
+/** [tab] is a [LibraryTab] name. */
+@Serializable data class LibraryRoute(val tab: String = LibraryTab.PATTERNS.name)
+/** [isNew]: just created, so the name field gets the cursor. */
+@Serializable data class ProjectRoute(val id: String, val isNew: Boolean = false)
+@Serializable data class PatternRoute(val id: String, val isNew: Boolean = false)
+@Serializable data class PersonRoute(val id: String, val isNew: Boolean = false)
+@Serializable data class MachineRoute(val id: String, val isNew: Boolean = false)
+@Serializable data class SetupRoute(val id: String, val isNew: Boolean = false)
+/** All photos of one owner, opened at [photoId] (SPEC 3.5). [ownerType] is a [PhotoOwner] name. */
 @Serializable data class PhotoViewerRoute(val ownerType: String, val ownerId: String, val photoId: String? = null)
+
+/** Short slides instead of the default 700 ms fades, which made screen changes feel sluggish. */
+private const val TransitionMillis = 250
 
 /**
  * Pops [entry] only while it is the resumed top destination, so a double tap (or tap + back) on a screen that is
@@ -89,154 +72,105 @@ private fun NavHostController.popFrom(entry: NavBackStackEntry) {
     if (entry.lifecycle.currentState == Lifecycle.State.RESUMED) popBackStack()
 }
 
-private enum class Tab(val route: Any, @StringRes val label: Int, val icon: ImageVector) {
-    PROJECTS(ProjectsRoute, R.string.tab_projects, Icons.Outlined.Checklist),
-    PATTERNS(PatternsRoute, R.string.tab_patterns, Icons.Outlined.ContentCut),
-    PEOPLE(PeopleRoute, R.string.tab_people, Icons.Outlined.Group),
-    MACHINES(MachinesRoute, R.string.tab_machines, Icons.Outlined.Tune),
-}
-
-/** App shell: bottom bar with the four tabs, opening on Projects (SPEC 2); other screens open full screen. */
+/** App shell (SPEC 2): the project list is home; everything else opens on top of it. No bottom bar. */
 @Composable
 fun SewFarRoot(container: AppContainer) {
-    val navController = rememberNavController()
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val isTab = Tab.entries.any { tab -> backStackEntry?.destination?.hasRoute(tab.route::class) == true }
-    val openSettings = { navController.navigate(SettingsRoute) { launchSingleTop = true } }
+    val nav = rememberNavController()
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val undoLabel = stringResource(R.string.action_undo)
     val messages = remember(snackbarHost, scope, undoLabel) { Messages(snackbarHost, scope, undoLabel) }
+    val openProject = { id: String -> nav.navigate(ProjectRoute(id)) }
 
     CompositionLocalProvider(LocalMessages provides messages) {
-        Scaffold(
-            contentWindowInsets = WindowInsets(0),
-            snackbarHost = { SnackbarHost(snackbarHost) },
-            bottomBar = {
-                if (isTab) {
-                    NavigationBar {
-                        Tab.entries.forEach { tab ->
-                            NavigationBarItem(
-                                selected = backStackEntry?.destination?.hasRoute(tab.route::class) == true,
-                                onClick = {
-                                    navController.navigate(tab.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                },
-                                icon = { Icon(tab.icon, contentDescription = null) },
-                                label = { Text(stringResource(tab.label)) },
-                            )
-                        }
-                    }
-                }
-            },
-        ) { padding ->
-            NavHost(navController, startDestination = ProjectsRoute, modifier = Modifier.padding(padding)) {
+        Scaffold(contentWindowInsets = WindowInsets(0), snackbarHost = { SnackbarHost(snackbarHost) }) { _ ->
+            NavHost(
+                nav,
+                startDestination = ProjectsRoute,
+                enterTransition = { slideInHorizontally(tween(TransitionMillis)) { it / 4 } + fadeIn(tween(TransitionMillis)) },
+                exitTransition = { fadeOut(tween(TransitionMillis)) },
+                popEnterTransition = { fadeIn(tween(TransitionMillis)) },
+                popExitTransition = { slideOutHorizontally(tween(TransitionMillis)) { it } + fadeOut(tween(TransitionMillis)) },
+                // The back gesture has its own defaults (scale to 70 % plus a slow fade); use the same slide.
+                predictivePopEnterTransition = { fadeIn(tween(TransitionMillis)) },
+                predictivePopExitTransition = { slideOutHorizontally(tween(TransitionMillis)) { it } },
+            ) {
                 composable<ProjectsRoute> {
                     ProjectsScreen(
                         viewModel = viewModel { ProjectListViewModel(container) },
-                        onOpenSettings = openSettings,
-                        onOpenProject = { id -> navController.navigate(ProjectDetailRoute(id)) },
+                        onOpenProject = { id, isNew -> nav.navigate(ProjectRoute(id, isNew)) },
+                        onOpenLibrary = { nav.navigate(LibraryRoute()) },
+                        onOpenSettings = { nav.navigate(SettingsRoute) { launchSingleTop = true } },
                     )
                 }
-                composable<PatternsRoute> {
-                    PatternsScreen(
-                        viewModel = viewModel { PatternsViewModel(container) },
-                        onOpenSettings = openSettings,
-                        onOpenPattern = { id -> navController.navigate(PatternDetailRoute(id)) },
+                composable<ProjectRoute> { entry ->
+                    val route = entry.toRoute<ProjectRoute>()
+                    ProjectDetailScreen(
+                        viewModel = viewModel { ProjectDetailViewModel(container, route.id, route.isNew) },
+                        isNew = route.isNew,
+                        onBack = { nav.popFrom(entry) },
+                        onOpenPhoto = { photoId -> nav.navigate(PhotoViewerRoute(PhotoOwner.PROJECT.name, route.id, photoId)) },
+                        onOpenPattern = { nav.navigate(PatternRoute(it)) },
+                        onOpenPerson = { nav.navigate(PersonRoute(it)) },
+                        onOpenSetup = { nav.navigate(SetupRoute(it)) },
                     )
                 }
-                composable<PeopleRoute> {
-                    PeopleScreen(
-                        viewModel = viewModel { PeopleViewModel(container) },
-                        onOpenSettings = openSettings,
-                        onOpenPerson = { id -> navController.navigate(PersonDetailRoute(id)) },
+                composable<LibraryRoute> { entry ->
+                    val tab = LibraryTab.valueOf(entry.toRoute<LibraryRoute>().tab)
+                    LibraryScreen(
+                        viewModel = viewModel { LibraryViewModel(container, tab) },
+                        onBack = { nav.popFrom(entry) },
+                        onOpen = { t, id, isNew ->
+                            nav.navigate(
+                                when (t) {
+                                    LibraryTab.PATTERNS -> PatternRoute(id, isNew)
+                                    LibraryTab.MACHINES -> MachineRoute(id, isNew)
+                                    LibraryTab.PEOPLE -> PersonRoute(id, isNew)
+                                },
+                            )
+                        },
                     )
                 }
-                composable<PatternDetailRoute> { entry ->
-                    val id = entry.toRoute<PatternDetailRoute>().id
-                    PatternDetailScreen(
-                        viewModel = viewModel { PatternDetailViewModel(container, id) },
-                        onBack = { navController.popFrom(entry) },
-                        onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
-                        onOpenPhoto = { photoId -> navController.navigate(PhotoViewerRoute(PhotoOwner.PATTERN.name, id, photoId)) },
+                composable<PatternRoute> { entry ->
+                    val route = entry.toRoute<PatternRoute>()
+                    PatternScreen(
+                        viewModel = viewModel { PatternViewModel(container, route.id, route.isNew) }, isNew = route.isNew,
+                        onBack = { nav.popFrom(entry) }, onOpenProject = openProject,
+                        onOpenPhoto = { photoId -> nav.navigate(PhotoViewerRoute(PhotoOwner.PATTERN.name, route.id, photoId)) },
                     )
                 }
-                composable<PersonDetailRoute> { entry ->
-                    val id = entry.toRoute<PersonDetailRoute>().id
-                    PersonDetailScreen(
-                        viewModel = viewModel { PersonDetailViewModel(container, id) },
-                        onBack = { navController.popFrom(entry) },
-                        onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
-                        onOpenPhoto = { photoId -> navController.navigate(PhotoViewerRoute(PhotoOwner.PERSON.name, id, photoId)) },
+                composable<PersonRoute> { entry ->
+                    val route = entry.toRoute<PersonRoute>()
+                    PersonScreen(
+                        viewModel = viewModel { PersonViewModel(container, route.id, route.isNew) }, isNew = route.isNew,
+                        onBack = { nav.popFrom(entry) }, onOpenProject = openProject,
                     )
                 }
-                composable<ListEditRoute> { entry ->
-                    ListEditScreen(
-                        ListKind.valueOf(entry.toRoute<ListEditRoute>().kind), container.lists, container.appScope,
-                        onBack = { navController.popFrom(entry) },
+                composable<MachineRoute> { entry ->
+                    val route = entry.toRoute<MachineRoute>()
+                    MachineScreen(
+                        viewModel = viewModel { MachineViewModel(container, route.id, route.isNew) }, isNew = route.isNew,
+                        onBack = { nav.popFrom(entry) },
+                        onOpenSetup = { id, isNew -> nav.navigate(SetupRoute(id, isNew)) },
                     )
                 }
-                composable<MachinesRoute> {
-                    MachinesScreen(
-                        viewModel = viewModel { MachinesViewModel(container) },
-                        onOpenSettings = openSettings,
-                        onOpenMachine = { id -> navController.navigate(MachineDetailRoute(id)) },
-                        onOpenSetup = { id -> navController.navigate(SetupDetailRoute(id)) },
-                    )
-                }
-                composable<MachineDetailRoute> { entry ->
-                    val id = entry.toRoute<MachineDetailRoute>().id
-                    MachineDetailScreen(
-                        viewModel = viewModel { MachineDetailViewModel(container, id) },
-                        onBack = { navController.popFrom(entry) },
-                        onOpenSetup = { setupId -> navController.navigate(SetupDetailRoute(setupId)) },
-                        onOpenPhoto = { photoId -> navController.navigate(PhotoViewerRoute(PhotoOwner.MACHINE.name, id, photoId)) },
-                    )
-                }
-                composable<SetupDetailRoute> { entry ->
-                    val id = entry.toRoute<SetupDetailRoute>().id
-                    SetupDetailScreen(
-                        viewModel = viewModel { SetupDetailViewModel(container, id) },
-                        onBack = { navController.popFrom(entry) },
-                        onOpenMachine = { machineId -> navController.navigate(MachineDetailRoute(machineId)) },
-                        onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
+                composable<SetupRoute> { entry ->
+                    val route = entry.toRoute<SetupRoute>()
+                    SetupScreen(
+                        viewModel = viewModel { SetupViewModel(container, route.id, route.isNew) }, isNew = route.isNew,
+                        onBack = { nav.popFrom(entry) }, onOpenProject = openProject,
+                        onOpenMachine = { nav.navigate(MachineRoute(it)) },
                     )
                 }
                 composable<SettingsRoute> { entry ->
-                    SettingsScreen(
-                        container, onBack = { navController.popFrom(entry) },
-                        onOpenList = { kind -> navController.navigate(ListEditRoute(kind.name)) },
-                    )
-                }
-                composable<ProjectDetailRoute> { entry ->
-                    val id = entry.toRoute<ProjectDetailRoute>().id
-                    ProjectDetailScreen(
-                        viewModel = viewModel { ProjectDetailViewModel(container, id) },
-                        onBack = { navController.popFrom(entry) },
-                        onOpenPhoto = { photoId ->
-                            navController.navigate(PhotoViewerRoute(PhotoOwner.PROJECT.name, id, photoId))
-                        },
-                        onOpenProject = { projectId -> navController.navigate(ProjectDetailRoute(projectId)) },
-                        onOpenCompletion = { navController.navigate(CompletionRoute(id)) },
-                        onOpenSetup = { setupId -> navController.navigate(SetupDetailRoute(setupId)) },
-                    )
-                }
-                composable<CompletionRoute> { entry ->
-                    val id = entry.toRoute<CompletionRoute>().projectId
-                    CompletionScreen(
-                        viewModel = viewModel { ProjectDetailViewModel(container, id) },
-                        onClose = { navController.popFrom(entry) },
-                    )
+                    SettingsScreen(container, onBack = { nav.popFrom(entry) })
                 }
                 composable<PhotoViewerRoute> { entry ->
                     val route = entry.toRoute<PhotoViewerRoute>()
                     val photos by container.photos.observe(PhotoOwner.valueOf(route.ownerType), route.ownerId)
                         .collectAsState(initial = null)
                     photos?.let { list ->
-                        PhotoViewerScreen(list.map { it.id }, route.photoId, onClose = { navController.popFrom(entry) })
+                        PhotoViewerScreen(list.map { it.id }, route.photoId, onClose = { nav.popFrom(entry) })
                     }
                 }
             }

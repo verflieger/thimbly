@@ -1,145 +1,98 @@
 package at.mtr.sewfar.data
 
+import at.mtr.sewfar.domain.PhotoOwner
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.GraphicsMode
 
-/** SPEC 7: soft delete, cascade table, undo. */
+/** SPEC 6: soft delete with cascade, undo restores exactly that deletion. */
 @RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class CascadeUndoTest {
     private lateinit var t: TestDb
+    private val image = TestDb.jpeg(20, 20)
 
-    @Before fun setUp() = runTest { t = TestDb(); t.seed() }
+    @Before fun setUp() { t = TestDb() }
     @After fun tearDown() = t.close()
 
-    @Test
-    fun deletingProjectCascadesToAllChildren() = runTest {
-        val patternId = t.patterns.create("Hoodie")
-        val projectId = t.projects.create("Hoodie for Josi", patternIds = listOf(patternId))
-        val link = t.projects.patterns(projectId).single()
-        t.projects.addFabric(projectId, "French Terry", 80)
-        t.projects.setLesson(projectId, link.id, t.lessonTagId("lengthen"), set = true)
-        val noteId = t.projects.addNote(projectId, "cut out")
-        t.insertPhoto("PROJECT", projectId, logEntryId = noteId)
-        t.insertPhoto("PROJECT", projectId, tag = "FINISHED")
-        val machine = t.insertMachine()
-        val setup = t.insertSetup(machine, t.insertField(machine))
-        t.insertSetupUse(setup, projectId)
-
-        val token = requireNotNull(t.projects.delete(projectId))
-
-        for (table in listOf("project_pattern", "project_fabric", "project_lesson", "log_entry", "setup_use")) {
-            assertEquals("$table should be deleted", 0, t.count(table, "projectId = '$projectId'"))
-        }
-        assertEquals(0, t.count("photo", "ownerId = '$projectId'"))
-        assertEquals(token.stamp, t.deletedAt("project", projectId))
-        // The pattern itself and the setup are not part of the project.
-        assertNotNull(t.patterns.get(patternId))
-        assertEquals(1, t.count("setup", "id = '$setup'"))
+    private suspend fun fullProject(): String {
+        val id = t.projects.create("Shirt")
+        t.projects.addPattern(id, t.patterns.create("Raglan"))
+        t.projects.addSetup(id, t.machines.createSetup(t.machines.create("M"), "Hem"))
+        t.projects.addTime(id, t.time.day, 30)
+        t.photos.add(PhotoOwner.PROJECT, id) { image.inputStream() }
+        return id
     }
 
     @Test
-    fun undoRestoresExactlyTheRowsOfThatDeletion() = runTest {
-        val projectId = t.projects.create("Shirt")
-        val keptFabric = t.projects.addFabric(projectId, "Jersey")
-        val removedFabric = t.projects.addFabric(projectId, "Ribbing")
-        t.time.advance()
-        t.projects.removeFabric(removedFabric)
-        t.time.advance()
-        val token = requireNotNull(t.projects.delete(projectId))
-
+    fun deletingProjectCascadesToAllChildrenAndUndoRestoresThem() = runTest {
+        val id = fullProject()
+        val token = t.projects.delete(id)!!
+        for (table in listOf("project", "project_pattern", "project_setup", "time_entry", "photo")) assertEquals(table, 0, t.count(table))
+        assertEquals(1, t.count("pattern")) // the pattern itself stays
         t.projects.undo(token)
-
-        assertNotNull(t.projects.get(projectId))
-        assertNull(t.deletedAt("project_fabric", keptFabric))
-        assertNotNull("deleted before the project, stays deleted", t.deletedAt("project_fabric", removedFabric))
+        for (table in listOf("project", "project_pattern", "project_setup", "time_entry", "photo")) assertEquals(table, 1, t.count(table))
     }
 
     @Test
-    fun deletionsAtTheSameMillisecondGetDistinctStamps() = runTest {
+    fun undoRestoresOnlyRowsOfThatDeletion() = runTest {
+        val id = fullProject()
+        val time = t.projects.observeTime(id).first().single()
+        t.projects.deleteTime(time.id)
+        t.time.advance()
+        val token = t.projects.delete(id)!!
+        t.projects.undo(token)
+        assertEquals(0, t.count("time_entry")) // deleted earlier, stays deleted
+        assertEquals(1, t.count("project"))
+    }
+
+    @Test
+    fun deletionsInTheSameMillisecondGetDistinctStamps() = runTest {
         val a = t.projects.create("A")
         val b = t.projects.create("B")
-        val tokenA = requireNotNull(t.projects.delete(a))
-        val tokenB = requireNotNull(t.projects.delete(b))
-        assertNotEquals(tokenA.stamp, tokenB.stamp)
-
-        t.projects.undo(tokenA)
-        assertNotNull(t.projects.get(a))
+        val ta = t.projects.delete(a)!!
+        val tb = t.projects.delete(b)!!
+        assertNotEquals(ta, tb)
+        t.projects.undo(ta)
         assertNull(t.projects.get(b))
     }
 
     @Test
-    fun deletingLogEntryTakesItsPhotosAndSetupUsesOnly() = runTest {
-        val projectId = t.projects.create("Dress")
-        val noteId = t.projects.addNote(projectId, "hemmed")
-        val entryPhoto = t.insertPhoto("PROJECT", projectId, logEntryId = noteId)
-        val projectPhoto = t.insertPhoto("PROJECT", projectId, tag = "INSPIRATION")
-        val machine = t.insertMachine()
-        val setup = t.insertSetup(machine, t.insertField(machine))
-        val entryUse = t.insertSetupUse(setup, projectId, logEntryId = noteId)
-        val projectUse = t.insertSetupUse(setup, projectId)
-
-        t.projects.deleteLogEntry(noteId)
-
-        assertNotNull(t.deletedAt("photo", entryPhoto))
-        assertNotNull(t.deletedAt("setup_use", entryUse))
-        assertNull(t.deletedAt("photo", projectPhoto))
-        assertNull(t.deletedAt("setup_use", projectUse))
+    fun deletingPatternRemovesItFromProjects() = runTest {
+        val project = t.projects.create("A")
+        val pattern = t.patterns.create("Raglan")
+        t.projects.addPattern(project, pattern)
+        val token = t.patterns.delete(pattern)!!
+        assertEquals(0, t.count("project_pattern"))
+        t.patterns.undo(token)
+        assertEquals(1, t.count("project_pattern"))
     }
 
     @Test
-    fun deletingSetupKeepsItsSnapshots() = runTest {
-        val projectId = t.projects.create("Leggings")
-        val machine = t.insertMachine()
-        val setup = t.insertSetup(machine, t.insertField(machine))
-        val use = t.insertSetupUse(setup, projectId)
-
-        t.deleter.delete("setup", setup)
-
-        assertEquals(0, t.count("setup_value", "setupId = '$setup'"))
-        assertNull("snapshot outlives its setup (SPEC 6.4)", t.deletedAt("setup_use", use))
-    }
-
-    @Test
-    fun deletingMachineCascadesFieldsSetupsAndValues() = runTest {
-        val machine = t.insertMachine()
-        val field = t.insertField(machine)
-        val setup = t.insertSetup(machine, field)
-        t.insertPhoto("MACHINE", machine, tag = null)
-
-        t.deleter.delete("machine", machine)
-
-        assertNotNull(t.deletedAt("machine_field", field))
-        assertNotNull(t.deletedAt("setup", setup))
-        assertEquals(0, t.count("setup_value", "setupId = '$setup'"))
-        assertEquals(0, t.count("photo", "ownerId = '$machine'"))
-    }
-
-    @Test
-    fun deletingPersonCascadesMeasurements() = runTest {
-        val personId = t.persons.create("Josi")
-        val heightType = t.lists.entries(ListKind.MEASUREMENT_TYPE).first { it.builtinKey == "height" }.id
-        val session = t.persons.createSession(personId, t.time.day, mapOf(heightType to 1040))
-
-        val result = t.persons.delete(personId)
-
-        assertTrue(result is at.mtr.sewfar.data.db.DeleteResult.Deleted)
-        assertNotNull(t.deletedAt("measurement_session", session))
-        assertEquals(0, t.count("measurement_value", "sessionId = '$session'"))
+    fun deletingMachineTakesSetupsValuesAndLinks() = runTest {
+        val project = t.projects.create("A")
+        val machine = t.machines.create("M")
+        val setup = t.machines.createSetup(machine, "Hem")
+        t.machines.setValue(setup, "stitch", "3")
+        t.projects.addSetup(project, setup)
+        val token = t.machines.delete(machine)!!
+        for (table in listOf("machine", "setup", "setup_value", "project_setup")) assertEquals(table, 0, t.count(table))
+        t.machines.undo(token)
+        for (table in listOf("machine", "setup", "setup_value", "project_setup")) assertEquals(table, 1, t.count(table))
     }
 
     @Test
     fun deletingAlreadyDeletedRowReturnsNull() = runTest {
-        val projectId = t.projects.create("Bag")
-        assertNotNull(t.projects.delete(projectId))
-        assertNull(t.projects.delete(projectId))
+        val id = t.projects.create("A")
+        t.projects.delete(id)
+        assertNull(t.projects.delete(id))
     }
 }

@@ -6,7 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.w3c.dom.Element
 
-/** SPEC 12: every translatable string exists in English (values) and German (values-de), and nothing extra. */
+/** SPEC 10: every translatable string exists in English (values) and German (values-de), and nothing extra. */
 class StringsCompletenessTest {
     private fun names(dir: String): Set<String> {
         val files = File("src/main/res/$dir").listFiles { f -> f.name.startsWith("strings") && f.extension == "xml" }.orEmpty()

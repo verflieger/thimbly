@@ -4,9 +4,7 @@ import at.mtr.sewfar.data.backup.AutoBackup
 import at.mtr.sewfar.data.backup.BackupException
 import at.mtr.sewfar.data.backup.BackupFolder
 import at.mtr.sewfar.data.backup.BackupRepository
-import at.mtr.sewfar.data.seed.Seeder
 import at.mtr.sewfar.domain.PhotoOwner
-import at.mtr.sewfar.domain.PhotoTag
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -28,7 +26,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 
-/** SPEC 9 and the backup tests of SPEC 12. */
+/** SPEC 8. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class BackupTest {
@@ -39,10 +37,9 @@ class BackupTest {
 
     @Before fun setUp() = runTest {
         t = TestDb()
-        t.seed()
         base = t.photoFiles.dir.parentFile!!.apply { mkdirs() }
         val cache = File(base, "cache").apply { mkdirs() }
-        backup = BackupRepository(t.db, t.photoFiles, base, cache, t.time, "test", afterImport = { Seeder(t.db, t.time).seed() })
+        backup = BackupRepository(t.db, t.photoFiles, base, cache, t.time, "test")
     }
 
     @After fun tearDown() { t.close(); base.deleteRecursively() }
@@ -58,13 +55,14 @@ class BackupTest {
 
     private suspend fun sampleData(): Pair<String, String> {
         val person = t.persons.create("Josi")
-        val height = t.lists.entries(ListKind.MEASUREMENT_TYPE).first().id
-        t.persons.createSession(person, t.time.day, mapOf(height to 1040))
         val pattern = t.patterns.create("Raglan")
-        val project = t.projects.create("Shirt", personId = person, patternIds = listOf(pattern))
-        val gone = t.projects.addFabric(project, "Old fabric")
-        t.projects.removeFabric(gone) // tombstones are part of the backup
-        val photo = t.photos.addProjectPhoto(project, PhotoTag.FINISHED) { image.inputStream() }
+        val project = t.projects.create("Shirt")
+        t.projects.edit(project) { it.copy(personId = person) }
+        t.projects.addPattern(project, pattern)
+        t.projects.addTime(project, t.time.day, 30)
+        val gone = t.projects.observeTime(project).first().single().id
+        t.projects.deleteTime(gone) // tombstones are part of the backup
+        val photo = t.photos.add(PhotoOwner.PROJECT, project) { image.inputStream() }
         return project to photo
     }
 
@@ -91,7 +89,7 @@ class BackupTest {
         assertTrue(t.photoFiles.file(photo).readBytes().contentEquals(image) || t.photoFiles.file(photo).length() > 0)
         assertTrue(photoBytes(zip, photo).contentEquals(t.photoFiles.file(photo).readBytes()))
         assertNotNull(t.projects.get(project))
-        assertEquals(1, t.count("project_fabric", "projectId = '$project'", live = false) - t.count("project_fabric", "projectId = '$project'"))
+        assertEquals(1, t.count("time_entry", "projectId = '$project'", live = false) - t.count("time_entry", "projectId = '$project'"))
     }
 
     @Test
@@ -129,37 +127,33 @@ class BackupTest {
         backup.import(backup.prepareImport(zip.inputStream()))
 
         assertNotNull(t.projects.get(project))
-        assertEquals(listOf(photo), t.photos.forOwner(PhotoOwner.PROJECT, project).map { it.id })
+        assertEquals(listOf(photo), t.photos.observe(PhotoOwner.PROJECT, project).first().map { it.id })
         assertFalse(t.photoFiles.file(photo).exists())
     }
 
+    /** The released format must stay importable (SPEC 8.1). Every table has a row in the fixture. */
     @Test
     fun formatOneFixtureImports() = runTest {
         val fixture = javaClass.classLoader!!.getResourceAsStream("backup/format1.zip")!!
         backup.import(backup.prepareImport(fixture))
         val project = t.projects.observeAll().first().single()
         assertEquals("Fixture shirt", project.name)
-        assertEquals("Fixture pattern", t.patterns.get(t.projects.patterns(project.id).single().patternId)?.name)
-        assertEquals("Fixture person", t.persons.get(project.personId!!)?.name)
-        assertEquals(1, t.projects.log(project.id).size)
-        val photos = t.photos.forOwner(PhotoOwner.PROJECT, project.id)
-        assertEquals(2, photos.size)
+        assertEquals("Fixture pattern", t.projects.observePatterns(project.id).first().single().name)
+        assertEquals("Fixture person", t.persons.observe(project.personId!!).first()?.name)
+        assertEquals(1, t.projects.observeTime(project.id).first().size)
+        val photos = t.photos.observe(PhotoOwner.PROJECT, project.id).first()
+        assertEquals(1, photos.size)
         assertTrue(photos.all { t.photoFiles.file(it.id).exists() })
-        assertEquals(1, photos.count { it.logEntryId != null })
-        // Every table of format 1 has rows in the fixture; spot-check what the core tables don't cover.
-        assertEquals(1, t.count("measurement_value"))
-        assertEquals(1, t.count("pattern_yardage"))
-        assertEquals(1, t.count("project_fabric"))
-        assertEquals(1, t.count("project_fabric", live = false) - 1)
-        assertEquals(1, t.projects.lessons(project.id).size)
-        assertEquals(1, t.count("machine"))
-        assertEquals(10, t.count("machine_field"))
-        assertEquals("1.3", SetupRepository(t.db, t.deleter, t.time).observeAll().first().single().let { setup ->
-            SetupRepository(t.db, t.deleter, t.time).values(setup.id).values.single()
-        })
-        val use = SetupRepository(t.db, t.deleter, t.time).observeUses(project.id).first().single()
-        assertEquals("1.3", at.mtr.sewfar.domain.Snapshots.decode(use.snapshot).first { it.value.isNotEmpty() }.value)
-        assertEquals(1, t.photos.forOwner(PhotoOwner.PATTERN, project.let { t.projects.patterns(it.id).single().patternId }).size)
+        val setup = t.projects.observeSetups(project.id).first().single()
+        assertEquals("1.3", t.machines.observeValues(setup.setupId).first().single().value)
+        for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables) assertTrue(table, t.count(table) > 0)
+    }
+
+    @Test
+    fun prototypeBackupIsRejected() = runTest {
+        sampleData()
+        val json = """{"format":1,"tables":{"project":[],"log_entry":[]}}"""
+        assertRejected(BackupException.Reason.PROTOTYPE, zipOf("backup.json" to json.toByteArray()))
     }
 
     @Test
@@ -266,7 +260,7 @@ class BackupTest {
 
         assertTrue(t.photoFiles.file(photo).exists())
         assertFalse(photosNew.exists())
-        assertEquals(1, t.photos.forOwner(PhotoOwner.PROJECT, with(t) { t.projects.observeAllOnce() }.single()).size)
+        assertEquals(1, t.photos.observe(PhotoOwner.PROJECT, with(t) { t.projects.observeAllOnce() }.single()).first().size)
     }
 
     private class FakeFolder(var accessible: Boolean = true, names: List<String> = emptyList()) : BackupFolder {

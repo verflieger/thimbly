@@ -32,16 +32,16 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 
 class BackupException(val reason: Reason, message: String, cause: Throwable? = null) : IOException(message, cause) {
-    enum class Reason { NOT_A_BACKUP, NEWER_FORMAT, UNSAFE_PATH }
+    enum class Reason { NOT_A_BACKUP, NEWER_FORMAT, UNSAFE_PATH, PROTOTYPE }
 }
 
-/** A validated backup, ready to replace the current data (SPEC 9.2, import steps 1–3). */
+/** A validated backup, ready to replace the current data (SPEC 8.2, import steps 1–3). */
 data class ImportPlan(val file: File, val format: Int, val exportedAt: String, val counts: Map<String, Int>)
 
 private val PhotoEntry = Regex("""^photos/[A-Za-z0-9-]+\.jpg$""")
 
 /**
- * Backup zip (SPEC 9): `backup.json` with every table (including soft-deleted rows) and `photos/<id>.jpg` for every
+ * Backup zip (SPEC 8): `backup.json` with every table (including soft-deleted rows) and `photos/<id>.jpg` for every
  * live photo. Tables are copied column by column, so the format follows the Room schema without per-entity code.
  */
 class BackupRepository(
@@ -51,8 +51,6 @@ class BackupRepository(
     private val cacheDir: File,
     private val time: TimeSource,
     private val appVersion: String,
-    /** Runs after an import (re-seeds built-in list entries that a backup may lack). */
-    private val afterImport: suspend () -> Unit = {},
 ) {
     private val json = Json { prettyPrint = false }
 
@@ -61,7 +59,7 @@ class BackupRepository(
     private val photosOld get() = File(filesDir, "photos.old")
     private val swapMarker get() = File(filesDir, "photo-swap.marker")
 
-    // ---- Export (SPEC 9.1) ----
+    // ---- Export (SPEC 8.1) ----
 
     /** Writes a complete backup to [out]. Tables are read in one transaction, so the snapshot is consistent. */
     suspend fun export(out: OutputStream) = withContext(Dispatchers.IO) {
@@ -95,7 +93,7 @@ class BackupRepository(
         }
     }
 
-    // ---- Import (SPEC 9.2) ----
+    // ---- Import (SPEC 8.2) ----
 
     /**
      * Copies the zip from [input] to the cache and validates it (steps 1–2). Throws [BackupException] if it is not
@@ -108,7 +106,7 @@ class BackupRepository(
     }
 
     /**
-     * "Undo last restore" (SPEC 10): imports a copy of the safety export, so the normal import makes a new safety
+     * "Undo last restore" (SPEC 8.2): imports a copy of the safety export, so the normal import makes a new safety
      * export of the current data first and nothing is lost (Undo works like a toggle).
      */
     suspend fun prepareSafetyRestore(): ImportPlan = withContext(Dispatchers.IO) {
@@ -140,8 +138,12 @@ class BackupRepository(
             ?: throw BackupException(BackupException.Reason.NOT_A_BACKUP, "No format")
         if (format > FORMAT) throw BackupException(BackupException.Reason.NEWER_FORMAT, "Format $format is newer than $FORMAT")
         val tables = backup["tables"] as? JsonObject ?: throw BackupException(BackupException.Reason.NOT_A_BACKUP, "No tables")
+        // Backups of the 1.0 prototype also say format 1 but have other tables; they can't be restored (SPEC 8.1).
+        if (!SoftDeleter.AllTables.containsAll(tables.keys)) {
+            throw BackupException(BackupException.Reason.PROTOTYPE, "Unknown tables ${tables.keys - SoftDeleter.AllTables.toSet()}")
+        }
         // Photo rows without a file are accepted (the photo shows as missing), so one lost file never makes every
-        // later backup unrestorable (SPEC 9.2).
+        // later backup unrestorable (SPEC 8.2).
         val counts = tables.mapValues { (_, rows) ->
             rows.jsonArray.count { row -> row.jsonObject["deletedAt"]?.let { it is JsonNull } ?: true }
         }
@@ -190,11 +192,10 @@ class BackupRepository(
         // 7. Swap the photo folders.
         finishSwap()
         plan.file.takeIf { it.parentFile?.canonicalPath == cacheDir.canonicalPath }?.delete()
-        afterImport()
     }
 
     /**
-     * Completes or rolls back a photo swap interrupted by a crash (SPEC 9.2 step 7). The import committed iff the
+     * Completes or rolls back a photo swap interrupted by a crash (SPEC 8.2 step 7). The import committed iff the
      * database's live photo IDs equal the backup's (listed in the marker): then finish the swap, otherwise drop
      * `photos.new` and put `photos.old` back if the old folder was already moved aside. (Equal ID sets also cover
      * an uncommitted import of identical photos: photo files are immutable, so either folder fits.)
@@ -261,7 +262,7 @@ class BackupRepository(
     }
 
     /**
-     * Zip slip (SPEC 9.2): reject absolute paths and `..` segments anywhere, and nested paths under `photos/` (photo
+     * Zip slip (SPEC 8.2): reject absolute paths and `..` segments anywhere, and nested paths under `photos/` (photo
      * entries must be flat). Other harmless entries are ignored.
      */
     private fun checkSafe(name: String) {
@@ -297,12 +298,12 @@ class BackupRepository(
     }
 
     companion object {
-        /** Backup format version (SPEC 9.1). Frozen at v1.0; newer apps must read every older format. */
+        /** Backup format version (SPEC 8.1). Frozen once released; newer apps must read every older format. */
         const val FORMAT = 1
         const val JSON_ENTRY = "backup.json"
         const val PHOTOS_DIR = "photos/"
 
-        /** `sewfar-backup-YYYY-MM-DD-HHmmss.zip` / `sewfar-auto-…` (SPEC 9.2). */
+        /** `sewfar-backup-YYYY-MM-DD-HHmmss.zip` / `sewfar-auto-…` (SPEC 8.2). */
         fun fileName(prefix: String, at: java.time.LocalDateTime): String =
             "$prefix-" + at.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")) + ".zip"
     }

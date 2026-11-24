@@ -23,7 +23,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** SPEC 3.6: full-screen viewer swipes between photos and closes. */
+/** SPEC 3.5: full-screen viewer swipes between photos and closes. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "en")

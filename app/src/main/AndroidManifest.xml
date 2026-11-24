@@ -31,7 +31,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Lets the camera app write a photo into our cache (SPEC 3.6); the temp file is deleted after import. -->
+        <!-- Lets the camera app write a photo into our cache (SPEC 3.5); the temp file is deleted after import. -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.camera"

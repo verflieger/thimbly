@@ -1,5 +1,6 @@
 package at.mtr.sewfar.ui.common
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,10 +31,10 @@ import at.mtr.sewfar.R
 import at.mtr.sewfar.domain.SearchText
 
 /** One choice in an [EntityPicker]. */
-data class PickerItem(val id: String, val title: String, val subtitle: String? = null, val avatarColor: Int? = null)
+data class PickerItem(val id: String, val title: String, val subtitle: String? = null)
 
 /**
- * Searchable single-choice picker with a "Create …" row (SPEC 2, "No dead ends"): typing a name that doesn't exist
+ * Searchable single-choice picker with a "Create …" row (SPEC 2): typing a name that doesn't exist
  * offers to create it, so an empty library never blocks. [noneLabel] adds a "none" choice (selects null).
  */
 @Composable
@@ -45,12 +46,14 @@ fun EntityPicker(
     onCreate: ((String) -> Unit)?,
     onDismiss: () -> Unit,
     noneLabel: String? = null,
-    /** Names of hidden entries: not offered, but typing one must not create a duplicate (SPEC 7). */
-    hiddenNames: List<String> = emptyList(),
+    /** Names that count as existing for the create row; null = the titles of [items]. */
+    existingNames: List<String>? = null,
+    /** Text of the create row, with the typed name as argument. */
+    @StringRes createLabel: Int = R.string.picker_create_new,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val matches = items.filter { SearchText.matches(query, listOfNotNull(it.title, it.subtitle)) }
-    val exact = (items.map { it.title } + hiddenNames).any { SearchText.fold(it) == SearchText.fold(query.trim()) }
+    val exact = (existingNames ?: items.map { it.title }).any { SearchText.fold(it) == SearchText.fold(query.trim()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -67,7 +70,7 @@ fun EntityPicker(
                     if (onCreate != null && query.isNotBlank() && !exact) {
                         item {
                             ListItem(
-                                headlineContent = { Text(stringResource(R.string.picker_create_new, query.trim())) },
+                                headlineContent = { Text(stringResource(createLabel, query.trim())) },
                                 leadingContent = { Icon(Icons.Outlined.Add, null) },
                                 modifier = Modifier.clickable { onCreate(query.trim()) },
                             )
@@ -82,7 +85,6 @@ fun EntityPicker(
                         ListItem(
                             headlineContent = { Text(item.title) },
                             supportingContent = item.subtitle?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
-                            leadingContent = item.avatarColor?.let { { Avatar(item.title, it, size = 32.dp) } },
                             modifier = Modifier.clickable { onPick(item.id) },
                         )
                     }

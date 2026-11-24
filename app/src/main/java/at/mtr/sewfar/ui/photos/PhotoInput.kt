@@ -16,7 +16,9 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.io.InputStream
 import java.util.UUID
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Opens an input stream on a picked or captured image; called several times by the pipeline. */
 typealias ImageSource = () -> InputStream
@@ -24,7 +26,7 @@ typealias ImageSource = () -> InputStream
 private fun Context.source(uri: Uri): ImageSource = { requireNotNull(contentResolver.openInputStream(uri)) { "Cannot open $uri" } }
 
 /**
- * Camera via the system camera app (SPEC 3.6): no CAMERA permission. The photo goes to a temp file in the cache,
+ * Camera via the system camera app (SPEC 3.5): no CAMERA permission. The photo goes to a temp file in the cache,
  * which is deleted after [onPhoto] returns or when capture is cancelled. Returns the launcher.
  */
 @Composable
@@ -39,7 +41,8 @@ fun rememberTakePhoto(onPhoto: suspend (ImageSource) -> Unit): () -> Unit {
         if (success && file.length() > 0) {
             scope.launch {
                 try {
-                    onPhoto { file.inputStream() }
+                    // Leaving the screen cancels its scope; finish storing the photo before the temp file goes.
+                    withContext(NonCancellable) { onPhoto { file.inputStream() } }
                 } finally {
                     file.delete()
                 }

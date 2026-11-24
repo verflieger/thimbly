@@ -1,9 +1,7 @@
 package at.mtr.sewfar
 
 import android.content.Context
-import at.mtr.sewfar.data.ListRepository
 import at.mtr.sewfar.data.MachineRepository
-import at.mtr.sewfar.data.SetupRepository
 import at.mtr.sewfar.data.PatternRepository
 import at.mtr.sewfar.data.PersonRepository
 import at.mtr.sewfar.data.PhotoRepository
@@ -15,7 +13,6 @@ import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
 import at.mtr.sewfar.data.photos.PhotoFiles
 import at.mtr.sewfar.data.photos.PhotoLoader
-import at.mtr.sewfar.data.seed.Seeder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -37,9 +34,7 @@ class AppContainer(private val context: Context) {
     val projects: ProjectRepository by lazy { ProjectRepository(database, deleter, time) }
     val patterns: PatternRepository by lazy { PatternRepository(database, deleter, time) }
     val persons: PersonRepository by lazy { PersonRepository(database, deleter, time) }
-    val lists: ListRepository by lazy { ListRepository(database, deleter, time) }
     val machines: MachineRepository by lazy { MachineRepository(database, deleter, time) }
-    val setups: SetupRepository by lazy { SetupRepository(database, deleter, time) }
 
     private val photoFiles: PhotoFiles by lazy { PhotoFiles(context.filesDir) }
     val photos: PhotoRepository by lazy { PhotoRepository(database, deleter, photoFiles, time, appScope) }
@@ -48,7 +43,6 @@ class AppContainer(private val context: Context) {
     val backup: BackupRepository by lazy {
         BackupRepository(
             database, photoFiles, context.filesDir, context.cacheDir, time, versionName,
-            afterImport = { Seeder(database, time).seed() },
         )
     }
 
@@ -74,14 +68,9 @@ class AppContainer(private val context: Context) {
         }
     }
 
-    /** Adds missing built-in list entries (SPEC 1). Cheap when nothing is missing; called on start. */
-    fun seedInBackground() {
-        appScope.launch { Seeder(database, time).seed() }
-    }
-
     /**
-     * On start: finish or roll back a photo swap an interrupted import left behind (SPEC 9.2), then remove files of
-     * photos whose Undo window has passed and orphan files (SPEC 7). Order matters: the purge must see the final folder.
+     * On start: finish or roll back a photo swap an interrupted import left behind (SPEC 8.2), then remove files of
+     * photos whose Undo window has passed and orphan files (SPEC 6). Order matters: the purge must see the final folder.
      */
     fun purgePhotoFilesInBackground() {
         appScope.launch {

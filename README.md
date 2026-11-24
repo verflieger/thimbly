@@ -1,23 +1,19 @@
 # SewFar
 
-A private, offline Android diary for sewing projects: what you sewed, for whom, with which pattern, what you
-learned, and which machine settings worked.
+A private, offline Android tracker for sewing projects: what you are sewing, how long it takes, which pattern and
+machine settings you used, and how it turned out.
 
 The app is in English and German, following the phone's language or Android's per-app language setting.
 The full specification is in [SPEC.md](SPEC.md), later plans in [ROADMAP.md](ROADMAP.md).
 
-**Status:** v1.0 – all features of the [specification](SPEC.md) are in place.
-
 ## Features
 
-- **Projects:** status (idea → planned → in progress → paused → done), person, patterns with the size sewn,
-  fabrics, notes, tagged photos, a dated progress log, and a completion step with lessons learned and a rating.
-  "Sew again" starts a new project and shows what you learned last time.
-- **Patterns:** designer, category, sizes, format, shop link, suited fabrics, yardage per size; every project and
-  lesson for that pattern in one place.
-- **People:** who you sew for, with dated measurement history.
-- **Machines & setups:** your machines and reusable settings (stitch, tension, differential feed …) per purpose and
-  fabric, linked to the projects that used them.
+- **Projects** on one page: status (planned, in progress, done), a timer and manually added time, photos, patterns,
+  who it is for, machine settings, notes, and a rating with "what I learned" when done.
+- **Quick start:** "New project" opens the project directly; patterns, people, machines and settings are created
+  right from the project by typing a name.
+- **Library** (from the menu): patterns with photos, people, and machines with their reusable settings (stitch,
+  tensions, differential feed …), each with the projects that used them.
 - **Backup:** zip export/import, optional weekly automatic backup to a folder of your choice.
 
 ## Privacy

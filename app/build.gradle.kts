@@ -17,8 +17,8 @@ android {
         minSdk = 34
         targetSdk = 37
         // Raise versionCode for every APK given to others: Android only installs higher versions as updates.
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "0.0.2"
     }
 
     // The release key lives outside the repository. Without it the release APK stays unsigned and can't be
@@ -79,7 +79,7 @@ ksp {
 android.sourceSets.getByName("debug").assets.directories.add("$projectDir/schemas")
 
 /**
- * SPEC 1 / 12: the merged manifest must contain neither INTERNET (offline promise) nor CAMERA
+ * SPEC 1 / 10: the merged manifest must contain neither INTERNET (offline promise) nor CAMERA
  * (TakePicture throws SecurityException if CAMERA is declared but not granted). Runs before every assemble.
  */
 abstract class CheckForbiddenPermissions : DefaultTask() {

@@ -7,19 +7,16 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 /**
- * SPEC 8. Schema version 1 is frozen with the v1.0 release (`SchemaFreezeTest` pins its identity hash). Every
- * schema change from now on raises the version, ships a migration in [MIGRATIONS] and a migration test; the
- * database is never dropped.
+ * SPEC 7. Schema version 1 is frozen once released (`SchemaFreezeTest` pins its identity hash). Every schema change
+ * from then on raises the version, ships a migration in [MIGRATIONS] and a migration test; the database is never
+ * dropped.
  */
 @Database(
     version = SewFarDatabase.VERSION,
     entities = [
-        PersonEntity::class, MeasurementTypeEntity::class, MeasurementSessionEntity::class, MeasurementValueEntity::class,
-        PatternCategoryEntity::class, PatternEntity::class, PatternYardageEntity::class,
-        ProjectEntity::class, ProjectPatternEntity::class, ProjectFabricEntity::class, LessonTagEntity::class,
-        ProjectLessonEntity::class, LogEntryEntity::class, PhotoEntity::class,
-        MachineEntity::class, MachineFieldEntity::class, PurposeEntity::class, SetupEntity::class,
-        SetupValueEntity::class, SetupUseEntity::class,
+        PersonEntity::class, PatternEntity::class, ProjectEntity::class, ProjectPatternEntity::class,
+        TimeEntryEntity::class, PhotoEntity::class, MachineEntity::class, SetupEntity::class,
+        SetupValueEntity::class, ProjectSetupEntity::class,
     ],
 )
 @TypeConverters(Converters::class)
@@ -27,7 +24,6 @@ abstract class SewFarDatabase : RoomDatabase() {
     abstract fun personDao(): PersonDao
     abstract fun patternDao(): PatternDao
     abstract fun projectDao(): ProjectDao
-    abstract fun listDao(): ListDao
     abstract fun photoDao(): PhotoDao
     abstract fun machineDao(): MachineDao
 
@@ -35,12 +31,21 @@ abstract class SewFarDatabase : RoomDatabase() {
         /** Current schema version. Raise it with every schema change (and add a migration). */
         const val VERSION = 1
 
-        /** Migrations between schema versions (none yet: version 1 is the first released schema). */
+        /** Migrations between schema versions (none yet). */
         val MIGRATIONS: Array<androidx.room.migration.Migration> = emptyArray()
 
-        fun create(context: Context): SewFarDatabase =
-            Room.databaseBuilder(context, SewFarDatabase::class.java, "sewfar.db")
+        /**
+         * The 1.0 prototype used `sewfar.db` with an incompatible schema that also had version 1; its data is not
+         * carried over (decided 2026-11-24), so this database has its own file and the old one is removed.
+         */
+        private const val FILE = "sewfar2.db"
+        private const val OLD_FILE = "sewfar.db"
+
+        fun create(context: Context): SewFarDatabase {
+            context.deleteDatabase(OLD_FILE)
+            return Room.databaseBuilder(context, SewFarDatabase::class.java, FILE)
                 .addMigrations(*MIGRATIONS)
                 .build()
+        }
     }
 }

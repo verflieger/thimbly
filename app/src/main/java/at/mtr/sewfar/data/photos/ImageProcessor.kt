@@ -13,7 +13,7 @@ import kotlin.math.min
 class PhotoImportException(message: String, cause: Throwable? = null) : IOException(message, cause)
 
 /**
- * Photo pipeline (SPEC 3.6): decode, apply EXIF orientation, downscale so the long edge is at most [MaxEdge] px,
+ * Photo pipeline (SPEC 3.5): decode, apply EXIF orientation, downscale so the long edge is at most [MaxEdge] px,
  * re-encode as JPEG ([Quality]). Re-encoding writes no EXIF, so location and all other metadata are dropped.
  */
 object ImageProcessor {

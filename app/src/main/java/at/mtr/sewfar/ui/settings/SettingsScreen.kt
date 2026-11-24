@@ -24,15 +24,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.mtr.sewfar.R
-import at.mtr.sewfar.data.ListKind
 import at.mtr.sewfar.AppContainer
-import androidx.compose.foundation.clickable
 import kotlinx.coroutines.launch
 
-/** Settings (SPEC 10). Lists and backup sections follow in later milestones. */
+/** Settings (SPEC 9). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(container: AppContainer, onBack: () -> Unit, onOpenList: (ListKind) -> Unit) {
+fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
     val settings = container.settings
     val versionName = container.versionName
     val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle(initialValue = false)
@@ -61,14 +59,6 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit, onOpenList: (Lis
                     )
                 },
             )
-            HorizontalDivider()
-            SectionHeader(stringResource(R.string.settings_lists))
-            ListKind.entries.forEach { kind ->
-                ListItem(
-                    headlineContent = { Text(stringResource(kind.title)) },
-                    modifier = Modifier.clickable { onOpenList(kind) },
-                )
-            }
             HorizontalDivider()
             SectionHeader(stringResource(R.string.settings_backup))
             BackupSection(container)

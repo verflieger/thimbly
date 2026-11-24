@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-/** User preferences (SPEC 10). Not part of the backup (SPEC 9.1). */
+/** User preferences (SPEC 9). Not part of the backup (SPEC 8.1). */
 class SettingsRepository(private val store: DataStore<Preferences>) {
     /** Material You colours from the wallpaper instead of SewFar's own scheme (SPEC 1). */
     val dynamicColor: Flow<Boolean> = store.data.map { it[DynamicColor] ?: false }
@@ -37,7 +37,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         }
     }
 
-    // ---- Automatic backup (SPEC 9.2) ----
+    // ---- Automatic backup (SPEC 8.2) ----
 
     /** SAF tree URI of the chosen folder; null = automatic backup off. */
     val autoBackupFolder: Flow<String?> = store.data.map { it[AutoBackupFolder] }

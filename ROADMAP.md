@@ -1,7 +1,7 @@
 # SewFar roadmap
 
-v1 is specified in [SPEC.md](SPEC.md). This file collects what comes after, roughly in priority order. Nothing here
-is decided in detail yet.
+The current app is specified in [SPEC.md](SPEC.md). This file collects what may come after, roughly in priority
+order. Nothing here is decided in detail. Every addition must keep the project page simple (SPEC, guiding rule).
 
 ## Principles
 
@@ -12,25 +12,26 @@ is decided in detail yet.
 
 ## v1.x — small additions
 
-- Deadlines on projects (event/birthday), shown on cards; optional reminder notification.
-- Costs per project (fabric, notions, pattern).
-- Statistics: projects finished per year/month, per person, most-sewn patterns, paused projects (UFOs).
-- Measurement history chart per person; "size suggestion" by comparing measurements with a pattern's size chart.
+- Fabrics (see v2) are the next big step: they become a second home tab (Projects | Fabrics).
+- Deadlines on projects (event/birthday), shown on cards.
+- Costs per project.
+- Statistics: time and projects per month/year, most-sewn patterns.
+- Measurements per person; size sewn per pattern.
 - Pattern PDFs stored in the app (separate, optional backup part because of size).
 
 ## v2 — fabric stash
 
 - Fabric entity: name, type, composition, weight (g/m²), width, colour, print, amount, where bought, price, storage
   location, photos.
-- Project fabric lines link to stash fabrics; finishing a project subtracts the used amount.
-- Setups link to fabrics instead of free text; "which setup worked for this fabric?".
+- Projects link stash fabrics (like patterns today); finishing a project subtracts the used amount.
+- Machine settings link to fabrics: "which setting worked for this fabric?".
 - Notions (zippers, elastic, ribbing/Bündchen) and a ribbing calculator.
 - Shopping list.
 
 ## v3 — sync & online (opt-in)
 
-- Merge import by UUID + `updatedAt` (data model is prepared: UUIDs, deterministic seed IDs, timestamps,
-  tombstones, immutable photo files).
+- Merge import by UUID + `updatedAt` (data model is prepared: UUIDs, timestamps, tombstones, immutable photo
+  files).
 - Last-writer-wins on device clocks is fragile (wrong clocks, offline edits on two phones). Consider a hybrid logical
   clock or per-field merge before building sync.
 - Optional sync via WebDAV/Nextcloud (requires adding the INTERNET permission; off by default).
@@ -38,4 +39,4 @@ is decided in detail yet.
 
 ## Distribution
 
-- GitHub Releases first; F-Droid later (fastlane metadata en-US/de-DE prepared with v1.0).
+- GitHub Releases first; F-Droid later (fastlane metadata en-US/de-DE prepared).

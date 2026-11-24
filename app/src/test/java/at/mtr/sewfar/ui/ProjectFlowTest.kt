@@ -1,9 +1,7 @@
 package at.mtr.sewfar.ui
 
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -16,7 +14,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** SPEC 2, 3.1–3.3, 7: create a project with a pattern made in the picker, change status, delete and undo. */
+/** SPEC 3: new project without a dialog, pattern and machine setting created inline, timer, delete and undo. */
 @RunWith(RobolectricTestRunner::class)
 // Default Robolectric screen (320x470dp): a larger qualifier made dialogs with text fields never go idle.
 // Off-screen controls are reached with performScrollTo.
@@ -25,38 +23,51 @@ class ProjectFlowTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     private fun waitFor(text: String) =
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+
+    private fun waitGone(text: String) =
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isEmpty() }
 
     private fun back() = compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
 
     @Test
-    fun createChangeStatusDeleteAndUndo() {
-        compose.onNodeWithContentDescription("New project").performClick()
-        compose.onNodeWithTag("newProjectName").performTextInput("Hoodie for Josi")
-        compose.onNodeWithText("Add pattern").performScrollTo().performClick()
+    fun createWithPatternSettingAndTimerThenDeleteAndUndo() {
+        compose.onNodeWithTag("newProject").performClick()
+        compose.onNodeWithTag("name").performTextInput("Hoodie")
+
+        compose.onNodeWithTag("addPattern").performScrollTo().performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Raglan")
         compose.onNodeWithText("Create “Raglan”").performClick()
         waitFor("Raglan")
-        compose.onNodeWithText("Create").performClick()
 
-        // Detail screen of the new project.
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Size sewn")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("statusChip").performClick()
-        compose.onNodeWithText("In progress").performClick()
-        waitFor("In progress")
+        // A machine setting with a new machine, straight from the project.
+        compose.onNodeWithTag("addSetup").performScrollTo().performClick()
+        compose.onNodeWithTag("pickerSearch").performTextInput("Jersey seam")
+        compose.onNodeWithText("New setting “Jersey seam”").performClick()
+        compose.onNodeWithTag("pickerSearch").performTextInput("Overlock")
+        compose.onNodeWithText("Create “Overlock”").performClick()
+        waitFor("Stitch length") // setup screen of a sewing machine (default type)
         back()
+        waitFor("Jersey seam · Overlock")
 
-        waitFor("In progress · 1")
-        compose.onNodeWithText("Hoodie for Josi").assertIsDisplayed()
+        compose.onNodeWithTag("timer").performScrollTo().performClick()
+        waitFor("Stop")
+        back()
+        waitFor("In progress (1)")
 
-        // Delete from the detail screen, then undo from the snackbar.
-        compose.onNodeWithText("Hoodie for Josi").performClick()
-        waitFor("Size sewn")
-        compose.onNodeWithContentDescription("More options").performClick()
-        compose.onNodeWithText("Delete project").performClick()
+        compose.onNodeWithText("Hoodie").performClick()
+        compose.onNodeWithTag("delete").performClick()
         waitFor("Project deleted")
-        waitFor("No projects yet.")
         compose.onNodeWithText("Undo").performClick()
-        waitFor("Hoodie for Josi")
+        waitFor("Hoodie")
+    }
+
+    @Test
+    fun leavingAnEmptyNewProjectDiscardsIt() {
+        compose.onNodeWithTag("newProject").performClick()
+        waitFor("Sewn for")
+        back()
+        waitFor("No projects yet.")
+        waitGone("Untitled project")
     }
 }

@@ -14,7 +14,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 
-/** SPEC 3.6: orientation applied, long edge at most 2048 px, no upscaling, EXIF (incl. location) removed. */
+/** SPEC 3.5: orientation applied, long edge at most 2048 px, no upscaling, EXIF (incl. location) removed. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ImageProcessorTest {
