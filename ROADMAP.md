@@ -10,22 +10,6 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 - Data guarantee: every update migrates the database and reads all older backups.
 - No ads, no shop content, no "premium".
 
-## Next: calmer UI
-
-Less to read, decide and confirm (2026-11-25 review). In order:
-
-1. Done needs no dialog and no extra fields: drop the finish dialog, the star rating and "What I learned"; the
-   project's Notes are the one place for it. Old `learned` text is appended to the notes once (schema 2 migration);
-   the `rating` and `learned` columns stay in the frozen schema, unused.
-2. No "Discard changes?" in text dialogs: a tap outside does nothing, Cancel discards. Library forms save on back.
-3. Home: a settings icon replaces the ⋮ menu that holds only Settings.
-4. One way to edit: library pages edit texts like the project page (tap a text → text dialog) instead of a whole-page
-   form; measurements and machine-setting values keep a form.
-5. Photo actions (cover, delete) as icons in the photo viewer; long-press in the strip stays as a shortcut.
-6. Accessibility for older users: check at 200 % font size (two home buttons, chips, cards with `bodySmall` text),
-   with TalkBack (every action labelled, no long-press-only action, see 5), and touch targets of at least 48 dp
-   (the chips' × is an 18 dp icon). Consider larger default text on cards and a Compose UI test at font scale 2.
-
 ## v1.x — small additions
 
 - Fabrics (see v2) are the next big step: they become a fourth Library tab (Patterns, Fabrics, People, Machines);
@@ -38,7 +22,7 @@ Less to read, decide and confirm (2026-11-25 review). In order:
   tag colours or AND/OR.
 - Statistics: time and projects per month/year, most-sewn patterns.
 - Size per pattern for outfits with several patterns (today: one size per project).
-- "Sew again" mark on patterns (replaces the dropped project rating, see Next 1); the pattern list can filter by it.
+- "Sew again" mark on patterns (replaces the project rating dropped on 2026-11-25); the pattern list can filter by it.
 - Share a photo from the photo viewer (Android share sheet: gallery, messenger, mail; no new permission). Today
   photos only leave the app inside a backup zip, named by ID and resized to 2048 px.
 - Pattern PDFs stored in the app (separate, optional backup part because of size).
