@@ -21,8 +21,11 @@ class PhotoLoader(private val files: PhotoFiles) {
         BitmapFactory.decodeFile(file.path, bounds)
         var sample = 1
         while (max(bounds.outWidth, bounds.outHeight) / (sample * 2) >= minEdgePx) sample *= 2
-        val bitmap = BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return null
-        cache.put(key, bitmap)
+        fun decode(s: Int) = BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = s })
+        // A full-size fine photo is ~50 MB; with low memory the viewer shows it at half size instead of crashing.
+        val bitmap = try { decode(sample) } catch (_: OutOfMemoryError) { decode(sample * 2) } ?: return null
+        // Fine photos at full size would push every thumbnail out; normal ones (≤ 16 MB) are still cached.
+        if (bitmap.allocationByteCount <= CacheBytes / 2) cache.put(key, bitmap)
         return bitmap
     }
 

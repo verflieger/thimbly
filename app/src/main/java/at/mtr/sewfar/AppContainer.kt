@@ -12,6 +12,7 @@ import at.mtr.sewfar.data.backup.BackupRepository
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.SoftDeleter
+import at.mtr.sewfar.data.photos.ImageProcessor
 import at.mtr.sewfar.data.photos.PhotoFiles
 import at.mtr.sewfar.data.photos.PhotoLoader
 import kotlinx.coroutines.CoroutineScope
@@ -39,7 +40,11 @@ class AppContainer(private val context: Context) {
     val machines: MachineRepository by lazy { MachineRepository(database, deleter, time) }
 
     private val photoFiles: PhotoFiles by lazy { PhotoFiles(context.filesDir) }
-    val photos: PhotoRepository by lazy { PhotoRepository(database, deleter, photoFiles, time) }
+    val photos: PhotoRepository by lazy {
+        PhotoRepository(database, deleter, photoFiles, time) {
+            if (settings.finePhotos.first()) ImageProcessor.FineEdge else ImageProcessor.MaxEdge
+        }
+    }
     val photoLoader: PhotoLoader by lazy { PhotoLoader(photoFiles) }
 
     val backup: BackupRepository by lazy {

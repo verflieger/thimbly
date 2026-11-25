@@ -35,8 +35,8 @@ class ImageProcessorTest {
         return file
     }
 
-    private fun process(file: File): Pair<Int, Int> {
-        ImageProcessor.process({ file.inputStream() }, output)
+    private fun process(file: File, maxEdge: Int = ImageProcessor.MaxEdge): Pair<Int, Int> {
+        ImageProcessor.process({ file.inputStream() }, output, maxEdge)
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(output.path, bounds)
         return bounds.outWidth to bounds.outHeight
@@ -46,6 +46,18 @@ class ImageProcessorTest {
     fun downscalesLongEdgeTo2048() {
         assertEquals(2048 to 1536, process(input(4000, 3000)))
         assertEquals(1152 to 2048, process(input(2700, 4800)))
+    }
+
+    @Test
+    fun fineKeepsUpTo4096() {
+        assertEquals(4096 to 2048, process(input(5000, 2500), ImageProcessor.FineEdge))
+    }
+
+    @Test
+    fun largePhotosAreDecodedWithinTheMemoryBudget() {
+        assertEquals(1, ImageProcessor.sampleSize(4080, 3072, ImageProcessor.FineEdge)) // 12.5 MP: full size
+        assertEquals(2, ImageProcessor.sampleSize(8160, 6120, ImageProcessor.FineEdge)) // 50 MP: half size
+        assertEquals(2, ImageProcessor.sampleSize(8160, 6120, ImageProcessor.MaxEdge)) // normal: unchanged
     }
 
     @Test

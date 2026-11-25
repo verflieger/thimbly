@@ -46,6 +46,9 @@
     <string name="person_deleted">Person deleted</string>
     <string name="action_add">Add</string>
     <string name="action_delete">Delete</string>
+    <string name="settings_photos">Photos</string>
+    <string name="settings_fine_photos">Fine photos</string>
+    <string name="settings_fine_photos_summary">Store new photos at up to 4096 px instead of 2048 px for sharper zoom. Each photo takes about 3–4 MB.</string>
     <string name="settings_backup">Backup</string>
     <string name="backup_export">Save backup</string>
     <string name="backup_share">Share backup</string>

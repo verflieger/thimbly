@@ -10,11 +10,11 @@ class PhotoFiles(filesDir: File) {
     fun file(photoId: String) = File(dir, "$photoId.jpg")
 
     /** Processes the image and stores it under [photoId]; atomic, so a crash never leaves a half-written photo. */
-    fun write(photoId: String, open: () -> InputStream) {
+    fun write(photoId: String, maxEdge: Int = ImageProcessor.MaxEdge, open: () -> InputStream) {
         dir.mkdirs()
         val temp = File(dir, "$photoId.jpg.tmp")
         try {
-            ImageProcessor.process(open, temp)
+            ImageProcessor.process(open, temp, maxEdge)
             if (!temp.renameTo(file(photoId))) throw PhotoImportException("Could not store photo")
         } finally {
             temp.delete()

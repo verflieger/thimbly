@@ -5,6 +5,7 @@ import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.PhotoEntity
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
+import at.mtr.sewfar.data.photos.ImageProcessor
 import at.mtr.sewfar.data.photos.PhotoFiles
 import at.mtr.sewfar.domain.Ids
 import at.mtr.sewfar.domain.PhotoOwner
@@ -23,6 +24,8 @@ class PhotoRepository(
     private val deleter: SoftDeleter,
     private val files: PhotoFiles,
     private val time: TimeSource,
+    /** Long edge for new photos (SPEC 3.5): normal or fine, from the settings. */
+    private val maxEdge: suspend () -> Int = { ImageProcessor.MaxEdge },
 ) {
     private val dao = db.photoDao()
 
@@ -69,8 +72,9 @@ class PhotoRepository(
         files.stored().forEach { (id, modified) -> if (id !in known && modified < cutoff) files.delete(id) }
     }
 
-    private suspend fun store(open: () -> InputStream): String = withContext(Dispatchers.IO) {
-        Ids.random().also { id -> files.write(id, open) }
+    private suspend fun store(open: () -> InputStream): String {
+        val edge = maxEdge()
+        return withContext(Dispatchers.IO) { Ids.random().also { id -> files.write(id, edge, open) } }
     }
 }
 

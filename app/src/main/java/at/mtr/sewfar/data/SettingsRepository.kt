@@ -24,6 +24,13 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[DynamicColor] = enabled }
     }
 
+    /** New photos at up to 4096 px instead of 2048 px (SPEC 3.5). */
+    val finePhotos: Flow<Boolean> = store.data.map { it[FinePhotos] ?: false }
+
+    suspend fun setFinePhotos(enabled: Boolean) {
+        store.edit { it[FinePhotos] = enabled }
+    }
+
     /** Collapsed sections of the project list (SPEC 3.1); Done is collapsed until the user opens it. */
     val collapsedSections: Flow<Set<ProjectStatus>> = store.data.map { prefs ->
         prefs[CollapsedSections]?.mapNotNull { name -> ProjectStatus.entries.firstOrNull { it.name == name } }?.toSet()
@@ -69,6 +76,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val LastAutoBackupError = stringPreferencesKey("last_auto_backup_error")
         private val CollapsedSections = stringSetPreferencesKey("collapsed_sections")
         private val DynamicColor = booleanPreferencesKey("dynamic_color")
+        private val FinePhotos = booleanPreferencesKey("fine_photos")
 
         fun create(context: Context) = SettingsRepository(context.applicationContext.dataStore)
     }

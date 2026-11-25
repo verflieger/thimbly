@@ -87,7 +87,7 @@ private fun ZoomablePhoto(photoId: String, active: Boolean) {
     }
     PhotoImage(
         photoId,
-        minEdgePx = Int.MAX_VALUE, // full stored size (at most 2048 px)
+        minEdgePx = Int.MAX_VALUE, // full stored size (at most 4096 px with fine photos)
         contentScale = ContentScale.Fit,
         modifier = Modifier
             .fillMaxSize()

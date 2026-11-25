@@ -35,6 +35,15 @@ class PhotoRepositoryTest {
     private suspend fun cover(projectId: String) = coverOf(photosOf(PhotoOwner.PROJECT, projectId), t.projects.get(projectId)!!.coverPhotoId)
 
     @Test
+    fun finePhotosSettingReachesTheStoredFile() = runTest {
+        val fine = PhotoRepository(t.db, t.deleter, t.photoFiles, t.time) { at.mtr.sewfar.data.photos.ImageProcessor.FineEdge }
+        val id = fine.add(PhotoOwner.PROJECT, t.projects.create("Coat")) { TestDb.jpeg(5000, 2500).inputStream() }
+        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeFile(t.photoFiles.file(id).path, bounds)
+        assertEquals(4096, bounds.outWidth)
+    }
+
+    @Test
     fun projectPhotosAreStoredInOrderAndTouchProject() = runTest {
         val projectId = t.projects.create("Dress")
         val before = t.projects.get(projectId)!!.lastActivityAt

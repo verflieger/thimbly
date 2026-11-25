@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,6 +35,7 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
     val settings = container.settings
     val versionName = container.versionName
     val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle(initialValue = false)
+    val finePhotos by settings.finePhotos.collectAsStateWithLifecycle(initialValue = false)
     val scope = rememberCoroutineScope()
     Scaffold(
         topBar = {
@@ -56,6 +58,19 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
                     Switch(
                         checked = dynamicColor,
                         onCheckedChange = { enabled -> scope.launch { settings.setDynamicColor(enabled) } },
+                    )
+                },
+            )
+            HorizontalDivider()
+            SectionHeader(stringResource(R.string.settings_photos))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_fine_photos)) },
+                supportingContent = { Text(stringResource(R.string.settings_fine_photos_summary)) },
+                trailingContent = {
+                    Switch(
+                        checked = finePhotos,
+                        onCheckedChange = { enabled -> scope.launch { settings.setFinePhotos(enabled) } },
+                        modifier = Modifier.testTag("finePhotos"),
                     )
                 },
             )

@@ -104,7 +104,8 @@ text is not dropped without asking). Both stay editable on the project page whil
   "Take photo" or "From gallery"; newest photo first. Tap opens the full-screen viewer (swipe, pinch zoom); long-press offers "Use as cover" (project)
   and delete (with Undo).
 - Cover: the pinned photo, otherwise the newest one.
-- Pipeline: decode, apply EXIF orientation, downscale to at most 2048 px on the long edge, re-encode as JPEG 85 (drops
+- Pipeline: decode, apply EXIF orientation, downscale to at most 2048 px on the long edge (4096 px
+  with the "Fine photos" setting, §9; photos already stored keep their size), re-encode as JPEG 85 (drops
   all EXIF, including location), store as `filesDir/photos/<photoId>.jpg`. The row is inserted after the file is
   written. A deleted photo's file is removed with its row after the 60 s Undo window (§6); files without a row
   (e.g. after a crash) are removed once older than that window.
@@ -212,7 +213,7 @@ are rejected with their own message.
 
 ## 9. Settings
 
-Appearance (dynamic colour), Backup (§8.2, plus the note that switching phones needs a manual backup), About
+Appearance (dynamic colour), Photos ("Fine photos": new photos at up to 4096 px, §3.5), Backup (§8.2, plus the note that switching phones needs a manual backup), About
 (version, licence).
 
 ## 10. Quality
