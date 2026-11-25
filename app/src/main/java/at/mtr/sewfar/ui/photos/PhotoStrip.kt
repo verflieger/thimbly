@@ -7,6 +7,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.outlined.AddAPhoto
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -30,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -41,7 +44,10 @@ import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.SectionLabel
 import kotlinx.coroutines.launch
 
-/** Photos of a pattern (SPEC 3.5): camera and gallery buttons, newest first; long-press deletes. */
+/**
+ * Photos of a project or pattern (SPEC 3.5): "Add photo" tile, newest first; tap opens, long-press deletes (with
+ * Undo) and, if [setCover] is given, pins or unpins the cover. [coverId] gets a star, [pinnedId] is the pinned one.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PhotoStrip(
@@ -49,6 +55,9 @@ fun PhotoStrip(
     add: suspend (List<ImageSource>) -> Int,
     delete: suspend (String) -> DeletionToken?,
     onOpen: (String) -> Unit,
+    coverId: String? = null,
+    pinnedId: String? = null,
+    setCover: ((String?) -> Unit)? = null,
 ) {
     val messages = LocalMessages.current
     val failedText = stringResource(R.string.photo_import_failed)
@@ -65,12 +74,24 @@ fun PhotoStrip(
             items(photos.reversed(), key = { it.id }) { photo ->
                 var menuOpen by remember { mutableStateOf(false) }
                 Box {
-                    PhotoImage(
-                        photo.id, minEdgePx = px,
-                        modifier = Modifier.size(96.dp).clip(RoundedCornerShape(8.dp))
-                            .combinedClickable(onClick = { onOpen(photo.id) }, onLongClick = { menuOpen = true }),
-                    )
+                    Box(Modifier.size(96.dp).clip(RoundedCornerShape(8.dp)).combinedClickable(onClick = { onOpen(photo.id) }, onLongClick = { menuOpen = true })) {
+                        PhotoImage(photo.id, minEdgePx = px, modifier = Modifier.size(96.dp))
+                        if (photo.id == coverId) {
+                            Icon(
+                                Icons.Outlined.Star, stringResource(R.string.photo_cover), tint = Color.White,
+                                modifier = Modifier.align(Alignment.BottomStart).background(Color.Black.copy(alpha = 0.5f)).padding(2.dp).size(14.dp),
+                            )
+                        }
+                    }
                     DropdownMenu(menuOpen, onDismissRequest = { menuOpen = false }) {
+                        if (setCover != null) {
+                            val pinned = photo.id == pinnedId
+                            DropdownMenuItem(
+                                text = { Text(stringResource(if (pinned) R.string.photo_unpin_cover else R.string.photo_set_cover)) },
+                                leadingIcon = { Icon(Icons.Outlined.Star, null) },
+                                onClick = { menuOpen = false; setCover(if (pinned) null else photo.id) },
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.photo_delete)) },
                             leadingIcon = { Icon(Icons.Outlined.Delete, null) },

@@ -145,6 +145,7 @@ Name, type (sewing machine, overlocker, coverstitch, embroidery, other), notes, 
 ## 6. Delete and undo
 
 - Delete = soft delete with cascade; the snackbar offers Undo, which restores exactly the rows of that deletion.
+  The Undo snackbar closes after at most 50 s (also with long accessibility timeouts), before the purge.
   A deletion never contains a running timer (§3.3), so Undo needs no further checks.
 - **Purge (2026-11-25):** 60 s after a deletion (and on every start) rows deleted longer ago are removed for good,
   children first, together with any row that still refers to them through the cascade. Each removed row is recorded

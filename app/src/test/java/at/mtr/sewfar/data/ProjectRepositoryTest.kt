@@ -118,6 +118,18 @@ class ProjectRepositoryTest {
     }
 
     @Test
+    fun relinkingARemovedSettingRevivesItsRow() = runTest {
+        val project = t.projects.create("A")
+        val setup = t.machines.createSetup(t.machines.create("M"), "Hem")
+        t.projects.addSetup(project, setup)
+        val link = t.projects.observeSetups(project).first().single()
+        t.projects.removeSetup(link.linkId)
+        t.projects.addSetup(project, setup)
+        assertEquals(link.linkId, t.projects.observeSetups(project).first().single().linkId)
+        assertEquals(1, t.count("project_setup", live = false))
+    }
+
+    @Test
     fun concurrentEditsOfDifferentFieldsAreAllKept() = runBlocking {
         val id = t.projects.create("A")
         listOf(

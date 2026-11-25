@@ -55,6 +55,7 @@ import at.mtr.sewfar.ui.common.EntityPicker
 import at.mtr.sewfar.ui.common.LabeledTextField
 import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.TextDialog
+import at.mtr.sewfar.ui.photos.PhotoStrip
 import at.mtr.sewfar.ui.common.PickerItem
 import at.mtr.sewfar.ui.common.SectionLabel
 import at.mtr.sewfar.ui.common.format
@@ -139,7 +140,10 @@ fun ProjectDetailScreen(
 
             TimeSection(state, viewModel, onRemove = { id -> removeWithUndo { viewModel.deleteTime(id) } })
 
-            ProjectPhotos(state, viewModel, onOpenPhoto)
+            PhotoStrip(
+                state.photos, viewModel::addPhotos, viewModel::deletePhoto, onOpenPhoto,
+                coverId = state.coverPhotoId, pinnedId = project.coverPhotoId, setCover = viewModel::setCover,
+            )
 
             Links(stringResource(R.string.project_patterns), stringResource(R.string.project_add_pattern), "addPattern",
                 state.patterns.map { Triple(it.linkId, it.name, it.patternId) },

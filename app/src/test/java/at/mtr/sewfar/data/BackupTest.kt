@@ -336,6 +336,6 @@ class BackupTest {
     @Test
     fun autoBackupReportsUnavailableFolder() = runTest {
         val error = runCatching { AutoBackup(backup).run(FakeFolder(accessible = false), LocalDateTime.now()) }.exceptionOrNull()
-        assertTrue(error is IOException && error.message == AutoBackup.FOLDER_UNAVAILABLE)
+        assertTrue(error is IOException && error.message == AutoBackup.ERROR_FOLDER)
     }
 }

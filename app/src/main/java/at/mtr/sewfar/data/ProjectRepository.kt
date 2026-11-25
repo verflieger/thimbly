@@ -88,17 +88,11 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
 
     /** Links a pattern (at most once per project). Re-adding a removed pattern revives its link (SPEC 1). */
     suspend fun addPattern(projectId: String, patternId: String) = db.withTransaction {
-        val now = time.nowMillis()
-        val existing = dao.getPatternAny(projectId, patternId)
-        when {
-            existing == null -> dao.insertPattern(
-                ProjectPatternEntity(Ids.random(), projectId, patternId, dao.nextPatternOrder(projectId), createdAt = now, updatedAt = now),
-            )
-            existing.deletedAt != null ->
-                dao.updatePattern(existing.copy(sortOrder = dao.nextPatternOrder(projectId), deletedAt = null, updatedAt = now))
-            else -> return@withTransaction
-        }
-        dao.touch(projectId, now)
+        addLink(
+            projectId, dao.getPatternAny(projectId, patternId), { it.deletedAt != null },
+            insert = { now -> dao.insertPattern(ProjectPatternEntity(Ids.random(), projectId, patternId, dao.nextPatternOrder(projectId), createdAt = now, updatedAt = now)) },
+            revive = { old, now -> dao.updatePattern(old.copy(sortOrder = dao.nextPatternOrder(projectId), deletedAt = null, updatedAt = now)) },
+        )
     }
 
     suspend fun removePattern(linkId: String): DeletionToken? = db.withTransaction {
@@ -111,15 +105,29 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
     fun observeSetups(projectId: String): Flow<List<LinkedSetup>> = dao.observeSetups(projectId)
 
     suspend fun addSetup(projectId: String, setupId: String) = db.withTransaction {
+        addLink(
+            projectId, dao.getSetupAny(projectId, setupId), { it.deletedAt != null },
+            insert = { now -> dao.insertSetup(ProjectSetupEntity(Ids.random(), projectId, setupId, dao.nextSetupOrder(projectId), createdAt = now, updatedAt = now)) },
+            revive = { old, now -> dao.updateSetup(old.copy(sortOrder = dao.nextSetupOrder(projectId), deletedAt = null, updatedAt = now)) },
+        )
+    }
+
+    /**
+     * Links at most once per project: inserts a new link, or revives [existing] if it was removed (its row still
+     * blocks the unique index, SPEC 1); a live link stays as it is. Any change counts as project activity.
+     */
+    private suspend inline fun <T : Any> addLink(
+        projectId: String,
+        existing: T?,
+        removed: (T) -> Boolean,
+        insert: (now: Long) -> Unit,
+        revive: (old: T, now: Long) -> Unit,
+    ) {
         val now = time.nowMillis()
-        val existing = dao.getSetupAny(projectId, setupId)
         when {
-            existing == null -> dao.insertSetup(
-                ProjectSetupEntity(Ids.random(), projectId, setupId, dao.nextSetupOrder(projectId), createdAt = now, updatedAt = now),
-            )
-            existing.deletedAt != null ->
-                dao.updateSetup(existing.copy(sortOrder = dao.nextSetupOrder(projectId), deletedAt = null, updatedAt = now))
-            else -> return@withTransaction
+            existing == null -> insert(now)
+            removed(existing) -> revive(existing, now)
+            else -> return
         }
         dao.touch(projectId, now)
     }

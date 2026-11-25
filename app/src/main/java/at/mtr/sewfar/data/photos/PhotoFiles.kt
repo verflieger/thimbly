@@ -21,8 +21,10 @@ class PhotoFiles(filesDir: File) {
         }
     }
 
+    /** Also removes a temp file a crash left behind ([stored] lists it under the same ID). */
     fun delete(photoId: String) {
         file(photoId).delete()
+        File(dir, "$photoId.jpg.tmp").delete()
     }
 
     /** IDs of all stored photo files, with their last-modified time. */

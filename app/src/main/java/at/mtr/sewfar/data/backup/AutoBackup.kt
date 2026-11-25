@@ -32,7 +32,7 @@ interface BackupFolder {
 class AutoBackup(private val backups: BackupRepository) {
     /** Runs one backup into [folder]; throws [IOException] with a user-facing reason on failure. */
     suspend fun run(folder: BackupFolder, now: LocalDateTime) {
-        if (!folder.isAccessible()) throw IOException(FOLDER_UNAVAILABLE)
+        if (!folder.isAccessible()) throw IOException(ERROR_FOLDER)
         val name = BackupRepository.fileName(Prefix, now)
         var complete = false
         try {
@@ -53,7 +53,6 @@ class AutoBackup(private val backups: BackupRepository) {
     companion object {
         const val Prefix = "sewfar-auto"
         const val Keep = 5
-        const val FOLDER_UNAVAILABLE = "folder_unavailable"
 
         /** Stored error codes, shown translated in Settings. */
         const val ERROR_FOLDER = "folder_unavailable"
@@ -127,7 +126,7 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) : CoroutineWo
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e // stopped by WorkManager: not a failure
         } catch (e: Exception) {
-            val code = if (e.message == AutoBackup.FOLDER_UNAVAILABLE) AutoBackup.ERROR_FOLDER else AutoBackup.ERROR_FAILED
+            val code = if (e.message == AutoBackup.ERROR_FOLDER) AutoBackup.ERROR_FOLDER else AutoBackup.ERROR_FAILED
             settings.recordAutoBackup(success = false, error = code, at = container.time.nowMillis())
             Result.success() // no retry storm: the error is shown and the next weekly run tries again
         }

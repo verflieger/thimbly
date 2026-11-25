@@ -156,7 +156,6 @@ interface ProjectDao {
 @Dao
 interface PhotoDao {
     @Insert suspend fun insert(photo: PhotoEntity)
-    @Update suspend fun update(photo: PhotoEntity)
 
     @Query("SELECT * FROM photo WHERE id = :id AND deletedAt IS NULL")
     suspend fun get(id: String): PhotoEntity?
@@ -169,8 +168,6 @@ interface PhotoDao {
 
     @Query("SELECT * FROM photo WHERE ownerType = :ownerType AND deletedAt IS NULL ORDER BY sortOrder")
     fun observeAllOfType(ownerType: PhotoOwner): Flow<List<PhotoEntity>>
-
-    /** Photos deleted before [cutoff]: their Undo window has passed, so the files can go (SPEC 6). */
 
     /** IDs of all photo rows, live or deleted. */
     @Query("SELECT id FROM photo")

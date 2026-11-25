@@ -1,5 +1,6 @@
 package at.mtr.sewfar.ui.projects
 
+import androidx.room.withTransaction
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.mtr.sewfar.AppContainer
@@ -97,8 +98,11 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
 
     /** Creates a setup on [machineId] (or on a new machine named [newMachineName]), links it and returns its ID. */
     suspend fun createSetup(title: String, machineId: String?, newMachineName: String?): String = run {
-        val machine = machineId ?: container.machines.create(newMachineName.orEmpty())
-        container.machines.createSetup(machine, title).also { projects.addSetup(id, it) }
+        // One transaction: a crash never leaves an empty machine or an unlinked setting.
+        container.database.withTransaction {
+            val machine = machineId ?: container.machines.create(newMachineName.orEmpty())
+            container.machines.createSetup(machine, title).also { projects.addSetup(id, it) }
+        }
     }
 
     suspend fun removeSetup(linkId: String): DeletionToken? = run { projects.removeSetup(linkId) }
