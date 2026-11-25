@@ -15,6 +15,7 @@ import at.mtr.sewfar.data.photos.PhotoFiles
 import at.mtr.sewfar.data.photos.PhotoLoader
 import java.io.File
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -47,6 +48,20 @@ class PhotoViewerTest {
         compose.onNodeWithText("1 / 3").assertIsDisplayed()
         compose.onNodeWithTag("photoPager").performTouchInput { swipeLeft() }
         compose.onNodeWithText("2 / 3").assertIsDisplayed()
+    }
+
+    @Test
+    fun deletesAndPinsTheShownPhoto() {
+        var deleted: String? = null
+        var pinned: String? = null
+        compose.setContent {
+            CompositionLocalProvider(LocalPhotoLoader provides PhotoLoader(files)) {
+                PhotoViewerScreen(ids, "p2", onClose = {}, onDelete = { deleted = it }, pinnedId = "p2", onSetCover = { pinned = it ?: "auto" })
+            }
+        }
+        compose.onNodeWithTag("photoDelete").performClick()
+        compose.onNodeWithContentDescription("Choose cover automatically").performClick() // p2 is pinned: unpin
+        assertEquals("p2" to "auto", deleted to pinned)
     }
 
     @Test

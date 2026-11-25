@@ -5,20 +5,21 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalAccessibilityManager
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -49,6 +50,8 @@ import at.mtr.sewfar.ui.projects.ProjectDetailViewModel
 import at.mtr.sewfar.ui.projects.ProjectListViewModel
 import at.mtr.sewfar.ui.projects.ProjectsScreen
 import at.mtr.sewfar.ui.settings.SettingsScreen
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Serializable object ProjectsRoute
@@ -185,10 +188,22 @@ fun SewFarRoot(container: AppContainer) {
                 }
                 composable<PhotoViewerRoute> { entry ->
                     val route = entry.toRoute<PhotoViewerRoute>()
-                    val photos by container.photos.observe(PhotoOwner.valueOf(route.ownerType), route.ownerId)
-                        .collectAsState(initial = null)
+                    val owner = PhotoOwner.valueOf(route.ownerType)
+                    val photos by container.photos.observe(owner, route.ownerId).collectAsState(initial = null)
+                    val isProject = owner == PhotoOwner.PROJECT
+                    val project by (if (isProject) container.projects.observe(route.ownerId) else flowOf(null)).collectAsState(initial = null)
+                    val messages = LocalMessages.current
+                    val deletedText = stringResource(R.string.photo_deleted)
+                    val scope = rememberCoroutineScope()
                     photos?.let { list ->
-                        PhotoViewerScreen(list.map { it.id }, route.photoId, onClose = { nav.popFrom(entry) })
+                        PhotoViewerScreen(
+                            list.map { it.id }, route.photoId, onClose = { nav.popFrom(entry) },
+                            onDelete = { id ->
+                                scope.launch { container.runInApp { container.photos.delete(id) }?.let { messages.showUndo(deletedText, it) } }
+                            },
+                            pinnedId = project?.coverPhotoId,
+                            onSetCover = if (isProject) { id -> container.appScope.launch { container.photos.setCover(route.ownerId, id) } } else null,
+                        )
                     }
                 }
             }

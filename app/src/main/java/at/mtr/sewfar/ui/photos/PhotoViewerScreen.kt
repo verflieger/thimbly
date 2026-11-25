@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -13,6 +14,9 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -41,10 +45,18 @@ private const val DoubleTapZoom = 2.5f
 /**
  * Full-screen viewer (SPEC 3.5): swipe between [photoIds], pinch or double-tap to zoom.
  * Panning is only active while zoomed, so swipes at normal size go to the pager.
+ * Top right: "Use as cover" (with [onSetCover]; filled while the shown photo is [pinnedId]) and delete.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PhotoViewerScreen(photoIds: List<String>, initialPhotoId: String?, onClose: () -> Unit) {
+fun PhotoViewerScreen(
+    photoIds: List<String>,
+    initialPhotoId: String?,
+    onClose: () -> Unit,
+    onDelete: (String) -> Unit = {},
+    pinnedId: String? = null,
+    onSetCover: ((String?) -> Unit)? = null,
+) {
     if (photoIds.isEmpty()) {
         LaunchedEffect(Unit) { onClose() }
         return
@@ -58,6 +70,21 @@ fun PhotoViewerScreen(photoIds: List<String>, initialPhotoId: String?, onClose: 
         Box(Modifier.fillMaxSize().safeDrawingPadding()) {
             IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopStart)) {
                 Icon(Icons.Filled.Close, stringResource(R.string.action_close), tint = Color.White)
+            }
+            val current = photoIds[pager.currentPage.coerceAtMost(photoIds.lastIndex)]
+            Row(Modifier.align(Alignment.TopEnd)) {
+                if (onSetCover != null) {
+                    val pinned = current == pinnedId
+                    IconButton(onClick = { onSetCover(if (pinned) null else current) }, modifier = Modifier.testTag("photoCover")) {
+                        Icon(
+                            if (pinned) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                            stringResource(if (pinned) R.string.photo_unpin_cover else R.string.photo_set_cover), tint = Color.White,
+                        )
+                    }
+                }
+                IconButton(onClick = { onDelete(current) }, modifier = Modifier.testTag("photoDelete")) {
+                    Icon(Icons.Outlined.Delete, stringResource(R.string.photo_delete), tint = Color.White)
+                }
             }
             if (photoIds.size > 1) {
                 Text(

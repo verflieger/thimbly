@@ -111,8 +111,9 @@ from an imported older backup) is appended to the notes.
 ### 3.5 Photos
 
 - Projects and patterns have any number of photos. The photo row shows the newest photo first and ends with one "Add
-  photo" tile, which offers "Take photo" or "From gallery". Tap opens the full-screen viewer (swipe, pinch zoom); long-press offers "Use as cover" (project)
-  and delete (with Undo).
+  photo" tile, which offers "Take photo" or "From gallery". Tap opens the full-screen viewer (swipe, pinch zoom), whose top bar has "Use as cover"
+  (project; the star is filled while the shown photo is the pinned cover, tap again to choose automatically) and
+  delete (with Undo); long-press in the row offers the same as a shortcut.
 - Cover: the pinned photo, otherwise the newest one.
 - Pipeline: decode, apply EXIF orientation, downscale to at most 2048 px on the long edge (4096 px
   with the "Fine photos" setting, §9; photos already stored keep their size), re-encode as JPEG 85 (drops
