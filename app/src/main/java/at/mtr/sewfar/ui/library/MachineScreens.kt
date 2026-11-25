@@ -39,6 +39,8 @@ import at.mtr.sewfar.data.db.SetupEntity
 import at.mtr.sewfar.data.db.SetupRow
 import at.mtr.sewfar.domain.MachineTemplates
 import at.mtr.sewfar.domain.MachineType
+import at.mtr.sewfar.ui.common.EditHeader
+import at.mtr.sewfar.ui.common.EditableText
 import at.mtr.sewfar.ui.common.FormField
 import at.mtr.sewfar.ui.common.ReadOnlyField
 import at.mtr.sewfar.ui.common.SectionLabel
@@ -66,7 +68,8 @@ class MachineViewModel(container: AppContainer, private val id: String) : Record
 
     override suspend fun delete() = container.runInApp { repo.delete(id) }
 
-    fun save(f: Map<String, String>) = write { repo.edit(id) { it.copy(name = f.getValue("name").trim(), notes = f.getValue("notes").trim()) } }
+    fun rename(name: String) = write { repo.edit(id) { it.copy(name = name) } }
+    fun setNotes(text: String) = write { repo.edit(id) { it.copy(notes = text) } }
     fun setType(type: MachineType) = write { repo.edit(id) { it.copy(type = type) } }
     suspend fun createSetup(title: String): String = container.runInApp { repo.createSetup(id, title) }
 }
@@ -78,16 +81,10 @@ fun MachineScreen(viewModel: MachineViewModel, onBack: () -> Unit, onOpenSetup: 
     var naming by rememberSaveable { mutableStateOf(false) }
     RecordScreen(
         viewModel, startEditing = false, stringResource(R.string.machine_deleted), onBack, onOpenProject = {},
-        titleOf = { it.name },
-        fieldsOf = { mapOf("name" to it.name, "notes" to it.notes) },
-        onSave = viewModel::save,
-        edit = { _, d, set ->
-            FormField(d.getValue("name"), { set("name", it) }, stringResource(R.string.machine_name))
-            FormField(d.getValue("notes"), { set("notes", it) }, stringResource(R.string.machine_notes), singleLine = false)
-        },
-    ) { machine ->
+        titleOf = { it.name }, nameOf = { it.name }, nameLabel = stringResource(R.string.machine_name), onRename = viewModel::rename,
+    ) { machine, _ ->
         MachineTypeChip(machine.type, viewModel::setType)
-        ReadOnlyField(stringResource(R.string.machine_notes), machine.notes)
+        EditableText(stringResource(R.string.machine_notes), machine.notes, "notes", onSave = viewModel::setNotes)
         Column {
             SectionLabel(stringResource(R.string.machine_setups))
             setups.forEach { setup ->
@@ -130,9 +127,11 @@ class SetupViewModel(container: AppContainer, private val id: String) : RecordVi
 
     override suspend fun delete() = container.runInApp { repo.deleteSetup(id) }
 
-    /** Stores the form: title, notes and every `v:<key>` value (a blank value is removed). */
-    fun save(f: Map<String, String>) = write {
-        repo.editSetup(id) { it.copy(title = f.getValue("name").trim(), notes = f.getValue("notes").trim()) }
+    fun rename(title: String) = write { repo.editSetup(id) { it.copy(title = title) } }
+    fun setNotes(text: String) = write { repo.editSetup(id) { it.copy(notes = text) } }
+
+    /** Stores the form: every `v:<key>` value (a blank value is removed). */
+    fun saveValues(f: Map<String, String>) = write {
         f.filterKeys { it.startsWith(ValuePrefix) }.forEach { (k, v) -> repo.setValue(id, k.removePrefix(ValuePrefix), v) }
     }
 
@@ -153,13 +152,12 @@ fun SetupScreen(
     RecordScreen(
         viewModel, startEditing, stringResource(R.string.setup_deleted), onBack, onOpenProject,
         titleOf = { it.setup.title.ifBlank { stringResource(R.string.setup_untitled) } },
+        nameOf = { it.setup.title }, nameLabel = stringResource(R.string.setup_title), onRename = viewModel::rename,
         fieldsOf = { d ->
-            val keys = d.machine?.let { MachineTemplates.of(it.type) }.orEmpty()
-            mapOf("name" to d.setup.title, "notes" to d.setup.notes) + keys.associate { "$ValuePrefix$it" to d.values[it].orEmpty() }
+            d.machine?.let { MachineTemplates.of(it.type) }.orEmpty().associate { "$ValuePrefix$it" to d.values[it].orEmpty() }
         },
-        onSave = viewModel::save,
+        onSave = viewModel::saveValues,
         edit = { detail, d, set ->
-            FormField(d.getValue("name"), { set("name", it) }, stringResource(R.string.setup_title))
             // The type decides the fields, so it can be fixed here too (e.g. a machine just created from a project).
             detail.machine?.let { m -> MachineTypeChip(m.type) { viewModel.setMachineType(m.id, it) } }
             // The fields of the machine's type, two per row: most values are short numbers.
@@ -175,29 +173,32 @@ fun SetupScreen(
                         if (row.size == 1) Spacer(Modifier.weight(1f))
                     }
                 }
-            FormField(d.getValue("notes"), { set("notes", it) }, stringResource(R.string.setup_notes), singleLine = false)
         },
-    ) { detail ->
+    ) { detail, openForm ->
         val machine = detail.machine
         if (machine != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AssistChip(onClick = { onOpenMachine(machine.id) }, label = { Text(machine.name.ifBlank { stringResource(R.string.untitled) }) })
                 MachineTypeChip(machine.type) { viewModel.setMachineType(machine.id, it) }
             }
-            val filled = MachineTemplates.of(machine.type).filter { !detail.values[it].isNullOrBlank() }
-            if (filled.isEmpty() && MachineTemplates.of(machine.type).isNotEmpty()) {
-                Text(stringResource(R.string.setup_no_values), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            filled.chunked(2).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { key ->
-                        Column(Modifier.weight(1f)) { ReadOnlyField(stringResource(fieldLabel(key)), detail.values.getValue(key)) }
+            val keys = MachineTemplates.of(machine.type)
+            if (keys.isNotEmpty()) {
+                Column(Modifier.clickable(onClick = openForm), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    EditHeader(stringResource(R.string.setup_values), "values", openForm)
+                    val filled = keys.filter { !detail.values[it].isNullOrBlank() }
+                    if (filled.isEmpty()) Text(stringResource(R.string.setup_no_values), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    filled.chunked(2).forEach { row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            row.forEach { key ->
+                                Column(Modifier.weight(1f)) { ReadOnlyField(stringResource(fieldLabel(key)), detail.values.getValue(key)) }
+                            }
+                            if (row.size == 1) Spacer(Modifier.weight(1f))
+                        }
                     }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
         }
-        ReadOnlyField(stringResource(R.string.setup_notes), detail.setup.notes)
+        EditableText(stringResource(R.string.setup_notes), detail.setup.notes, "notes", onSave = viewModel::setNotes)
     }
 }
 

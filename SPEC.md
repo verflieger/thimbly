@@ -37,11 +37,14 @@ screens, fields and tabs).
   machines, settings and people can also be created right from a project, so the Library is only needed to edit or
   delete them.
 - **Creating:** "+" asks only for the name (dialog with Save), creates the record and opens its page.
-- **Editing (2026-11-24):** real edits use an explicit form; state changes apply at once.
-  - Texts (names, notes, a pattern's designer, a setting's values) are shown read-only. ✎ opens the edit form (or a
-    text dialog for a project's name, size, fabric and notes); **Save** stores. Nothing asks "Discard changes?"
-    (2026-11-25): a tap outside a dialog does nothing, Cancel or back in a dialog discards; in a form ✕ discards and
-    back saves (while the form can't be saved, e.g. a measurement is not a number, back does nothing).
+- **Editing (2026-11-24, one way everywhere since 2026-11-25):** texts are edited in a dialog with Save; state
+  changes apply at once.
+  - Texts (names, notes, size, fabric, a pattern's designer) are shown read-only. Tapping one or its ✎ opens a text
+    dialog; ✎ in the top bar renames. Only groups of values have a form: a person's measurements and a setting's
+    values (✎ next to them; **Save** stores).
+  - Nothing asks "Discard changes?": a tap outside a dialog does nothing, Cancel or back in a dialog discards; in a
+    form ✕ discards and back saves (while the form can't be saved, e.g. a measurement is not a number, back does
+    nothing).
   - Status, timer, photos, linking or unlinking patterns, person and settings, and a machine's type apply
     immediately.
   - Every text field has its label fixed above it (as on the read-only page), never floating inside, so fields
@@ -130,7 +133,7 @@ Name, measurements, notes, "Used in". A deleted person no longer shows on projec
 
 **Measurements (2026-11-25):** a fixed set: height, bust / chest, waist, hips, back length, arm length, inside leg;
 in cm, numbers only (comma or dot), the field shows "cm". The page shows the filled ones two per row under
-"Measured on <date>", or "Not measured yet". They are edited in the person's form (✎, Save is disabled while a value
+"Measured on <date>", or "Not measured yet". They are edited in a form (✎ next to them, Save is disabled while a value
 is not a number between 1 and 300). Saving changed values stores today's measuring: a measuring from today is
 corrected, otherwise a new one is added and older ones stay hidden, so finished projects keep showing what they were
 sewn with. Unchanged values store nothing.
@@ -140,7 +143,7 @@ sewn with. Unchanged values store nothing.
 ### 5.1 Machines
 
 Name, type (sewing machine, overlocker, coverstitch, embroidery, other), notes, and the list of its settings with
-"+ New setting" (asks for the name, then opens the setting's form). Deleting a machine deletes its settings and their project links (with Undo).
+"+ New setting" (asks for the name, then opens the setting's values form). Deleting a machine deletes its settings and their project links (with Undo).
 
 ### 5.2 Machine settings ("setups")
 
@@ -159,7 +162,7 @@ Name, type (sewing machine, overlocker, coverstitch, embroidery, other), notes, 
 - Plus notes and "Used in".
 - From a project: "+ Machine setting" → pick a setting, or type a name and "New setting “…”". With exactly one
   machine it is used directly; otherwise a machine picker follows (with "Create “…”" for a new machine). The new
-  setting is linked and its page opens with the form, ready for the values.
+  setting is linked and its page opens with the values form.
 
 ## 6. Delete and undo
 

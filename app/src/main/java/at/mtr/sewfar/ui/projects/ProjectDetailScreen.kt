@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,11 +17,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -36,7 +33,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -47,15 +43,16 @@ import at.mtr.sewfar.R
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.domain.ProjectStatus
 import at.mtr.sewfar.ui.common.DetailScaffold
+import at.mtr.sewfar.ui.common.EditHeader
 import at.mtr.sewfar.ui.common.EntityPicker
 import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.MeasurementsView
-import at.mtr.sewfar.ui.common.TextDialog
-import at.mtr.sewfar.ui.photos.PhotoStrip
 import at.mtr.sewfar.ui.common.PickerItem
 import at.mtr.sewfar.ui.common.SectionLabel
+import at.mtr.sewfar.ui.common.TextDialog
 import at.mtr.sewfar.ui.common.format
 import at.mtr.sewfar.ui.common.label
+import at.mtr.sewfar.ui.photos.PhotoStrip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -294,12 +291,7 @@ fun ProjectDetailScreen(
 @Composable
 private fun TextBlock(title: String, text: String, tag: String, onEdit: () -> Unit) {
     Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SectionLabel(title, Modifier.weight(1f))
-            IconButton(onClick = onEdit, modifier = Modifier.testTag("edit-$tag")) {
-                Icon(Icons.Outlined.Edit, stringResource(R.string.action_edit), Modifier.size(20.dp))
-            }
-        }
+        EditHeader(title, tag, onEdit)
         Text(text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit))
     }
 }

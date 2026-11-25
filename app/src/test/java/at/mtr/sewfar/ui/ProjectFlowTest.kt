@@ -95,19 +95,21 @@ class ProjectFlowTest {
     }
 
     @Test
-    fun backFromAnEditFormSaves() {
+    fun libraryTextsAreEditedInADialog() {
         compose.onNodeWithTag("library").performClick()
         compose.onNodeWithTag("tab-PATTERNS").performClick()
         compose.onNodeWithTag("add").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Raglan")
         compose.onNodeWithTag("dialogSave").performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Raglan")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("edit").performClick()
-        compose.onNodeWithTag("field-designer").performTextReplacement("Studio X")
-        compose.waitForIdle() // on a phone there is always a frame between typing and back
-        back()
+        compose.onNodeWithTag("edit-designer").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Studio X")
+        compose.onNodeWithTag("dialogSave").performClick()
         waitFor("Studio X")
-        compose.onNodeWithTag("save").assertDoesNotExist()
+        compose.onNodeWithTag("edit").performClick() // rename
+        compose.onNodeWithTag("dialogText").performTextReplacement("Raglan shirt")
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("Raglan shirt")
     }
 
     @Test
@@ -125,9 +127,10 @@ class ProjectFlowTest {
         compose.onNodeWithText("Lena", useUnmergedTree = true).performScrollTo().performClick()
         waitFor("Not measured yet")
 
-        compose.onNodeWithTag("edit").performClick()
+        compose.onNodeWithTag("edit-measurements").performClick()
         compose.onNodeWithTag("measure-waist").performScrollTo().performTextInput("55,5")
-        compose.onNodeWithTag("save").performClick()
+        compose.waitForIdle() // on a phone there is always a frame between typing and back
+        back() // saves the form
         waitFor("Measured on")
         compose.onNodeWithText("55.5 cm").assertExists()
         back()

@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,17 +39,18 @@ import at.mtr.sewfar.data.db.PatternEntity
 import at.mtr.sewfar.data.db.PersonEntity
 import at.mtr.sewfar.data.db.PhotoEntity
 import at.mtr.sewfar.data.db.ProjectRef
-import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.domain.MeasurementFields
 import at.mtr.sewfar.domain.Measurements
+import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.domain.parseCm
 import at.mtr.sewfar.ui.common.DetailScaffold
-import at.mtr.sewfar.ui.common.FormField
+import at.mtr.sewfar.ui.common.EditHeader
+import at.mtr.sewfar.ui.common.EditableText
 import at.mtr.sewfar.ui.common.LabeledTextField
 import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.MeasurementsView
-import at.mtr.sewfar.ui.common.ReadOnlyField
 import at.mtr.sewfar.ui.common.SectionLabel
+import at.mtr.sewfar.ui.common.TextDialog
 import at.mtr.sewfar.ui.common.format
 import at.mtr.sewfar.ui.common.formatCm
 import at.mtr.sewfar.ui.common.label
@@ -85,9 +87,10 @@ abstract class RecordViewModel<T : Any>(protected val container: AppContainer) :
 }
 
 /**
- * Frame of a library detail page (SPEC 2): [view] shows the record read-only (plus things that change at once, like
- * photos); ✎ opens [edit], a form over a draft of [fieldsOf] that [onSave] stores. [startEditing] opens the form
- * right away (a record just created to be filled in).
+ * Frame of a library detail page (SPEC 2): [view] shows the record read-only; its texts are edited in dialogs and
+ * state changes (photos, type) apply at once. ✎ in the top bar renames ([nameOf], [onRename]). Records with a group of
+ * values (measurements, setting values) also have a form over a draft of [fieldsOf]: [view] opens it with `openForm`,
+ * [onSave] stores it. [startEditing] opens the form right away (a setting just created to be filled in).
  */
 @Composable
 fun <T : Any> RecordScreen(
@@ -97,18 +100,22 @@ fun <T : Any> RecordScreen(
     onBack: () -> Unit,
     onOpenProject: (String) -> Unit,
     titleOf: @Composable (T) -> String,
-    fieldsOf: (T) -> Map<String, String>,
-    onSave: (Map<String, String>) -> Unit,
-    edit: @Composable ColumnScope.(record: T, draft: Map<String, String>, set: (String, String) -> Unit) -> Unit,
-    /** Extra check before Save is enabled (the name must never be blank). */
+    nameOf: (T) -> String,
+    nameLabel: String,
+    onRename: (String) -> Unit,
+    fieldsOf: (T) -> Map<String, String> = { emptyMap() },
+    onSave: (Map<String, String>) -> Unit = {},
+    edit: @Composable ColumnScope.(record: T, draft: Map<String, String>, set: (String, String) -> Unit) -> Unit = { _, _, _ -> },
+    /** Extra check before Save is enabled. */
     valid: (Map<String, String>) -> Boolean = { true },
-    view: @Composable ColumnScope.(T) -> Unit,
+    view: @Composable ColumnScope.(record: T, openForm: () -> Unit) -> Unit,
 ) {
     val loaded by viewModel.state.collectAsStateWithLifecycle()
     val projects by viewModel.projects.collectAsStateWithLifecycle()
     val messages = LocalMessages.current
     val scope = rememberCoroutineScope()
     var draft by rememberSaveable { mutableStateOf<HashMap<String, String>?>(null) }
+    var renaming by rememberSaveable { mutableStateOf(false) }
     var autoEditDone by rememberSaveable { mutableStateOf(false) }
     // The form opened by itself for a record just created: cancelling it leaves the page too.
     var autoOpened by rememberSaveable { mutableStateOf(false) }
@@ -126,7 +133,7 @@ fun <T : Any> RecordScreen(
     DetailScaffold(
         title = titleOf(record),
         onBack = onBack,
-        onEdit = { autoOpened = false; draft = HashMap(fieldsOf(record)) },
+        onEdit = { renaming = true },
         onDelete = {
             scope.launch {
                 val token = viewModel.delete()
@@ -136,7 +143,7 @@ fun <T : Any> RecordScreen(
         },
         editing = current != null,
         dirty = current != null && current != fieldsOf(record),
-        canSave = current?.let { it["name"]?.isNotBlank() != false && valid(it) } ?: true,
+        canSave = current?.let(valid) ?: true,
         onSave = { current?.let(onSave); draft = null; autoOpened = false },
         onCancel = { draft = null; if (autoOpened) onBack() },
     ) { padding ->
@@ -147,7 +154,7 @@ fun <T : Any> RecordScreen(
             if (current != null) {
                 edit(record, current) { key, value -> draft = HashMap(current).apply { put(key, value) } }
             } else {
-                view(record)
+                view(record) { autoOpened = false; draft = HashMap(fieldsOf(record)) }
                 if (projects.isNotEmpty()) {
                     Column {
                         SectionLabel(stringResource(R.string.used_in))
@@ -164,6 +171,12 @@ fun <T : Any> RecordScreen(
             }
         }
     }
+    if (renaming) {
+        TextDialog(
+            stringResource(R.string.action_rename), nameLabel, initial = nameOf(record),
+            onSave = { onRename(it); renaming = false }, onDismiss = { renaming = false },
+        )
+    }
 }
 
 // ---- Pattern (SPEC 4.1) ----
@@ -177,9 +190,9 @@ class PatternViewModel(container: AppContainer, private val id: String) : Record
 
     override suspend fun delete() = container.runInApp { repo.delete(id) }
 
-    fun save(f: Map<String, String>) = write {
-        repo.edit(id) { it.copy(name = f.getValue("name").trim(), designer = f.getValue("designer").trim(), notes = f.getValue("notes").trim()) }
-    }
+    fun rename(name: String) = write { repo.edit(id) { it.copy(name = name) } }
+    fun setDesigner(text: String) = write { repo.edit(id) { it.copy(designer = text) } }
+    fun setNotes(text: String) = write { repo.edit(id) { it.copy(notes = text) } }
 
     suspend fun addPhotos(sources: List<() -> InputStream>): Int = container.runInApp {
         sources.count { runCatching { container.photos.add(PhotoOwner.PATTERN, id, it) }.isFailure }
@@ -193,17 +206,10 @@ fun PatternScreen(viewModel: PatternViewModel, onBack: () -> Unit, onOpenProject
     val photos by viewModel.photos.collectAsStateWithLifecycle()
     RecordScreen(
         viewModel, startEditing = false, stringResource(R.string.pattern_deleted), onBack, onOpenProject,
-        titleOf = { it.name },
-        fieldsOf = { mapOf("name" to it.name, "designer" to it.designer, "notes" to it.notes) },
-        onSave = viewModel::save,
-        edit = { _, d, set ->
-            FormField(d.getValue("name"), { set("name", it) }, stringResource(R.string.pattern_name))
-            FormField(d.getValue("designer"), { set("designer", it) }, stringResource(R.string.pattern_designer), tag = "field-designer")
-            FormField(d.getValue("notes"), { set("notes", it) }, stringResource(R.string.pattern_notes), singleLine = false)
-        },
-    ) { pattern ->
-        ReadOnlyField(stringResource(R.string.pattern_designer), pattern.designer)
-        ReadOnlyField(stringResource(R.string.pattern_notes), pattern.notes)
+        titleOf = { it.name }, nameOf = { it.name }, nameLabel = stringResource(R.string.pattern_name), onRename = viewModel::rename,
+    ) { pattern, _ ->
+        EditableText(stringResource(R.string.pattern_designer), pattern.designer, "designer", singleLine = true, onSave = viewModel::setDesigner)
+        EditableText(stringResource(R.string.pattern_notes), pattern.notes, "notes", onSave = viewModel::setNotes)
         PhotoStrip(photos, viewModel::addPhotos, viewModel::deletePhoto, onOpenPhoto)
     }
 }
@@ -220,9 +226,11 @@ class PersonViewModel(container: AppContainer, private val id: String) : RecordV
 
     override suspend fun delete() = container.runInApp { repo.delete(id) }
 
-    /** Name, notes and every `m:<key>` measurement (blank = none; the form only saves valid numbers). */
-    fun save(f: Map<String, String>) = write {
-        repo.edit(id) { it.copy(name = f.getValue("name").trim(), notes = f.getValue("notes").trim()) }
+    fun rename(name: String) = write { repo.edit(id) { it.copy(name = name) } }
+    fun setNotes(text: String) = write { repo.edit(id) { it.copy(notes = text) } }
+
+    /** Every `m:<key>` measurement of the form (blank = none; the form only saves valid numbers). */
+    fun saveMeasurements(f: Map<String, String>) = write {
         repo.saveMeasurements(id, f.filterKeys { it.startsWith(MeasurePrefix) }.mapNotNull { (k, v) -> parseCm(v)?.let { k.removePrefix(MeasurePrefix) to it } }.toMap())
     }
 }
@@ -233,15 +241,12 @@ private const val MeasurePrefix = "m:"
 fun PersonScreen(viewModel: PersonViewModel, onBack: () -> Unit, onOpenProject: (String) -> Unit) {
     RecordScreen(
         viewModel, startEditing = false, stringResource(R.string.person_deleted), onBack, onOpenProject,
-        titleOf = { it.person.name },
-        fieldsOf = { d ->
-            mapOf("name" to d.person.name, "notes" to d.person.notes) +
-                MeasurementFields.associate { "$MeasurePrefix$it" to (d.measurements?.valuesCm?.get(it)?.let(::formatCm) ?: "") }
-        },
-        onSave = viewModel::save,
-        valid = { d -> d.filterKeys { it.startsWith(MeasurePrefix) }.values.all { it.isBlank() || parseCm(it) != null } },
+        titleOf = { it.person.name }, nameOf = { it.person.name }, nameLabel = stringResource(R.string.person_name),
+        onRename = viewModel::rename,
+        fieldsOf = { d -> MeasurementFields.associate { "$MeasurePrefix$it" to (d.measurements?.valuesCm?.get(it)?.let(::formatCm) ?: "") } },
+        onSave = viewModel::saveMeasurements,
+        valid = { d -> d.values.all { it.isBlank() || parseCm(it) != null } },
         edit = { _, d, set ->
-            FormField(d.getValue("name"), { set("name", it) }, stringResource(R.string.person_name))
             SectionLabel(stringResource(R.string.measurements))
             // Two per row like machine settings: all values are short numbers.
             MeasurementFields.chunked(2).forEach { row ->
@@ -258,18 +263,20 @@ fun PersonScreen(viewModel: PersonViewModel, onBack: () -> Unit, onOpenProject: 
                     if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
-            FormField(d.getValue("notes"), { set("notes", it) }, stringResource(R.string.person_notes), singleLine = false)
         },
-    ) { detail ->
+    ) { detail, openForm ->
         val m = detail.measurements
-        if (m != null && m.valuesCm.isNotEmpty()) {
-            Column {
-                SectionLabel(stringResource(R.string.measurements))
-                MeasurementsView(stringResource(R.string.measured_on, m.measuredOn.format()), m)
+        Column {
+            EditHeader(stringResource(R.string.measurements), "measurements", openForm)
+            if (m != null && m.valuesCm.isNotEmpty()) {
+                MeasurementsView(stringResource(R.string.measured_on, m.measuredOn.format()), m, Modifier.clickable(onClick = openForm))
+            } else {
+                Text(
+                    stringResource(R.string.not_measured), style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.clickable(onClick = openForm),
+                )
             }
-        } else {
-            ReadOnlyField(stringResource(R.string.measurements), "", placeholder = stringResource(R.string.not_measured))
         }
-        ReadOnlyField(stringResource(R.string.person_notes), detail.person.notes)
+        EditableText(stringResource(R.string.person_notes), detail.person.notes, "notes", onSave = viewModel::setNotes)
     }
 }

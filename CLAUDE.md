@@ -48,8 +48,9 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   span deleted rows). Child-row changes must call `ProjectDao.touch` (`lastActivityAt`). Status changes only via
   `ProjectRepository.setStatus`.
 - **Creating and editing** (SPEC 2): "+" asks for the name (`TextDialog`), creates the row, opens the page. Texts are
-  shown read-only and edited in a form with Save (`DetailScaffold` editing mode; library pages via `RecordScreen`
-  with a draft map) or a `TextDialog`; state changes (status, timer, links, photos, stars) are written at once.
+  shown read-only and edited in a `TextDialog` (library pages: `EditableText`, rename via ✎ in `RecordScreen`). Only
+  groups of values (measurements, setting values) use a form (`DetailScaffold` editing mode, `RecordScreen` draft
+  map); state changes (status, timer, links, photos) are written at once.
 - **Frozen formats** (SPEC 7, 8): database schema 1 and backup format 1 are released (v0.1; testers use real data).
   A schema change needs a new `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and a migration
   test (`SchemaFreezeTest` pins the v1 hash and requires an exported schema and a migration for every step); never
