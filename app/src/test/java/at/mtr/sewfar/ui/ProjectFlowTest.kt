@@ -100,4 +100,28 @@ class ProjectFlowTest {
         waitFor("Grade the seams")
         compose.onNodeWithTag("finishSave").assertDoesNotExist()
     }
+
+    @Test
+    fun measurementsEnteredOnThePersonShowOnTheProject() {
+        compose.onNodeWithTag("newProject").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Dress for Lena")
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("Sewn for")
+        compose.onNodeWithTag("addPerson").performScrollTo().performClick()
+        compose.onNodeWithTag("pickerSearch").performTextInput("Lena")
+        compose.onNodeWithText("Create “Lena”").performClick()
+        // Linked once the add chip is gone (the title also contains "Lena").
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("addPerson").fetchSemanticsNodes().isEmpty() }
+        // A plain tap on a short name opens the person, not the remove × next to it.
+        compose.onNodeWithText("Lena", useUnmergedTree = true).performScrollTo().performClick()
+        waitFor("Not measured yet")
+
+        compose.onNodeWithTag("edit").performClick()
+        compose.onNodeWithTag("measure-waist").performScrollTo().performTextInput("55,5")
+        compose.onNodeWithTag("save").performClick()
+        waitFor("Measured on")
+        compose.onNodeWithText("55.5 cm").assertExists()
+        back()
+        waitFor("Measurements from")
+    }
 }

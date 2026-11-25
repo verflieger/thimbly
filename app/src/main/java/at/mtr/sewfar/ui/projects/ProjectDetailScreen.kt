@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.mtr.sewfar.R
@@ -54,6 +56,7 @@ import at.mtr.sewfar.ui.common.DiscardDialog
 import at.mtr.sewfar.ui.common.EntityPicker
 import at.mtr.sewfar.ui.common.LabeledTextField
 import at.mtr.sewfar.ui.common.LocalMessages
+import at.mtr.sewfar.ui.common.MeasurementsView
 import at.mtr.sewfar.ui.common.TextDialog
 import at.mtr.sewfar.ui.photos.PhotoStrip
 import at.mtr.sewfar.ui.common.PickerItem
@@ -158,6 +161,15 @@ fun ProjectDetailScreen(
                     messages.showUndo(removedText) { viewModel.setPerson(personId) }
                 },
                 onAdd = { picking = Picking.Person }, canAdd = state.person == null)
+            // Read-only here; they are edited on the person's page (SPEC 3.2).
+            val person = state.person
+            val m = state.measurements
+            if (person != null && m != null && m.valuesCm.isNotEmpty()) {
+                MeasurementsView(
+                    stringResource(R.string.measurements_from, m.measuredOn.format()), m,
+                    Modifier.fillMaxWidth().clickable { onOpenPerson(person.id) }.testTag("measurements"),
+                )
+            }
 
             Links(stringResource(R.string.project_setups), stringResource(R.string.project_add_setup), "addSetup",
                 state.setups.map { Triple(it.linkId, setupLabel(it.title, it.machineName), it.setupId) },
@@ -379,7 +391,8 @@ private fun Links(
                 InputChip(
                     selected = false,
                     onClick = { onOpen(openId) },
-                    label = { Text(label.ifBlank { "…" }) },
+                    // The ×'s touch target grows to 48 dp; a wide enough label keeps a tap on a short name ("Lena") opening it.
+                    label = { Text(label.ifBlank { "…" }, Modifier.widthIn(min = 48.dp), textAlign = TextAlign.Center) },
                     trailingIcon = {
                         Icon(
                             Icons.Outlined.Close, stringResource(R.string.action_remove),

@@ -24,6 +24,37 @@ data class PersonEntity(
     val deletedAt: Long? = null,
 )
 
+/** One measuring of a person (SPEC 4.2): the date; the values are [MeasurementValueEntity] rows. */
+@Entity(
+    tableName = "measurement",
+    foreignKeys = [ForeignKey(entity = PersonEntity::class, parentColumns = ["id"], childColumns = ["personId"])],
+    indices = [Index("personId", "measuredOn")],
+)
+data class MeasurementEntity(
+    @PrimaryKey val id: String,
+    val personId: String,
+    val measuredOn: LocalDate,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+)
+
+/** One body measurement in cm; [key] is a `MeasurementFields` key. */
+@Entity(
+    tableName = "measurement_value",
+    foreignKeys = [ForeignKey(entity = MeasurementEntity::class, parentColumns = ["id"], childColumns = ["measurementId"])],
+    indices = [Index("measurementId", "key", unique = true)],
+)
+data class MeasurementValueEntity(
+    @PrimaryKey val id: String,
+    val measurementId: String,
+    val key: String,
+    val valueCm: Double,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+)
+
 @Entity(tableName = "pattern")
 data class PatternEntity(
     @PrimaryKey val id: String,

@@ -15,11 +15,16 @@ import at.mtr.sewfar.data.db.PhotoEntity
 import at.mtr.sewfar.data.db.ProjectEntity
 import at.mtr.sewfar.data.db.SetupRow
 import at.mtr.sewfar.data.db.TimeEntryEntity
+import at.mtr.sewfar.domain.Measurements
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.domain.ProjectStatus
 import java.io.InputStream
 import java.time.LocalDate
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -34,6 +39,8 @@ data class ProjectDetailState(
     val setups: List<LinkedSetup> = emptyList(),
     val time: List<TimeEntryEntity> = emptyList(),
     val photos: List<PhotoEntity> = emptyList(),
+    /** The person's measurements: the newest, or once Done, those valid on the finish date (SPEC 3.2). */
+    val measurements: Measurements? = null,
 ) {
     val coverPhotoId: String? get() = coverOf(photos, project?.coverPhotoId)
     val running: TimeEntryEntity? get() = time.firstOrNull { it.endedAt == null }
@@ -52,16 +59,20 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     private val projects = container.projects
     private val app = container.appScope
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val measurements = projects.observe(id).map { it?.personId to it?.finishedOn }.distinctUntilChanged()
+        .flatMapLatest { (personId, finishedOn) -> personId?.let { container.persons.observeMeasurements(it, finishedOn) } ?: flowOf(null) }
+
     val state: StateFlow<ProjectDetailState> = combine(
         projects.observe(id),
         container.persons.observeAll(),
         combine(projects.observePatterns(id), projects.observeSetups(id)) { p, s -> p to s },
-        projects.observeTime(id),
+        combine(projects.observeTime(id), measurements) { t, m -> t to m },
         container.photos.observe(PhotoOwner.PROJECT, id),
-    ) { project, persons, (patterns, setups), time, photos ->
+    ) { project, persons, (patterns, setups), (time, measurements), photos ->
         ProjectDetailState(
             loaded = true, project = project, person = persons.firstOrNull { it.id == project?.personId },
-            patterns = patterns, setups = setups, time = time, photos = photos,
+            patterns = patterns, setups = setups, time = time, photos = photos, measurements = measurements,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProjectDetailState())
 

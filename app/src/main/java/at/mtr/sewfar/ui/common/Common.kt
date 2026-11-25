@@ -216,6 +216,7 @@ fun LabeledTextField(
     minLines: Int = 1,
     placeholder: String? = null,
     supportingText: String? = null,
+    suffix: String? = null,
     isError: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
 ) {
@@ -225,6 +226,7 @@ fun LabeledTextField(
             value, onChange,
             placeholder = placeholder?.let { { Text(it) } },
             supportingText = supportingText?.let { { Text(it) } },
+            suffix = suffix?.let { { Text(it) } },
             isError = isError,
             singleLine = singleLine,
             minLines = minLines,

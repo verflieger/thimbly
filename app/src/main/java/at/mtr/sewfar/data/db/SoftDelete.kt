@@ -150,12 +150,14 @@ class SoftDeleter(
          * `TableRegistryTest` checks both against the schema.
          */
         val AllTables = listOf(
-            "person", "pattern", "project", "project_pattern", "time_entry", "photo",
+            "person", "measurement", "measurement_value", "pattern", "project", "project_pattern", "time_entry", "photo",
             "machine", "setup", "setup_value", "project_setup",
         )
 
         /** Child rows that a deletion of a row in the key table also deletes (SPEC 6, cascade table). */
         val Cascade: Map<String, List<Ref>> = mapOf(
+            "person" to listOf(Ref("measurement", "personId")),
+            "measurement" to listOf(Ref("measurement_value", "measurementId")),
             "project" to listOf(
                 Ref("project_pattern", "projectId"),
                 Ref("project_setup", "projectId"),

@@ -195,6 +195,7 @@ class BackupTest {
         assertTrue(photos.all { t.photoFiles.file(it.id).exists() })
         val setup = t.projects.observeSetups(project.id).first().single()
         assertEquals("1.3", t.machines.observeValues(setup.setupId).first().single().value)
+        assertEquals(mapOf("waist" to 74.5), t.persons.observeMeasurements(project.personId!!).first()!!.valuesCm)
         for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables) assertTrue(table, t.count(table) > 0)
     }
 

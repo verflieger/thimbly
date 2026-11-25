@@ -4,10 +4,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -21,7 +24,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,18 +39,27 @@ import at.mtr.sewfar.data.db.PersonEntity
 import at.mtr.sewfar.data.db.PhotoEntity
 import at.mtr.sewfar.data.db.ProjectRef
 import at.mtr.sewfar.domain.PhotoOwner
+import at.mtr.sewfar.domain.MeasurementFields
+import at.mtr.sewfar.domain.Measurements
+import at.mtr.sewfar.domain.parseCm
 import at.mtr.sewfar.ui.common.DetailScaffold
 import at.mtr.sewfar.ui.common.FormField
+import at.mtr.sewfar.ui.common.LabeledTextField
 import at.mtr.sewfar.ui.common.LocalMessages
+import at.mtr.sewfar.ui.common.MeasurementsView
 import at.mtr.sewfar.ui.common.ReadOnlyField
 import at.mtr.sewfar.ui.common.SectionLabel
+import at.mtr.sewfar.ui.common.format
+import at.mtr.sewfar.ui.common.formatCm
 import at.mtr.sewfar.ui.common.label
+import at.mtr.sewfar.ui.common.measurementLabel
 import at.mtr.sewfar.ui.photos.PhotoStrip
 import java.io.InputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -86,6 +100,8 @@ fun <T : Any> RecordScreen(
     fieldsOf: (T) -> Map<String, String>,
     onSave: (Map<String, String>) -> Unit,
     edit: @Composable ColumnScope.(record: T, draft: Map<String, String>, set: (String, String) -> Unit) -> Unit,
+    /** Extra check before Save is enabled (the name must never be blank). */
+    valid: (Map<String, String>) -> Boolean = { true },
     view: @Composable ColumnScope.(T) -> Unit,
 ) {
     val loaded by viewModel.state.collectAsStateWithLifecycle()
@@ -120,7 +136,7 @@ fun <T : Any> RecordScreen(
         },
         editing = current != null,
         dirty = current != null && current != fieldsOf(record),
-        canSave = current?.get("name")?.isNotBlank() ?: true,
+        canSave = current?.let { it["name"]?.isNotBlank() != false && valid(it) } ?: true,
         onSave = { current?.let(onSave); draft = null; autoOpened = false },
         onCancel = { draft = null; if (autoOpened) onBack() },
     ) { padding ->
@@ -194,28 +210,66 @@ fun PatternScreen(viewModel: PatternViewModel, onBack: () -> Unit, onOpenProject
 
 // ---- Person (SPEC 4.2) ----
 
-class PersonViewModel(container: AppContainer, private val id: String) : RecordViewModel<PersonEntity>(container) {
+/** A person with their newest measurements (SPEC 4.2). */
+data class PersonDetail(val person: PersonEntity, val measurements: Measurements?)
+
+class PersonViewModel(container: AppContainer, private val id: String) : RecordViewModel<PersonDetail>(container) {
     private val repo = container.persons
-    override val record = repo.observe(id)
+    override val record = combine(repo.observe(id), repo.observeMeasurements(id)) { p, m -> p?.let { PersonDetail(it, m) } }
     override val projectsFlow = repo.observeProjects(id)
 
     override suspend fun delete() = container.runInApp { repo.delete(id) }
 
-    fun save(f: Map<String, String>) = write { repo.edit(id) { it.copy(name = f.getValue("name").trim(), notes = f.getValue("notes").trim()) } }
+    /** Name, notes and every `m:<key>` measurement (blank = none; the form only saves valid numbers). */
+    fun save(f: Map<String, String>) = write {
+        repo.edit(id) { it.copy(name = f.getValue("name").trim(), notes = f.getValue("notes").trim()) }
+        repo.saveMeasurements(id, f.filterKeys { it.startsWith(MeasurePrefix) }.mapNotNull { (k, v) -> parseCm(v)?.let { k.removePrefix(MeasurePrefix) to it } }.toMap())
+    }
 }
+
+private const val MeasurePrefix = "m:"
 
 @Composable
 fun PersonScreen(viewModel: PersonViewModel, onBack: () -> Unit, onOpenProject: (String) -> Unit) {
     RecordScreen(
         viewModel, startEditing = false, stringResource(R.string.person_deleted), onBack, onOpenProject,
-        titleOf = { it.name },
-        fieldsOf = { mapOf("name" to it.name, "notes" to it.notes) },
+        titleOf = { it.person.name },
+        fieldsOf = { d ->
+            mapOf("name" to d.person.name, "notes" to d.person.notes) +
+                MeasurementFields.associate { "$MeasurePrefix$it" to (d.measurements?.valuesCm?.get(it)?.let(::formatCm) ?: "") }
+        },
         onSave = viewModel::save,
+        valid = { d -> d.filterKeys { it.startsWith(MeasurePrefix) }.values.all { it.isBlank() || parseCm(it) != null } },
         edit = { _, d, set ->
             FormField(d.getValue("name"), { set("name", it) }, stringResource(R.string.person_name))
+            SectionLabel(stringResource(R.string.measurements))
+            // Two per row like machine settings: all values are short numbers.
+            MeasurementFields.chunked(2).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { key ->
+                        val text = d.getValue("$MeasurePrefix$key")
+                        LabeledTextField(
+                            text, { set("$MeasurePrefix$key", it) }, stringResource(measurementLabel(key)), Modifier.weight(1f),
+                            fieldModifier = Modifier.testTag("measure-$key"), suffix = stringResource(R.string.unit_cm),
+                            isError = text.isNotBlank() && parseCm(text) == null,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        )
+                    }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
             FormField(d.getValue("notes"), { set("notes", it) }, stringResource(R.string.person_notes), singleLine = false)
         },
-    ) { person ->
-        ReadOnlyField(stringResource(R.string.person_notes), person.notes)
+    ) { detail ->
+        val m = detail.measurements
+        if (m != null && m.valuesCm.isNotEmpty()) {
+            Column {
+                SectionLabel(stringResource(R.string.measurements))
+                MeasurementsView(stringResource(R.string.measured_on, m.measuredOn.format()), m)
+            }
+        } else {
+            ReadOnlyField(stringResource(R.string.measurements), "", placeholder = stringResource(R.string.not_measured))
+        }
+        ReadOnlyField(stringResource(R.string.person_notes), detail.person.notes)
     }
 }

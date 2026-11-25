@@ -67,7 +67,9 @@ One scrolling page. The top bar shows the name with ✎ (rename dialog) and dele
 2. Time (§3.3).
 3. Photos (§3.5).
 4. Patterns (chips; tap opens the pattern, × removes, "+ Pattern" picks or creates).
-5. Sewn for (one person, same chip pattern).
+5. Sewn for (one person, same chip pattern). Below it, read-only, the person's measurements (§4.2) headed
+   "Measurements from <date>": the newest ones, or once Done, the newest ones measured on or before the finish date
+   (none if there are none). Tap opens the person.
 6. Machine settings (chips "Setting · Machine"; tap opens it, × unlinks, "+ Machine setting" picks or creates one,
    §5.2).
 7. Notes (shown as text; "Add notes" or ✎ opens a text dialog).
@@ -114,7 +116,14 @@ Name, designer, notes, photos, and "Used in" (projects linking it). Deleting a p
 
 ### 4.2 People
 
-Name, notes, "Used in". A deleted person no longer shows on projects.
+Name, measurements, notes, "Used in". A deleted person no longer shows on projects.
+
+**Measurements (2026-11-25):** a fixed set: height, bust / chest, waist, hips, back length, arm length, inside leg;
+in cm, numbers only (comma or dot), the field shows "cm". The page shows the filled ones two per row under
+"Measured on <date>", or "Not measured yet". They are edited in the person's form (✎, Save is disabled while a value
+is not a number between 1 and 300). Saving changed values stores today's measuring: a measuring from today is
+corrected, otherwise a new one is added and older ones stay hidden, so finished projects keep showing what they were
+sewn with. Unchanged values store nothing.
 
 ## 5. Machines and machine settings
 
@@ -151,7 +160,8 @@ Name, type (sewing machine, overlocker, coverstitch, embroidery, other), notes, 
   children first, together with any row that still refers to them through the cascade. Each removed row is recorded
   in `deletion_log` (table, row ID, deletion time; never pruned). A deleted person's projects stay and lose the
   person. Re-adding a removed link or value within the window revives its row.
-- Cascade: project → pattern links, setting links, time entries, photos; pattern → its project links and photos;
+- Cascade: person → measurements → their values; project → pattern links, setting links, time entries, photos;
+  pattern → its project links and photos;
   machine → settings; setting → values and project links.
 
 ## 7. Data model (Room)
@@ -160,6 +170,7 @@ Every table: `id` (UUID text), `createdAt`, `updatedAt`, `deletedAt`. Unique ind
 Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 
 - `person` (name, notes)
+- `measurement` (personId, measuredOn) and `measurement_value` (measurementId, key, valueCm; unique pair)
 - `pattern` (name, designer, notes)
 - `project` (name, status, personId?, notes, startedOn?, finishedOn?, rating?, learned, coverPhotoId?, lastActivityAt)
 - `project_pattern` (projectId, patternId, sortOrder; unique pair)

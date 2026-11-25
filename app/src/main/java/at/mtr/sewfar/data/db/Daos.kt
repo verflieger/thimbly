@@ -25,6 +25,9 @@ data class LinkedSetup(val linkId: String, val setupId: String, val title: Strin
 /** A setup with its machine, for pickers and lists. */
 data class SetupRow(val id: String, val machineId: String, val machineName: String, val machineType: MachineType, val title: String)
 
+/** One value of a person's measurements, with the date of that measuring. */
+data class MeasurementRow(val measurementId: String, val measuredOn: java.time.LocalDate, val key: String?, val valueCm: Double?)
+
 @Dao
 interface PersonDao {
     @Insert suspend fun insert(person: PersonEntity)
@@ -41,6 +44,29 @@ interface PersonDao {
 
     @Query("SELECT id, name, status FROM project WHERE personId = :id AND deletedAt IS NULL ORDER BY lastActivityAt DESC")
     fun observeProjects(id: String): Flow<List<ProjectRef>>
+
+    // ---- Measurements (SPEC 4.2) ----
+
+    @Insert suspend fun insertMeasurement(measurement: MeasurementEntity)
+    @Update suspend fun updateMeasurement(measurement: MeasurementEntity)
+    @Insert suspend fun insertMeasurementValue(value: MeasurementValueEntity)
+    @Update suspend fun updateMeasurementValue(value: MeasurementValueEntity)
+
+    @Query("SELECT * FROM measurement WHERE personId = :personId AND deletedAt IS NULL ORDER BY measuredOn DESC, createdAt DESC LIMIT 1")
+    suspend fun newestMeasurement(personId: String): MeasurementEntity?
+
+    /** Including removed values, for revival (unique per measurement and key). */
+    @Query("SELECT * FROM measurement_value WHERE measurementId = :measurementId")
+    suspend fun measurementValuesAny(measurementId: String): List<MeasurementValueEntity>
+
+    /** The newest measuring of [personId] on or before [onOrBefore] (null = newest at all), one row per value. */
+    @Query(
+        "SELECT m.id AS measurementId, m.measuredOn, v.key, v.valueCm FROM measurement m " +
+            "LEFT JOIN measurement_value v ON v.measurementId = m.id AND v.deletedAt IS NULL " +
+            "WHERE m.id = (SELECT id FROM measurement WHERE personId = :personId AND deletedAt IS NULL " +
+            "AND (:onOrBefore IS NULL OR measuredOn <= :onOrBefore) ORDER BY measuredOn DESC, createdAt DESC LIMIT 1)",
+    )
+    fun observeMeasurement(personId: String, onOrBefore: java.time.LocalDate?): Flow<List<MeasurementRow>>
 }
 
 @Dao

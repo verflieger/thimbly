@@ -14,7 +14,7 @@ import androidx.room.TypeConverters
 @Database(
     version = SewFarDatabase.VERSION,
     entities = [
-        PersonEntity::class, PatternEntity::class, ProjectEntity::class, ProjectPatternEntity::class,
+        PersonEntity::class, MeasurementEntity::class, MeasurementValueEntity::class, PatternEntity::class, ProjectEntity::class, ProjectPatternEntity::class,
         TimeEntryEntity::class, PhotoEntity::class, MachineEntity::class, SetupEntity::class,
         SetupValueEntity::class, ProjectSetupEntity::class, DeletionLogEntity::class,
     ],
