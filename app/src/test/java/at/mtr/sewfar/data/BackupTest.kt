@@ -187,6 +187,7 @@ class BackupTest {
         backup.import(backup.prepareImport(fixture))
         val project = t.projects.observeAll().first().single()
         assertEquals("Fixture shirt", project.name)
+        assertEquals("122", project.size)
         assertEquals("Fixture pattern", t.projects.observePatterns(project.id).first().single().name)
         assertEquals("Fixture person", t.persons.observe(project.personId!!).first()?.name)
         assertEquals(1, t.projects.observeTime(project.id).first().size)

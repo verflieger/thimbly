@@ -94,7 +94,10 @@ class DemoDataReceiver : BroadcastReceiver() {
 
         // In progress, with the timer running
         val twirl = p.create(t("Twirl dress for Lena", "Drehkleid für Lena"))
-        p.edit(twirl) { it.copy(personId = lena, notes = t("Purple jersey, size 122, skirt 4 cm longer.", "Lila Jersey, Gr. 122, Rock 4 cm länger.")) }
+        p.edit(twirl) {
+            it.copy(personId = lena, size = "122", notes = t("Skirt 4 cm longer.", "Rock 4 cm länger."),
+                fabric = t("1.6 m purple jersey, 150 cm wide\n30 cm ribbing", "1,6 m lila Jersey, 150 cm breit\n30 cm Bündchen"))
+        }
         p.addPattern(twirl, frieda)
         p.addSetup(twirl, jersey)
         p.addSetup(twirl, hem)
@@ -104,7 +107,7 @@ class DemoDataReceiver : BroadcastReceiver() {
         c.photos.add(PhotoOwner.PROJECT, twirl) { image(0xFF6E4A8E.toInt(), 0xFFF1E6F7.toInt(), 1).inputStream() }
 
         val hoodieAnna = p.create(t("Hoodie for Anna", "Hoodie für Anna"))
-        p.edit(hoodieAnna) { it.copy(personId = anna, notes = t("Sweat fabric, cuffs from the stash.", "Sweat, Bündchen aus dem Vorrat.")) }
+        p.edit(hoodieAnna) { it.copy(personId = anna, size = "M", fabric = t("2 m sweat fabric, cuffs from the stash", "2 m Sweat, Bündchen aus dem Vorrat")) }
         p.addPattern(hoodieAnna, hoodie)
         p.addSetup(hoodieAnna, jersey)
         p.addTime(hoodieAnna, today.minusDays(6), 95)

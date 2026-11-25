@@ -36,6 +36,6 @@ class SchemaFreezeTest {
     }
 
     private companion object {
-        const val FROZEN_V1 = "505c7c924fed261135fec6b8e196d02a"
+        const val FROZEN_V1 = "d7c597a118b2e657bc80284513159d6d"
     }
 }

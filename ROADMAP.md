@@ -23,7 +23,8 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 
 - Fabric entity: name, type, composition, weight (g/m²), width, colour, print, amount, where bought, price, storage
   location, photos.
-- Projects link stash fabrics (like patterns today); finishing a project subtracts the used amount.
+- Projects link stash fabrics (like patterns today); finishing a project subtracts the used amount. The project's
+  free-text Fabric field (v1) stays beside the linked fabrics for extras; nothing is converted.
 - Machine settings link to fabrics: "which setting worked for this fabric?".
 - Notions (zippers, elastic, ribbing/Bündchen) and a ribbing calculator.
 - Shopping list.

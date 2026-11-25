@@ -128,6 +128,10 @@
     <string name="project_add_setup">Maschineneinstellung</string>
     <string name="project_finished_on">Fertig am %1$s</string>
     <string name="project_learned">Was ich gelernt habe</string>
+    <string name="project_size">Größe</string>
+    <string name="size_add">Größe eintragen</string>
+    <string name="project_fabric">Stoff</string>
+    <string name="fabric_add">Stoff eintragen</string>
     <string name="project_notes">Notizen</string>
     <string name="project_patterns">Schnittmuster</string>
     <string name="project_person">Genäht für</string>

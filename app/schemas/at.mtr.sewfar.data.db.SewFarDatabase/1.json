@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "505c7c924fed261135fec6b8e196d02a",
+    "identityHash": "d7c597a118b2e657bc80284513159d6d",
     "entities": [
       {
         "tableName": "person",
@@ -256,7 +256,7 @@
       },
       {
         "tableName": "project",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `status` TEXT NOT NULL, `personId` TEXT, `notes` TEXT NOT NULL, `startedOn` TEXT, `finishedOn` TEXT, `rating` INTEGER, `learned` TEXT NOT NULL, `coverPhotoId` TEXT, `lastActivityAt` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`personId`) REFERENCES `person`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `status` TEXT NOT NULL, `personId` TEXT, `size` TEXT NOT NULL, `fabric` TEXT NOT NULL, `notes` TEXT NOT NULL, `startedOn` TEXT, `finishedOn` TEXT, `rating` INTEGER, `learned` TEXT NOT NULL, `coverPhotoId` TEXT, `lastActivityAt` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`personId`) REFERENCES `person`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
         "fields": [
           {
             "fieldPath": "id",
@@ -280,6 +280,18 @@
             "fieldPath": "personId",
             "columnName": "personId",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "size",
+            "columnName": "size",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fabric",
+            "columnName": "fabric",
+            "affinity": "TEXT",
+            "notNull": true
           },
           {
             "fieldPath": "notes",
@@ -946,7 +958,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '505c7c924fed261135fec6b8e196d02a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd7c597a118b2e657bc80284513159d6d')"
     ]
   }
 }

@@ -75,6 +75,8 @@ private sealed interface Picking {
     /** A new setup named [title] needs a machine. */
     data class SetupMachine(val title: String) : Picking
     data object Rename : Picking
+    data object Size : Picking
+    data object Fabric : Picking
     data object Notes : Picking
     data object Learned : Picking
     /** Just set to Done: ask for rating and "What I learned" (SPEC 3.4). */
@@ -152,6 +154,9 @@ fun ProjectDetailScreen(
                 state.patterns.map { Triple(it.linkId, it.name, it.patternId) },
                 onOpen = onOpenPattern, onRemove = { link -> removeWithUndo { viewModel.removePattern(link) } },
                 onAdd = { picking = Picking.Pattern })
+
+            TextBlock(stringResource(R.string.project_size), project.size, stringResource(R.string.size_add), "size") { picking = Picking.Size }
+            TextBlock(stringResource(R.string.project_fabric), project.fabric, stringResource(R.string.fabric_add), "fabric") { picking = Picking.Fabric }
 
             Links(stringResource(R.string.project_person), stringResource(R.string.project_add_person), "addPerson",
                 listOfNotNull(state.person?.let { Triple(it.id, it.name, it.id) }),
@@ -265,6 +270,14 @@ fun ProjectDetailScreen(
         Picking.Rename -> TextDialog(
             stringResource(R.string.project_rename), stringResource(R.string.project_name), initial = project.name,
             onSave = { viewModel.rename(it); picking = null }, onDismiss = { picking = null },
+        )
+        Picking.Size -> TextDialog(
+            stringResource(R.string.project_size), stringResource(R.string.project_size), initial = project.size,
+            required = false, onSave = { viewModel.setSize(it); picking = null }, onDismiss = { picking = null },
+        )
+        Picking.Fabric -> TextDialog(
+            stringResource(R.string.project_fabric), stringResource(R.string.project_fabric), initial = project.fabric,
+            singleLine = false, required = false, onSave = { viewModel.setFabric(it); picking = null }, onDismiss = { picking = null },
         )
         Picking.Notes -> TextDialog(
             stringResource(R.string.project_notes), stringResource(R.string.project_notes), initial = project.notes,

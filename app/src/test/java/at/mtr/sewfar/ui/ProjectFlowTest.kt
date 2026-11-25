@@ -124,4 +124,20 @@ class ProjectFlowTest {
         back()
         waitFor("Measurements from")
     }
+
+    @Test
+    fun sizeAndFabricAreShownLikeNotes() {
+        compose.onNodeWithTag("newProject").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Hoodie")
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("Sewn for")
+        compose.onNodeWithTag("edit-size").performScrollTo().performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("122")
+        compose.onNodeWithTag("dialogSave").performClick()
+        compose.onNodeWithTag("edit-fabric").performScrollTo().performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("1,5 m jersey")
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("1,5 m jersey")
+        compose.onNodeWithText("122").assertExists()
+    }
 }

@@ -39,7 +39,7 @@ screens, fields and tabs).
 - **Creating:** "+" asks only for the name (dialog with Save), creates the record and opens its page.
 - **Editing (2026-11-24):** real edits use an explicit form; state changes apply at once.
   - Texts (names, notes, a pattern's designer, a setting's values) are shown read-only. ✎ opens the edit form (or a
-    text dialog for a project's name, notes and "What I learned"); **Save** stores, ✕ or back discards, asking
+    text dialog for a project's name, size, fabric, notes and "What I learned"); **Save** stores, ✕ or back discards, asking
     "Discard changes?" first if something was changed.
   - Status, timer, photos, linking or unlinking patterns, person and settings, stars and a machine's type apply
     immediately.
@@ -66,7 +66,9 @@ One scrolling page. The top bar shows the name with ✎ (rename dialog) and dele
 1. Status: Planned · In progress · Done (segmented buttons).
 2. Time (§3.3).
 3. Photos (§3.5).
-4. Patterns (chips; tap opens the pattern, × removes, "+ Pattern" picks or creates).
+4. Patterns (chips; tap opens the pattern, × removes, "+ Pattern" picks or creates). Below them **Size** (one line,
+   e.g. "122", "M", "38/40") and **Fabric** (free text, e.g. "1,5 m jersey, 150 cm wide; ribbing 30 cm"), each shown
+   like notes: "Add size" / "Add fabric" or ✎ opens a text dialog.
 5. Sewn for (one person, same chip pattern). Below it, read-only, the person's measurements (§4.2) headed
    "Measurements from <date>": the newest ones, or once Done, the newest ones measured on or before the finish date
    (none if there are none). Tap opens the person.
@@ -172,7 +174,7 @@ Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 - `person` (name, notes)
 - `measurement` (personId, measuredOn) and `measurement_value` (measurementId, key, valueCm; unique pair)
 - `pattern` (name, designer, notes)
-- `project` (name, status, personId?, notes, startedOn?, finishedOn?, rating?, learned, coverPhotoId?, lastActivityAt)
+- `project` (name, status, personId?, size, fabric, notes, startedOn?, finishedOn?, rating?, learned, coverPhotoId?, lastActivityAt)
 - `project_pattern` (projectId, patternId, sortOrder; unique pair)
 - `time_entry` (projectId, startedAt, endedAt? — null = running)
 - `photo` (ownerType PROJECT|PATTERN, ownerId, sortOrder)

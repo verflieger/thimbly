@@ -77,6 +77,10 @@ data class ProjectEntity(
     val name: String,
     val status: ProjectStatus = ProjectStatus.PLANNED,
     val personId: String? = null,
+    /** Pattern size sewn, free text ("122", "M", "38/40"); SPEC 3.2. */
+    val size: String = "",
+    /** Fabric needed, free text; stays beside linked stash fabrics later (ROADMAP v2). */
+    val fabric: String = "",
     val notes: String = "",
     val startedOn: LocalDate? = null,
     val finishedOn: LocalDate? = null,
