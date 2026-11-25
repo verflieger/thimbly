@@ -14,9 +14,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
@@ -72,12 +73,18 @@ private fun NavHostController.popFrom(entry: NavBackStackEntry) {
     if (entry.lifecycle.currentState == Lifecycle.State.RESUMED) popBackStack()
 }
 
+private class ShellViewModel : ViewModel() {
+    val snackbarHost = SnackbarHostState()
+}
+
 /** App shell (SPEC 2): the project list is home; everything else opens on top of it. No bottom bar. */
 @Composable
 fun SewFarRoot(container: AppContainer) {
     val nav = rememberNavController()
-    val snackbarHost = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    // Held by the activity's ViewModel, so an Undo bar survives rotation, dark mode and language changes.
+    val shell = viewModel { ShellViewModel() }
+    val snackbarHost = shell.snackbarHost
+    val scope = shell.viewModelScope
     val undoLabel = stringResource(R.string.action_undo)
     val messages = remember(snackbarHost, scope, undoLabel) { Messages(snackbarHost, scope, undoLabel, container::undo) }
     val openProject = { id: String -> nav.navigate(ProjectRoute(id)) }

@@ -69,6 +69,22 @@ class ProjectFlowTest {
     }
 
     @Test
+    fun undoBarSurvivesRotation() {
+        compose.onNodeWithTag("newProject").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Skirt")
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("Sewn for")
+        compose.onNodeWithTag("delete").performClick()
+        waitFor("Project deleted")
+
+        compose.activityRule.scenario.recreate()
+
+        waitFor("Project deleted")
+        compose.onNodeWithText("Undo").performClick()
+        waitFor("Skirt")
+    }
+
+    @Test
     fun cancellingAnEditFormAsksBeforeDiscarding() {
         compose.onNodeWithTag("menu").performClick()
         compose.onNodeWithText("Library").performClick()

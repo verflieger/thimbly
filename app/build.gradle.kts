@@ -104,7 +104,7 @@ androidComponents {
         val checkTask = tasks.register<CheckForbiddenPermissions>("check${variantName}Permissions") {
             mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
         }
-        tasks.matching { it.name == "assemble$variantName" }.configureEach { dependsOn(checkTask) }
+        tasks.matching { it.name == "assemble$variantName" || it.name == "bundle$variantName" }.configureEach { dependsOn(checkTask) }
         tasks.matching { it.name == "test${variantName}UnitTest" }.configureEach { dependsOn(checkTask) }
     }
 }

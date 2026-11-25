@@ -202,7 +202,8 @@ are rejected with their own message.
 ### 8.2 Export, import, automatic backup
 
 - **Export:** save via the system dialog (`thimbly-backup-YYYY-MM-DD-HHmmss.zip`) or share.
-- **Import replaces all data:** reject zip slip and newer formats; validate one `backup.json`; confirm with counts;
+- **Import replaces all data:** reject newer formats; only flat `photos/<id>.jpg` entries are
+  extracted, other entries are ignored (no zip slip); validate one `backup.json`; confirm with counts;
   write a safety export (restorable via "Undo last restore"); extract photos to `photos.new`; replace all tables in
   one transaction; swap the photo folders, guarded by a marker file so an interrupted swap is completed or rolled back
   on the next start. Photo rows without a file are accepted.

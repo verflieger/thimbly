@@ -60,7 +60,6 @@
     <string name="backup_replace">Replace</string>
     <string name="backup_error_not_backup">This file is not a Thimbly backup.</string>
     <string name="backup_error_newer">This backup is from a newer Thimbly version. Update the app first.</string>
-    <string name="backup_error_unsafe">This backup contains invalid file names.</string>
     <string name="backup_phone_switch">Android\'s own backup is off. To move to a new phone, save a backup and restore it there.</string>
     <string name="auto_backup">Weekly automatic backup</string>
     <string name="auto_backup_folder">Folder: %1$s</string>

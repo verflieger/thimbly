@@ -59,7 +59,6 @@
     <string name="backup_replace">Ersetzen</string>
     <string name="backup_error_not_backup">Diese Datei ist keine Fingerhut-Sicherung.</string>
     <string name="backup_error_newer">Diese Sicherung stammt von einer neueren Fingerhut-Version. Aktualisiere zuerst die App.</string>
-    <string name="backup_error_unsafe">Diese Sicherung enthält ungültige Dateinamen.</string>
     <string name="backup_phone_switch">Die Android-eigene Sicherung ist aus. Für ein neues Handy speichere eine Sicherung und stelle sie dort wieder her.</string>
     <string name="auto_backup">Wöchentliche automatische Sicherung</string>
     <string name="auto_backup_folder">Ordner: %1$s</string>

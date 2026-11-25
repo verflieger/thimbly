@@ -18,7 +18,7 @@ class DurationsTest {
 
     @Test
     fun rejectsInvalidOrZero() {
-        listOf("", "abc", "0", "1:75", "-5", "1:").forEach { assertNull(it, Durations.parseMinutes(it)) }
+        listOf("", "abc", "0", "1:75", "-5", "1:", "1,5 min", "0.5min").forEach { assertNull(it, Durations.parseMinutes(it)) }
     }
 
     @Test

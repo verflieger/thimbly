@@ -54,13 +54,13 @@ class AppContainer(private val context: Context) {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
     }
 
+    /** Restores everything one deletion removed (SPEC 6); runs in [appScope]. The only way to undo a deletion. */
+    suspend fun undo(token: DeletionToken) = runInApp { deleter.undo(token) }
+
     /**
      * Runs [block] in [appScope] and waits for it: the write finishes even if the calling screen goes away
      * (CLAUDE.md, "UI conventions").
      */
-    /** Restores everything one deletion removed (SPEC 6); runs in [appScope]. The only way to undo a deletion. */
-    suspend fun undo(token: DeletionToken) = runInApp { deleter.undo(token) }
-
     suspend fun <T> runInApp(block: suspend () -> T): T = appScope.async { block() }.await()
 
     /** Re-applies the weekly auto-backup schedule on start (KEEP: an existing schedule stays as it is). */

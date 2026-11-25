@@ -32,12 +32,13 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 
 class BackupException(val reason: Reason, message: String, cause: Throwable? = null) : IOException(message, cause) {
-    enum class Reason { NOT_A_BACKUP, NEWER_FORMAT, UNSAFE_PATH, PROTOTYPE }
+    enum class Reason { NOT_A_BACKUP, NEWER_FORMAT, PROTOTYPE }
 }
 
 /** A validated backup, ready to replace the current data (SPEC 8.2, import steps 1–3). */
 data class ImportPlan(val file: File, val format: Int, val exportedAt: String, val counts: Map<String, Int>)
 
+/** The only entries ever written to disk, so a zip slip (`../` in a name) can't escape `photos.new` (SPEC 8.2). */
 private val PhotoEntry = Regex("""^photos/[A-Za-z0-9-]+\.jpg$""")
 
 /**
@@ -121,7 +122,6 @@ class BackupRepository(
         try {
             ZipInputStream(file.inputStream().buffered()).use { zip ->
                 generateSequence { zip.nextEntry }.forEach { entry ->
-                    checkSafe(entry.name)
                     if (entry.name == JSON_ENTRY) {
                         // Two backup.json entries could validate one and import the other.
                         if (root != null) throw BackupException(BackupException.Reason.NOT_A_BACKUP, "Duplicate $JSON_ENTRY")
@@ -168,7 +168,6 @@ class BackupRepository(
         photosNew.mkdirs()
         ZipInputStream(plan.file.inputStream().buffered()).use { zip ->
             generateSequence { zip.nextEntry }.forEach { entry ->
-                checkSafe(entry.name)
                 if (!entry.isDirectory && PhotoEntry.matches(entry.name)) {
                     File(photosNew, entry.name.removePrefix(PHOTOS_DIR)).outputStream().use { zip.copyTo(it) }
                 }
@@ -292,17 +291,6 @@ class BackupRepository(
     private fun readJson(file: File): JsonObject = ZipInputStream(file.inputStream().buffered()).use { zip ->
         generateSequence { zip.nextEntry }.first { it.name == JSON_ENTRY }
         json.parseToJsonElement(zip.readBytes().decodeToString()).jsonObject
-    }
-
-    /**
-     * Zip slip (SPEC 8.2): reject absolute paths and `..` segments anywhere, and nested paths under `photos/` (photo
-     * entries must be flat). Other harmless entries are ignored.
-     */
-    private fun checkSafe(name: String) {
-        val segments = name.replace('\\', '/').split('/')
-        val unsafe = name.startsWith("/") || name.startsWith("\\") || ':' in name || segments.any { it == ".." || it == "." } ||
-            (name.startsWith(PHOTOS_DIR) && name != PHOTOS_DIR && !PhotoEntry.matches(name) && name.removePrefix(PHOTOS_DIR).let { '/' in it || '\\' in it })
-        if (unsafe) throw BackupException(BackupException.Reason.UNSAFE_PATH, "Unsafe entry $name")
     }
 
     private fun Cursor.rows(): List<JsonElement> = buildList {

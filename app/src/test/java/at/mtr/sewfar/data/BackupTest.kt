@@ -277,10 +277,21 @@ class BackupTest {
             writeBytes(String(readBytes(), Charsets.ISO_8859_1).replace("backup.jsoX", "backup.json").toByteArray(Charsets.ISO_8859_1))
         }
         assertRejected(BackupException.Reason.NOT_A_BACKUP, duplicate)
-        assertRejected(BackupException.Reason.UNSAFE_PATH, zipOf("backup.json" to json, "../evil.jpg" to byteArrayOf(1)))
-        assertRejected(BackupException.Reason.UNSAFE_PATH, zipOf("backup.json" to json, "photos/../../evil.jpg" to byteArrayOf(1)))
         val newer = json.decodeToString().replaceFirst("\"format\":1", "\"format\":99").toByteArray()
         assertRejected(BackupException.Reason.NEWER_FORMAT, zipOf("backup.json" to newer))
+    }
+
+    @Test
+    fun zipSlipEntriesAreIgnored() = runTest {
+        sampleData()
+        val json = ZipInputStream(exportBytes().inputStream()).use { z -> generateSequence { z.nextEntry }.first { it.name == "backup.json" }; z.readBytes() }
+        val evil = zipOf("backup.json" to json, "../evil.jpg" to byteArrayOf(1), "photos/../../evil.jpg" to byteArrayOf(1), "photos/a/b.jpg" to byteArrayOf(1))
+
+        backup.import(backup.prepareImport(evil.inputStream()))
+
+        assertEquals(1, t.count("project"))
+        val written = base.parentFile!!.walk().filter { it.name == "evil.jpg" || it.name == "b.jpg" }.toList()
+        assertEquals(emptyList<File>(), written)
     }
 
     @Test

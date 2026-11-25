@@ -75,7 +75,6 @@ fun BackupSection(container: AppContainer) {
     val errorTexts = mapOf(
         BackupException.Reason.NOT_A_BACKUP to stringResource(R.string.backup_error_not_backup),
         BackupException.Reason.NEWER_FORMAT to stringResource(R.string.backup_error_newer),
-        BackupException.Reason.UNSAFE_PATH to stringResource(R.string.backup_error_unsafe),
         BackupException.Reason.PROTOTYPE to stringResource(R.string.backup_error_prototype),
     )
     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(currentLocale)

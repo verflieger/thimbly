@@ -37,7 +37,9 @@ object Durations {
                 val mins = m.toIntOrNull()?.takeIf { it in 0..59 } ?: return null
                 hours * 60 + mins
             }
-            text.trim().lowercase().endsWith("h") || '.' in t -> ((t.toDoubleOrNull() ?: return null) * 60).toInt()
+            // "1.5" means hours, but "1.5 min" is rejected rather than read as 90 minutes.
+            text.trim().lowercase().endsWith("h") || ('.' in t && !text.trim().lowercase().endsWith("min")) ->
+                ((t.toDoubleOrNull() ?: return null) * 60).toInt()
             else -> t.toIntOrNull() ?: return null
         }
         return minutes.takeIf { it > 0 }
