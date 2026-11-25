@@ -45,7 +45,7 @@ import at.mtr.sewfar.ui.common.SectionLabel
 import kotlinx.coroutines.launch
 
 /**
- * Photos of a project or pattern (SPEC 3.5): "Add photo" tile, newest first; tap opens, long-press deletes (with
+ * Photos of a project or pattern (SPEC 3.5): newest first, then the "Add photo" tile; tap opens, long-press deletes (with
  * Undo) and, if [setCover] is given, pins or unpins the cover. [coverId] gets a star, [pinnedId] is the pinned one.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -70,7 +70,6 @@ fun PhotoStrip(
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         SectionLabel(stringResource(R.string.project_photos))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            item { AddPhotoTile(takePhoto, pickPhotos) }
             items(photos.reversed(), key = { it.id }) { photo ->
                 var menuOpen by remember { mutableStateOf(false) }
                 Box {
@@ -103,11 +102,12 @@ fun PhotoStrip(
                     }
                 }
             }
+            item { AddPhotoTile(takePhoto, pickPhotos) }
         }
     }
 }
 
-/** First tile of a photo row (SPEC 3.5): one "Add photo" button that asks for camera or gallery. */
+/** Last tile of a photo row (SPEC 3.5): one "Add photo" button that asks for camera or gallery. */
 @Composable
 fun AddPhotoTile(takePhoto: () -> Unit, pickPhotos: () -> Unit) {
     var open by remember { mutableStateOf(false) }

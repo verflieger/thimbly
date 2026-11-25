@@ -1,6 +1,6 @@
 # Thimbly — Specification
 
-Thimbly (German: **Fingerhut**) is a private, offline Android tracker for sewing projects: what you are sewing, how long it takes, which
+Thimbly is a private, offline Android tracker for sewing projects: what you are sewing, how long it takes, which
 pattern and machine settings you used, and how it turned out.
 
 **Guiding rule: keep it simple.** One home screen, one page per project, everything a project needs can be added
@@ -32,8 +32,8 @@ screens, fields and tabs).
 ## 2. Navigation
 
 - **Home = project list** (§3.1). No bottom bar.
-- Top bar: search, and a menu with **Library** and **Settings**.
-- **Library:** one screen with three tabs (Patterns, Machines, People), each a list with a "+" button. Patterns,
+- Top bar: search, and a menu with **Settings**. At the bottom: **Library** and **+ New project**.
+- **Library:** one screen with three tabs (Patterns, People, Machines; opens on Patterns), each a list with a "+" button. Patterns,
   machines, settings and people can also be created right from a project, so the Library is only needed to edit or
   delete them.
 - **Creating:** "+" asks only for the name (dialog with Save), creates the record and opens its page.
@@ -100,8 +100,8 @@ text is not dropped without asking). Both stay editable on the project page whil
 
 ### 3.5 Photos
 
-- Projects and patterns have any number of photos. The photo row starts with one "Add photo" tile, which offers
-  "Take photo" or "From gallery"; newest photo first. Tap opens the full-screen viewer (swipe, pinch zoom); long-press offers "Use as cover" (project)
+- Projects and patterns have any number of photos. The photo row shows the newest photo first and ends with one "Add
+  photo" tile, which offers "Take photo" or "From gallery". Tap opens the full-screen viewer (swipe, pinch zoom); long-press offers "Use as cover" (project)
   and delete (with Undo).
 - Cover: the pinned photo, otherwise the newest one.
 - Pipeline: decode, apply EXIF orientation, downscale to at most 2048 px on the long edge (4096 px

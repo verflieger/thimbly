@@ -1,6 +1,6 @@
 # Thimbly
 
-Thimbly (German: Fingerhut) is a private, offline Android tracker for sewing projects: what you
+Thimbly is a private, offline Android tracker for sewing projects: what you
 are sewing, how long it takes, which pattern and machine settings you used, and how it turned out.
 
 The app is in English and German, following the phone's language or Android's per-app language setting.

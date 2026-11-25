@@ -86,8 +86,8 @@ class ProjectFlowTest {
 
     @Test
     fun cancellingAnEditFormAsksBeforeDiscarding() {
-        compose.onNodeWithTag("menu").performClick()
-        compose.onNodeWithText("Library").performClick()
+        compose.onNodeWithTag("library").performClick()
+        compose.onNodeWithTag("tab-PATTERNS").performClick()
         compose.onNodeWithTag("add").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Raglan")
         compose.onNodeWithTag("dialogSave").performClick()

@@ -49,7 +49,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Library sections (SPEC 2). */
-enum class LibraryTab { PATTERNS, MACHINES, PEOPLE }
+/** In the order of the tabs. */
+enum class LibraryTab { PATTERNS, PEOPLE, MACHINES }
 
 /** A library row: title and an optional second line. */
 data class LibraryItem(val id: String, val title: String, val subtitle: String)

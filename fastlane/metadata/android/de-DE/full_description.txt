@@ -1,4 +1,4 @@
-Fingerhut ist ein einfacher, privater Tracker für deine Nähprojekte: was du nähst, wie lange es dauert, welchen Schnitt und welche Maschineneinstellungen du verwendet hast und wie es geworden ist.
+Thimbly ist ein einfacher, privater Tracker für deine Nähprojekte: was du nähst, wie lange es dauert, welchen Schnitt und welche Maschineneinstellungen du verwendet hast und wie es geworden ist.
 
 <b>Eine Seite pro Projekt</b>
 • Status: geplant, in Arbeit, fertig
@@ -14,7 +14,7 @@ Fingerhut ist ein einfacher, privater Tracker für deine Nähprojekte: was du n�
 Schnittmuster mit Fotos, Personen und deine Maschinen mit wiederverwendbaren Einstellungen (Stich, Spannungen, Differentialtransport …), jeweils mit den Projekten, in denen sie vorkamen.
 
 <b>Sicherung</b>
-Speichere oder teile jederzeit eine Sicherungsdatei, oder lass Fingerhut wöchentlich in einen Ordner deiner Wahl sichern.
+Speichere oder teile jederzeit eine Sicherungsdatei, oder lass Thimbly wöchentlich in einen Ordner deiner Wahl sichern.
 
 <b>Privat von Grund auf</b>
 Keine Internetberechtigung, keine Werbung, kein Tracking, kein Konto. Deine Daten bleiben auf deinem Handy, bis du sie selbst exportierst.

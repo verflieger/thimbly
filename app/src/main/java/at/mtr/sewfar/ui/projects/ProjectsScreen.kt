@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.FabPosition
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +27,7 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.Card
+import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -83,6 +87,7 @@ fun ProjectsScreen(
     val now = rememberNow(anyRunning)
 
     Scaffold(
+        floatingActionButtonPosition = FabPosition.Center,
         topBar = {
             TopAppBar(
                 title = {
@@ -115,19 +120,29 @@ fun ProjectsScreen(
                         Icon(Icons.Outlined.MoreVert, stringResource(R.string.action_more))
                     }
                     DropdownMenu(menuOpen, onDismissRequest = { menuOpen = false }) {
-                        DropdownMenuItem(text = { Text(stringResource(R.string.library_title)) }, onClick = { menuOpen = false; onOpenLibrary() })
                         DropdownMenuItem(text = { Text(stringResource(R.string.settings_title)) }, onClick = { menuOpen = false; onOpenSettings() })
                     }
                 },
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { naming = true },
-                icon = { Icon(Icons.Outlined.Add, null) },
-                text = { Text(stringResource(R.string.project_new)) },
-                modifier = Modifier.testTag("newProject"),
-            )
+            // Two equal buttons across the full width (FabPosition.Center, so the row starts at the left edge).
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ExtendedFloatingActionButton(onClick = { naming = true }, modifier = Modifier.weight(1f).testTag("newProject")) {
+                    Icon(Icons.Outlined.Add, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.project_new))
+                }
+                ExtendedFloatingActionButton(
+                    onClick = onOpenLibrary,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.weight(1f).testTag("library"),
+                ) {
+                    Icon(Icons.Outlined.LocalLibrary, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.library_title))
+                }
+            }
         },
     ) { padding ->
         if (state.loaded && state.isEmpty) {

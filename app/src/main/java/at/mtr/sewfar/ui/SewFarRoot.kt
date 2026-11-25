@@ -52,7 +52,7 @@ import kotlinx.serialization.Serializable
 @Serializable object ProjectsRoute
 @Serializable object SettingsRoute
 /** [tab] is a [LibraryTab] name. */
-@Serializable data class LibraryRoute(val tab: String = LibraryTab.PATTERNS.name)
+@Serializable data class LibraryRoute(val tab: String = LibraryTab.entries.first().name)
 @Serializable data class ProjectRoute(val id: String)
 @Serializable data class PatternRoute(val id: String)
 @Serializable data class PersonRoute(val id: String)
