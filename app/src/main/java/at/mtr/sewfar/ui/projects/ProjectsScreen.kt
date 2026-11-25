@@ -3,6 +3,8 @@ package at.mtr.sewfar.ui.projects
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -65,8 +67,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * Above this font scale the two home buttons stack: on a 411 dp wide phone "Neues Projekt" fits side by side at
+ * Android's "Large" (1.15) but not at 1.3 (AccessibilityTest).
+ * shortcut: ignores the screen width, so on a 360 dp phone at "Large" the German label is cut off; measure the labels
+ * against the width (TextMeasurer) if that shows up.
+ */
+private const val StackFontScale = 1.2f
+
 /** Home screen (SPEC 2, 3.1): projects grouped by status, search, quick timer, "New project". */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ProjectsScreen(
     viewModel: ProjectListViewModel,
@@ -83,6 +93,7 @@ fun ProjectsScreen(
     val scope = rememberCoroutineScope()
     val anyRunning = state.sections.values.any { list -> list.any { it.runningSince != null } }
     val now = rememberNow(anyRunning)
+    val stacked = LocalDensity.current.fontScale > StackFontScale
 
     Scaffold(
         floatingActionButtonPosition = FabPosition.Center,
@@ -121,8 +132,13 @@ fun ProjectsScreen(
             )
         },
         floatingActionButton = {
-            // Two equal buttons across the full width (FabPosition.Center, so the row starts at the left edge).
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Two equal buttons across the full width (FabPosition.Center, so the row starts at the left edge); at a
+            // large font size they stack, so "Neues Projekt" isn't cut off (SPEC 10).
+            FlowRow(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
+                maxItemsInEachRow = if (stacked) 1 else 2,
+            ) {
                 ExtendedFloatingActionButton(onClick = { naming = true }, modifier = Modifier.weight(1f).testTag("newProject")) {
                     Icon(Icons.Outlined.Add, null)
                     Spacer(Modifier.width(8.dp))
@@ -144,8 +160,9 @@ fun ProjectsScreen(
             EmptyState(stringResource(R.string.projects_empty), padding)
             return@Scaffold
         }
+        // Room for the buttons below the last card: one row of 56 dp buttons, or two when stacked.
         LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = 96.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = if (stacked) 168.dp else 96.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SectionOrder.forEach { status ->
@@ -213,14 +230,14 @@ private fun ProjectCard(project: ProjectSummary, now: Long, trackTime: Boolean, 
                 val details = listOfNotNull(project.patternNames.firstOrNull(), project.personName).joinToString(" · ")
                 if (details.isNotEmpty()) {
                     Text(
-                        details, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        details, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 }
                 val total = project.timeMillis + (project.runningSince?.let { (now - it).coerceAtLeast(0) } ?: 0)
                 if ((trackTime && total > 0) || project.runningSince != null) {
                     Text(
-                        formatDuration(total), style = MaterialTheme.typography.bodySmall,
+                        formatDuration(total), style = MaterialTheme.typography.bodyMedium,
                         color = if (project.runningSince != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

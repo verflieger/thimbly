@@ -2,6 +2,7 @@ package at.mtr.sewfar.ui.projects
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -33,10 +33,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.mtr.sewfar.R
@@ -335,13 +335,12 @@ private fun Links(
                 InputChip(
                     selected = false,
                     onClick = { onOpen(openId) },
-                    // The ×'s touch target grows to 48 dp; a wide enough label keeps a tap on a short name ("Lena") opening it.
-                    label = { Text(label.ifBlank { "…" }, Modifier.widthIn(min = 48.dp), textAlign = TextAlign.Center) },
+                    label = { Text(label.ifBlank { "…" }) },
+                    // A 48 dp target, so a tap meant for × never opens the item instead (SPEC 10).
                     trailingIcon = {
-                        Icon(
-                            Icons.Outlined.Close, stringResource(R.string.action_remove),
-                            Modifier.size(18.dp).clickable { onRemove(key) }.testTag("remove-$key"),
-                        )
+                        Box(Modifier.size(48.dp).clickable { onRemove(key) }.testTag("remove-$key"), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Outlined.Close, stringResource(R.string.action_remove), Modifier.size(18.dp))
+                        }
                     },
                 )
             }

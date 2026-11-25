@@ -237,3 +237,6 @@ Appearance (dynamic colour), Time ("Time tracking", §3.3), Photos ("Fine photos
 - Compose UI tests: navigation, creating a project with a pattern and a machine setting (new machine) inline, timer,
   delete and undo, discarding an empty new project, German strings.
 - Every string exists in both languages (`StringsCompletenessTest`).
+- Accessibility (2026-11-25, `AccessibilityTest`): text follows the system font size; at 200 % the home buttons
+  stack instead of cutting off their labels (side by side up to Android's "Large", 115 %); a link chip's × is a
+  48 dp target; every icon button has a label for TalkBack.
