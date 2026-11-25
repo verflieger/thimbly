@@ -39,9 +39,9 @@ screens, fields and tabs).
 - **Creating:** "+" asks only for the name (dialog with Save), creates the record and opens its page.
 - **Editing (2026-11-24):** real edits use an explicit form; state changes apply at once.
   - Texts (names, notes, a pattern's designer, a setting's values) are shown read-only. ✎ opens the edit form (or a
-    text dialog for a project's name, size, fabric, notes and "What I learned"); **Save** stores, ✕ or back discards, asking
+    text dialog for a project's name, size, fabric and notes); **Save** stores, ✕ or back discards, asking
     "Discard changes?" first if something was changed.
-  - Status, timer, photos, linking or unlinking patterns, person and settings, stars and a machine's type apply
+  - Status, timer, photos, linking or unlinking patterns, person and settings, and a machine's type apply
     immediately.
   - Every text field has its label fixed above it (as on the read-only page), never floating inside, so fields
     keep their size when focused. Search fields have only a placeholder.
@@ -75,8 +75,7 @@ One scrolling page. The top bar shows the name with ✎ (rename dialog) and dele
 6. Machine settings (chips "Setting · Machine"; tap opens it, × unlinks, "+ Machine setting" picks or creates one,
    §5.2).
 7. Notes (shown as text; "Add notes" or ✎ opens a text dialog).
-8. When Done: rating (1–5 stars, tap the same star again to clear) and "What I learned" (like notes).
-9. Started / finished dates (read-only).
+8. Started / finished dates (read-only).
 
 Sections 4–7 show only once filled (2026-11-25): empty ones fold into one "Add" row of chips below them (pattern,
 size, fabric, person, machine setting, notes), so a new project shows little more than status and photos. A filled
@@ -101,8 +100,9 @@ timer; leaving Done clears the finish date.
 
 ### 3.4 Completion
 
-Setting a project to Done opens a dialog asking for the rating and "What I learned" (**Save** or **Later**; typed
-text is not dropped without asking). Both stay editable on the project page while it is Done.
+Setting a project to Done only changes the status: no dialog, no extra fields; what went well or wrong goes into the
+notes (2026-11-25). The former rating and "What I learned" are no longer shown; text left in "What I learned" (also
+from an imported older backup) is appended to the notes.
 
 ### 3.5 Photos
 
@@ -182,7 +182,8 @@ Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 - `person` (name, notes)
 - `measurement` (personId, measuredOn) and `measurement_value` (measurementId, key, valueCm; unique pair)
 - `pattern` (name, designer, notes)
-- `project` (name, status, personId?, size, fabric, notes, startedOn?, finishedOn?, rating?, learned, coverPhotoId?, lastActivityAt)
+- `project` (name, status, personId?, size, fabric, notes, startedOn?, finishedOn?, rating? and learned (both unused since
+  2026-11-25, §3.4), coverPhotoId?, lastActivityAt)
 - `project_pattern` (projectId, patternId, sortOrder; unique pair)
 - `time_entry` (projectId, startedAt, endedAt? — null = running)
 - `photo` (ownerType PROJECT|PATTERN, ownerId, sortOrder)

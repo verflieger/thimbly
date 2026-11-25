@@ -132,15 +132,12 @@
     <string name="project_add_person">Für jemanden</string>
     <string name="project_add_setup">Maschineneinstellung</string>
     <string name="project_finished_on">Fertig am %1$s</string>
-    <string name="project_learned">Was ich gelernt habe</string>
     <string name="project_size">Größe</string>
     <string name="project_fabric">Stoff</string>
     <string name="project_notes">Notizen</string>
     <string name="project_patterns">Schnittmuster</string>
     <string name="project_person">Genäht für</string>
-    <string name="project_rating">Wie ist es geworden?</string>
     <string name="project_setups">Maschineneinstellungen</string>
-    <string name="project_stars">%1$d Sterne</string>
     <string name="project_started_on">Begonnen am %1$s</string>
     <string name="project_time">Zeit</string>
     <string name="project_untitled">Projekt ohne Namen</string>
@@ -167,14 +164,11 @@
     </plurals>
     <string name="backup_error_prototype">Diese Sicherung stammt von einem frühen Prototyp (1.0); deren Daten können in dieser Version nicht wiederhergestellt werden.</string>
     <string name="action_save">Speichern</string>
-    <string name="action_later">Später</string>
-    <string name="finish_title">Fertig – gut genäht!</string>
     <string name="action_edit">Bearbeiten</string>
     <string name="discard_title">Änderungen verwerfen?</string>
     <string name="action_discard">Verwerfen</string>
     <string name="keep_editing">Weiter bearbeiten</string>
     <string name="setup_no_values">Noch keine Werte. Tippe auf ✎, um sie einzutragen.</string>
     <string name="photo_add">Foto hinzufügen</string>
-    <string name="learned_add">Gelerntes hinzufügen</string>
     <string name="project_rename">Projekt umbenennen</string>
 </resources>

@@ -247,6 +247,7 @@ class BackupRepository(
                     )
                 }
             }
+            db.projectDao().foldLearnedIntoNotes(time.nowMillis())
         }
     }
 

@@ -108,6 +108,13 @@ interface ProjectDao {
     @Query("UPDATE project SET lastActivityAt = :now, updatedAt = :now WHERE id = :id")
     suspend fun touch(id: String, now: Long)
 
+    /** "What I learned" was dropped (SPEC 3.4): its text moves to the end of the notes; old backups still carry it. */
+    @Query(
+        "UPDATE project SET notes = CASE WHEN notes = '' THEN learned ELSE notes || char(10) || char(10) || learned END, " +
+            "learned = '', updatedAt = :now WHERE learned != ''",
+    )
+    suspend fun foldLearnedIntoNotes(now: Long)
+
     // ---- Patterns ----
 
     @Insert suspend fun insertPattern(link: ProjectPatternEntity)

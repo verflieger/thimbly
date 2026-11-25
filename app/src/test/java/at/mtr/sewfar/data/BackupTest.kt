@@ -100,6 +100,14 @@ class BackupTest {
     }
 
     @Test
+    fun importMovesWhatILearnedToTheNotes() = runTest {
+        val id = t.projects.create("Skirt")
+        t.projects.edit(id) { it.copy(notes = "Fits", learned = "Grade the seams") } // as in a backup before SPEC 3.4
+        backup.import(backup.prepareImport(exportBytes().inputStream()))
+        assertEquals("Fits\n\nGrade the seams", t.projects.get(id)!!.notes)
+    }
+
+    @Test
     fun exportHoldsLiveRowsAndTheDeletionLog() = runTest {
         val (project, _) = sampleData()
         val person = t.projects.get(project)!!.personId!!

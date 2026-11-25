@@ -114,21 +114,6 @@ class ProjectFlowTest {
     }
 
     @Test
-    fun settingDoneAsksForRatingAndWhatILearned() {
-        compose.onNodeWithTag("newProject").performClick()
-        compose.onNodeWithTag("dialogText").performTextInput("Skirt")
-        compose.onNodeWithTag("dialogSave").performClick()
-        pageOpen()
-
-        compose.onNodeWithTag("status-DONE").performClick()
-        compose.onNodeWithTag("finishStar-4").performClick()
-        compose.onNodeWithTag("finishLearned").performTextInput("Grade the seams")
-        compose.onNodeWithTag("finishSave").performClick()
-        waitFor("Grade the seams")
-        compose.onNodeWithTag("finishSave").assertDoesNotExist()
-    }
-
-    @Test
     fun measurementsEnteredOnThePersonShowOnTheProject() {
         compose.onNodeWithTag("newProject").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Dress for Lena")

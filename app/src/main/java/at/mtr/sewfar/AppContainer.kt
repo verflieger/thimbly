@@ -85,6 +85,8 @@ class AppContainer(private val context: Context) {
     fun purgeInBackground() {
         appScope.launch {
             runCatching { backup.recoverPhotoSwap() }.onFailure { android.util.Log.e("SewFar", "Photo swap recovery failed", it) }
+            runCatching { database.projectDao().foldLearnedIntoNotes(time.nowMillis()) }
+                .onFailure { android.util.Log.e("SewFar", "Moving 'What I learned' to notes failed", it) }
             purge()
         }
     }

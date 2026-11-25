@@ -142,6 +142,22 @@ class ProjectRepositoryTest {
     }
 
     @Test
+    fun learnedTextMovesToTheNotes() = runTest {
+        val both = t.projects.create("A")
+        t.projects.edit(both) { it.copy(notes = "Fits", learned = "Grade the seams") }
+        val onlyLearned = t.projects.create("B")
+        t.projects.edit(onlyLearned) { it.copy(learned = "Pre-wash") }
+        val none = t.projects.create("C")
+        t.projects.edit(none) { it.copy(notes = "Kept") }
+
+        t.db.projectDao().foldLearnedIntoNotes(t.time.nowMillis())
+
+        assertEquals("Fits\n\nGrade the seams" to "", t.projects.get(both)!!.let { it.notes to it.learned })
+        assertEquals("Pre-wash" to "", t.projects.get(onlyLearned)!!.let { it.notes to it.learned })
+        assertEquals("Kept", t.projects.get(none)!!.notes)
+    }
+
+    @Test
     fun setupValuesAreTrimmedClearedAndRevived() = runTest {
         val machine = t.machines.create("Overlock")
         val setup = t.machines.createSetup(machine, "Jersey")

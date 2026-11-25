@@ -94,9 +94,6 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     fun setNotes(text: String) = write { projects.edit(id) { it.copy(notes = text) } }
     fun setSize(text: String) = write { projects.edit(id) { it.copy(size = text) } }
     fun setFabric(text: String) = write { projects.edit(id) { it.copy(fabric = text) } }
-    fun setLearned(text: String) = write { projects.edit(id) { it.copy(learned = text) } }
-    fun setRating(stars: Int?) = write { projects.edit(id) { it.copy(rating = stars) } }
-    fun finish(stars: Int?, learned: String) = write { projects.edit(id) { it.copy(rating = stars, learned = learned) } }
     fun setPerson(personId: String?) = write { projects.edit(id) { it.copy(personId = personId) } }
     fun createPerson(personName: String) = write {
         val personId = container.persons.create(personName)
