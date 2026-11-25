@@ -8,21 +8,17 @@ working title SewFar; user-visible texts say Thimbly / Fingerhut.
 **`SPEC.md` is the source of truth** for behaviour, data model, backup format and wording; code comments cite it as
 "SPEC 3.2" etc. Update SPEC.md alongside behaviour changes.
 
-**Keep it simple** (the user's explicit wish after a cluttered first prototype): no feature or field that wasn't asked
-for, everything a project needs is reachable from the project page. Prefer one screen over
-two and keep the data model generic enough for later additions (ROADMAP.md).
+**Keep it simple:** no feature or field that wasn't asked for, everything a project needs is reachable from the
+project page. Prefer one screen over two and keep the data model generic enough for later additions (ROADMAP.md).
 
 Code, identifiers and SPEC are English. The UI is **English** (default, `res/values/`) and **standard German**
 (`res/values-de/`); every string needs both (`StringsCompletenessTest` enforces it).
 
-Never mention other commercial sewing apps in committed files; this repo may be published.
-
 ## Commands
 
-The system Java here is JRE-only; run Gradle with Android Studio's JBR:
+Gradle needs a JDK 17+ (e.g. Android Studio's bundled JBR via `JAVA_HOME`):
 
 ```sh
-export JAVA_HOME=~/.local/opt/android-studio/jbr
 ./gradlew assembleDebug                      # debug APK
 ./gradlew installDebug                       # install on attached phone / emulator
 ./gradlew testDebugUnitTest                  # all unit tests (JVM + Robolectric)
@@ -41,7 +37,7 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   `domain/` (pure Kotlin, no Android deps), `ui/` (`projects/` = home list + project page, `library/` = patterns,
   people, machines, settings ("setups"); navigation in `ui/SewFarRoot.kt`, theme in `ui/theme/Theme.kt`).
 - Navigation: no bottom bar; the project list is home, Library and Settings come from its menu. Keep the short slide
-  transitions in `SewFarRoot` (the 700 ms default fades made the app feel laggy; same fix as in LogMyGut).
+  transitions in `SewFarRoot` (the 700 ms default fades made the app feel laggy).
 - **Data rules** (SPEC 1, 6, 7): UUID string keys. Delete through `SoftDeleter`, which stamps `deletedAt` on the row
   and its cascade (SPEC 6) and returns a `DeletionToken`; the UI passes it to `messages.showUndo(text, token)`,
   which undoes through `AppContainer.undo` (repositories have no `undo`). After the 60 s Undo window
@@ -54,11 +50,14 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
 - **Creating and editing** (SPEC 2): "+" asks for the name (`TextDialog`), creates the row, opens the page. Texts are
   shown read-only and edited in a form with Save (`DetailScaffold` editing mode; library pages via `RecordScreen`
   with a draft map) or a `TextDialog`; state changes (status, timer, links, photos, stars) are written at once.
-- **Formats** (SPEC 7, 8): until the first real release (decided 2026-11-25: nobody uses the app yet), schema and
-  backup changes edit version 1 / format 1 in place: update the hash in `SchemaFreezeTest` and, if needed, the
-  fixture; installed test copies clear their data. From that release on they freeze again: a schema change needs a
-  new `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and a migration test; a backup format
-  change needs a new `BackupRepository.FORMAT`, reading of all older formats, and a new fixture.
+- **Frozen formats** (SPEC 7, 8): database schema 1 and backup format 1 are released (v0.1; testers use real data).
+  A schema change needs a new `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and a migration
+  test (`SchemaFreezeTest` pins the v1 hash and requires an exported schema and a migration for every step); never
+  edit a released schema or drop the database. A backup format change needs a new `BackupRepository.FORMAT`, reading
+  of all older formats, and a new fixture.
+- **Releases:** raise `versionCode` and `versionName` in `app/build.gradle.kts`, add
+  `fastlane/metadata/android/{en-US,de-DE}/changelogs/<versionCode>.txt`, tag `v<versionName>`. The release key lives
+  outside the repository (`~/.config/sewfar/keystore.properties`).
 - Raw SQL writes (`openHelper.writableDatabase.execSQL`) only inside `db.withTransaction`, so they run off the main
   thread and Room observers are notified.
 - **Photos** (SPEC 3.5): `PhotoRepository` stores the processed file first (`PhotoFiles`, `ImageProcessor`: EXIF

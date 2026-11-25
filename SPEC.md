@@ -184,9 +184,8 @@ Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 - `project_setup` (projectId, setupId, sortOrder; unique pair)
 
 The database file is `sewfar2.db`; the incompatible `sewfar.db` of the 1.0 prototype is deleted on start.
-Enums are stored by name; never rename or remove an entry. Until the first real release, schema version 1 is edited
-in place (installed test copies clear their data); from then on it is frozen (`SchemaFreezeTest`) and every change
-needs a new version, a migration and a migration test.
+Enums are stored by name; never rename or remove an entry. Schema version 1 is frozen since v0.1
+(`SchemaFreezeTest`); every change needs a new version, a migration and a migration test.
 
 ## 8. Backup
 
@@ -196,7 +195,7 @@ A zip with `backup.json` (`{ "format": 1, "appVersion", "exportedAt", "tables": 
 one transaction) and `photos/<photoId>.jpg` for every live photo. Tables hold live rows only (rows inside the Undo
 window are left out, references to them cleared) plus `deletion_log`; importing an older backup drops its deleted
 rows the same way. Preferences are not
-included. Until the first real release format 1 is edited in place; after it, every app version reads every older format; each format has a fixture in
+included. Format 1 is frozen since v0.1; every app version reads every older format; each format has a fixture in
 `src/test/resources/backup/format<n>.zip`. Backups of the discarded 1.0 prototype (also "format 1", but other tables)
 are rejected with their own message.
 

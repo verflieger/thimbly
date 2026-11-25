@@ -61,6 +61,7 @@ class ProjectFlowTest {
         waitFor("In progress (1)")
 
         compose.onNodeWithText("Hoodie").performClick()
+        waitFor("Sewn for") // the project page is open, not still sliding in
         compose.onNodeWithTag("delete").performClick()
         waitFor("Project deleted")
         compose.onNodeWithText("Undo").performClick()

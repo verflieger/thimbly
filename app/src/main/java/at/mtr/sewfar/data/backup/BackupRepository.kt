@@ -331,10 +331,7 @@ class BackupRepository(
     }
 
     companion object {
-        /**
-         * Backup format version (SPEC 8.1). Until the first real release, changes edit format 1 in place; from then on
-         * it is frozen and newer apps must read every older format.
-         */
+        /** Backup format version (SPEC 8.1). Frozen since v0.1; newer apps must read every older format. */
         const val FORMAT = 1
         private const val LogTable = "deletion_log"
 

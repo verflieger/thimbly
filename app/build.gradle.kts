@@ -17,8 +17,8 @@ android {
         minSdk = 34
         targetSdk = 37
         // Raise versionCode for every APK given to others: Android only installs higher versions as updates.
-        versionCode = 2
-        versionName = "0.0.2"
+        versionCode = 3
+        versionName = "0.1"
     }
 
     // The release key lives outside the repository. Without it the release APK stays unsigned and can't be

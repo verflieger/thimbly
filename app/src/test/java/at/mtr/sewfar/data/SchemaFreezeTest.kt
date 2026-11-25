@@ -7,9 +7,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * SPEC 7: Room re-exports `schemas/.../1.json` on every build, so a schema change changes its identity hash and fails
- * here. Until the first real release, schema 1 may be edited in place: then update [FROZEN_V1] on purpose. From that
- * release on, raise the version, add a migration to [SewFarDatabase.MIGRATIONS] and a migration test instead.
+ * SPEC 7: schema version 1 is frozen since v0.1. Room re-exports `schemas/.../1.json` on every build, so a schema
+ * change without a version bump changes its identity hash and fails here. Changing the schema means: raise the version,
+ * add a migration to [SewFarDatabase.MIGRATIONS] and a migration test; never edit this hash.
  */
 class SchemaFreezeTest {
     private fun identityHash(version: Int): String {

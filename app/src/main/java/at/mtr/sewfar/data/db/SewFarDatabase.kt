@@ -7,9 +7,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 /**
- * SPEC 7. Until the first real release, schema changes edit version 1 in place (update `SchemaFreezeTest`'s hash;
- * installed test copies must clear their data). From that release on, every schema change raises the version, ships
- * a migration in [MIGRATIONS] and a migration test; the database is never dropped.
+ * SPEC 7. Schema version 1 is frozen since v0.1 (`SchemaFreezeTest` pins its identity hash). Every schema change raises
+ * the version, ships a migration in [MIGRATIONS] and a migration test; the database is never dropped.
  */
 @Database(
     version = SewFarDatabase.VERSION,
