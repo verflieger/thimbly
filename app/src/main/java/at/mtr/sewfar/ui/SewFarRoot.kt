@@ -79,7 +79,7 @@ fun SewFarRoot(container: AppContainer) {
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val undoLabel = stringResource(R.string.action_undo)
-    val messages = remember(snackbarHost, scope, undoLabel) { Messages(snackbarHost, scope, undoLabel) }
+    val messages = remember(snackbarHost, scope, undoLabel) { Messages(snackbarHost, scope, undoLabel, container::undo) }
     val openProject = { id: String -> nav.navigate(ProjectRoute(id)) }
 
     CompositionLocalProvider(LocalMessages provides messages) {

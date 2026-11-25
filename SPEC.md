@@ -85,7 +85,8 @@ timer; leaving Done clears the finish date.
   Starting the timer moves a Planned project to In progress. Deleting a project stops its timer first, so
   Undo never brings back a second running timer.
 - "+" adds time by hand: duration (`45`, `1:30`, `1.5h`, `1,5 h`, `20 min`) and a day (stored as starting at noon).
-- Total = all entries, the running one counted up to now. "Show entries" lists them (day, duration) for deletion.
+- Total = all entries, the running one counted up to now. "Show entries" lists them (day, duration) for deletion;
+  the running entry has no remove button (stop the timer first), for the same Undo reason.
 
 ### 3.4 Completion
 
@@ -143,6 +144,7 @@ Name, type (sewing machine, overlocker, coverstitch, embroidery, other), notes, 
 ## 6. Delete and undo
 
 - Delete = soft delete with cascade; the snackbar offers Undo, which restores exactly the rows of that deletion.
+  A deletion never contains a running timer (§3.3), so Undo needs no further checks.
 - Cascade: project → pattern links, setting links, time entries, photos; pattern → its project links and photos;
   machine → settings; setting → values and project links.
 

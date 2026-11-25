@@ -68,7 +68,6 @@ abstract class RecordViewModel<T : Any>(protected val container: AppContainer) :
         app.launch { block() }
     }
 
-    fun undo(token: DeletionToken) = write { container.projects.undo(token) }
 }
 
 /**
@@ -116,7 +115,7 @@ fun <T : Any> RecordScreen(
             scope.launch {
                 val token = viewModel.delete()
                 withContext(Dispatchers.Main) { onBack() }
-                if (token != null) messages.showUndo(deletedText) { viewModel.undo(token) }
+                if (token != null) messages.showUndo(deletedText, token)
             }
         },
         editing = current != null,
@@ -189,7 +188,7 @@ fun PatternScreen(viewModel: PatternViewModel, onBack: () -> Unit, onOpenProject
     ) { pattern ->
         ReadOnlyField(stringResource(R.string.pattern_designer), pattern.designer)
         ReadOnlyField(stringResource(R.string.pattern_notes), pattern.notes)
-        PhotoStrip(photos, viewModel::addPhotos, viewModel::deletePhoto, viewModel::undo, onOpenPhoto)
+        PhotoStrip(photos, viewModel::addPhotos, viewModel::deletePhoto, onOpenPhoto)
     }
 }
 

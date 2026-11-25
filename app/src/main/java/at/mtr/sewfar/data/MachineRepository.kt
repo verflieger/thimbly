@@ -36,7 +36,6 @@ class MachineRepository(private val db: SewFarDatabase, private val deleter: Sof
     /** Deletes the machine with its settings; projects lose the links (undo restores everything). */
     suspend fun delete(id: String): DeletionToken? = deleter.delete("machine", id)
 
-    suspend fun undo(token: DeletionToken) = deleter.undo(token)
 
     // ---- Setups (SPEC 5.2) ----
 

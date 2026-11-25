@@ -10,6 +10,7 @@ import at.mtr.sewfar.data.SettingsRepository
 import at.mtr.sewfar.data.TimeSource
 import at.mtr.sewfar.data.backup.BackupRepository
 import at.mtr.sewfar.data.db.SewFarDatabase
+import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.SoftDeleter
 import at.mtr.sewfar.data.photos.PhotoFiles
 import at.mtr.sewfar.data.photos.PhotoLoader
@@ -56,6 +57,9 @@ class AppContainer(private val context: Context) {
      * Runs [block] in [appScope] and waits for it: the write finishes even if the calling screen goes away
      * (CLAUDE.md, "UI conventions").
      */
+    /** Restores everything one deletion removed (SPEC 6); runs in [appScope]. The only way to undo a deletion. */
+    suspend fun undo(token: DeletionToken) = runInApp { deleter.undo(token) }
+
     suspend fun <T> runInApp(block: suspend () -> T): T = appScope.async { block() }.await()
 
     /** Re-applies the weekly auto-backup schedule on start (KEEP: an existing schedule stays as it is). */

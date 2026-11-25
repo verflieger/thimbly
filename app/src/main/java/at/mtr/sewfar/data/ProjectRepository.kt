@@ -77,7 +77,6 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
         deleter.delete("project", id)
     }
 
-    suspend fun undo(token: DeletionToken) = deleter.undo(token)
 
     // ---- Patterns (SPEC 3.1) ----
 
@@ -171,8 +170,13 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
         dao.touch(projectId, now)
     }
 
+    /**
+     * Soft-deletes a time entry. A running entry is not deleted (null; stop it first), so Undo can't bring back a
+     * second running timer (SPEC 3.3).
+     */
     suspend fun deleteTime(entryId: String): DeletionToken? = db.withTransaction {
         val entry = dao.getTime(entryId) ?: return@withTransaction null
+        if (entry.endedAt == null) return@withTransaction null
         deleter.delete("time_entry", entryId).also { dao.touch(entry.projectId, time.nowMillis()) }
     }
 }

@@ -117,7 +117,10 @@ internal fun TimeSection(state: ProjectDetailState, viewModel: ProjectDetailView
                         if (entry.endedAt == null) stringResource(R.string.timer_running)
                         else formatDuration(entry.endedAt - entry.startedAt),
                     )
-                    IconButton(onClick = { onRemove(entry.id) }) { Icon(Icons.Outlined.Close, stringResource(R.string.action_remove)) }
+                    // A running entry can't be removed (SPEC 3.3): stop the timer first.
+                    if (entry.endedAt != null) {
+                        IconButton(onClick = { onRemove(entry.id) }) { Icon(Icons.Outlined.Close, stringResource(R.string.action_remove)) }
+                    }
                 }
             }
         }
@@ -220,7 +223,7 @@ private fun PhotoThumb(photo: PhotoEntity, isCover: Boolean, isPinned: Boolean, 
                 leadingIcon = { Icon(Icons.Outlined.Delete, null) },
                 onClick = {
                     menuOpen = false
-                    scope.launch { viewModel.deletePhoto(photo.id)?.let { token -> messages.showUndo(deletedText) { viewModel.undo(token) } } }
+                    scope.launch { viewModel.deletePhoto(photo.id)?.let { token -> messages.showUndo(deletedText, token) } }
                 },
             )
         }

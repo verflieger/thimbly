@@ -58,7 +58,6 @@ class PhotoRepository(
         return token
     }
 
-    suspend fun undo(token: DeletionToken) = deleter.undo(token)
 
     /** Pins a cover (SPEC 3.5); null returns to the automatic cover. */
     suspend fun setCover(projectId: String, photoId: String?) = db.withTransaction {

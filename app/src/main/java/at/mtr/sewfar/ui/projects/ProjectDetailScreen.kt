@@ -103,7 +103,7 @@ fun ProjectDetailScreen(
     val project = state.project ?: return
 
     fun removeWithUndo(remove: suspend () -> DeletionToken?) {
-        scope.launch { remove()?.let { token -> messages.showUndo(removedText) { viewModel.undo(token) } } }
+        scope.launch { remove()?.let { token -> messages.showUndo(removedText, token) } }
     }
 
     DetailScaffold(
@@ -114,7 +114,7 @@ fun ProjectDetailScreen(
             scope.launch {
                 val token = viewModel.delete()
                 withContext(Dispatchers.Main) { onBack() }
-                if (token != null) messages.showUndo(deletedText) { viewModel.undo(token) }
+                if (token != null) messages.showUndo(deletedText, token)
             }
         },
     ) { padding ->

@@ -70,7 +70,7 @@ class PhotoRepositoryTest {
 
         t.photos.purgeFiles()
         assertTrue("still inside the Undo window", t.photoFiles.file(photo).exists())
-        t.photos.undo(token)
+        t.deleter.undo(token)
         assertEquals(listOf(photo), photosOf(PhotoOwner.PROJECT, projectId).map { it.id })
 
         t.photos.delete(photo)

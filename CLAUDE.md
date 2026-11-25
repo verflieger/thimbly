@@ -41,7 +41,9 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
 - Navigation: no bottom bar; the project list is home, Library and Settings come from its menu. Keep the short slide
   transitions in `SewFarRoot` (the 700 ms default fades made the app feel laggy; same fix as in LogMyGut).
 - **Data rules** (SPEC 1, 6, 7): UUID string keys. Rows are never hard-deleted: delete through `SoftDeleter`, which
-  cascades per the SPEC 6 list and returns a `DeletionToken` for undo; add any new table to `AllTables` and, if it
+  cascades per the SPEC 6 list and returns a `DeletionToken`; the UI passes it to `messages.showUndo(text, token)`,
+  which undoes through `AppContainer.undo` (repositories have no `undo`). A deletion must never contain a running
+  time entry (SPEC 3.3). Add any new table to `AllTables` and, if it
   has a parent, to the `cascade` map. Re-adding a removed link/value revives its tombstone (unique indexes span
   deleted rows). Child-row changes must call `ProjectDao.touch` (`lastActivityAt`). Status changes only via
   `ProjectRepository.setStatus`.

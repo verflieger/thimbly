@@ -78,7 +78,16 @@ class ProjectRepositoryTest {
         t.projects.startTimer(a)
         val token = t.projects.delete(a)!!
         t.projects.startTimer(b)
-        t.projects.undo(token)
+        t.deleter.undo(token)
+        assertEquals(1, t.count("time_entry", "endedAt IS NULL"))
+    }
+
+    @Test
+    fun aRunningEntryCannotBeDeleted() = runTest {
+        val id = t.projects.create("A")
+        t.projects.startTimer(id)
+        val entry = t.projects.observeTime(id).first().single()
+        assertNull(t.projects.deleteTime(entry.id))
         assertEquals(1, t.count("time_entry", "endedAt IS NULL"))
     }
 
@@ -91,7 +100,7 @@ class ProjectRepositoryTest {
         assertEquals(LocalDate.of(2026, 11, 2), java.time.Instant.ofEpochMilli(entry.startedAt).atZone(ZoneOffset.UTC).toLocalDate())
         val token = t.projects.deleteTime(entry.id)!!
         assertTrue(t.projects.observeTime(id).first().isEmpty())
-        t.projects.undo(token)
+        t.deleter.undo(token)
         assertEquals(1, t.projects.observeTime(id).first().size)
     }
 

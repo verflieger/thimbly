@@ -48,7 +48,6 @@ fun PhotoStrip(
     photos: List<PhotoEntity>,
     add: suspend (List<ImageSource>) -> Int,
     delete: suspend (String) -> DeletionToken?,
-    undo: (DeletionToken) -> Unit,
     onOpen: (String) -> Unit,
 ) {
     val messages = LocalMessages.current
@@ -77,7 +76,7 @@ fun PhotoStrip(
                             leadingIcon = { Icon(Icons.Outlined.Delete, null) },
                             onClick = {
                                 menuOpen = false
-                                scope.launch { delete(photo.id)?.let { token -> messages.showUndo(deletedText) { undo(token) } } }
+                                scope.launch { delete(photo.id)?.let { token -> messages.showUndo(deletedText, token) } }
                             },
                         )
                     }

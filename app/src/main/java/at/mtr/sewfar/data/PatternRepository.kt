@@ -32,5 +32,4 @@ class PatternRepository(private val db: SewFarDatabase, private val deleter: Sof
 
     suspend fun delete(id: String): DeletionToken? = deleter.delete("pattern", id)
 
-    suspend fun undo(token: DeletionToken) = deleter.undo(token)
 }

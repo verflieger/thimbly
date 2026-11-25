@@ -117,5 +117,4 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     fun setCover(photoId: String?) = write { container.photos.setCover(id, photoId) }
 
     suspend fun delete(): DeletionToken? = run { projects.delete(id) }
-    fun undo(token: DeletionToken) = write { projects.undo(token) }
 }

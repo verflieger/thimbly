@@ -38,7 +38,7 @@ class CascadeUndoTest {
         val token = t.projects.delete(id)!!
         for (table in listOf("project", "project_pattern", "project_setup", "time_entry", "photo")) assertEquals(table, 0, t.count(table))
         assertEquals(1, t.count("pattern")) // the pattern itself stays
-        t.projects.undo(token)
+        t.deleter.undo(token)
         for (table in listOf("project", "project_pattern", "project_setup", "time_entry", "photo")) assertEquals(table, 1, t.count(table))
     }
 
@@ -49,7 +49,7 @@ class CascadeUndoTest {
         t.projects.deleteTime(time.id)
         t.time.advance()
         val token = t.projects.delete(id)!!
-        t.projects.undo(token)
+        t.deleter.undo(token)
         assertEquals(0, t.count("time_entry")) // deleted earlier, stays deleted
         assertEquals(1, t.count("project"))
     }
@@ -61,7 +61,7 @@ class CascadeUndoTest {
         val ta = t.projects.delete(a)!!
         val tb = t.projects.delete(b)!!
         assertNotEquals(ta, tb)
-        t.projects.undo(ta)
+        t.deleter.undo(ta)
         assertNull(t.projects.get(b))
     }
 
@@ -72,7 +72,7 @@ class CascadeUndoTest {
         t.projects.addPattern(project, pattern)
         val token = t.patterns.delete(pattern)!!
         assertEquals(0, t.count("project_pattern"))
-        t.patterns.undo(token)
+        t.deleter.undo(token)
         assertEquals(1, t.count("project_pattern"))
     }
 
@@ -85,7 +85,7 @@ class CascadeUndoTest {
         t.projects.addSetup(project, setup)
         val token = t.machines.delete(machine)!!
         for (table in listOf("machine", "setup", "setup_value", "project_setup")) assertEquals(table, 0, t.count(table))
-        t.machines.undo(token)
+        t.deleter.undo(token)
         for (table in listOf("machine", "setup", "setup_value", "project_setup")) assertEquals(table, 1, t.count(table))
     }
 
