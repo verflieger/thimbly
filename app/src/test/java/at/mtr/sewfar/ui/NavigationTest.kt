@@ -50,9 +50,8 @@ class NavigationTest {
     }
 
     @Test
-    fun settingsFromMenu() {
-        compose.onNodeWithTag("menu").performClick()
-        compose.onNodeWithText("Settings").performClick()
+    fun settingsFromHome() {
+        compose.onNodeWithTag("settings").performClick()
         compose.waitFor("Wallpaper colours")
     }
 }

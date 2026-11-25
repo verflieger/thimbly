@@ -22,14 +22,12 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.Card
 import androidx.compose.material.icons.outlined.LocalLibrary
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -43,7 +41,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -82,7 +79,6 @@ fun ProjectsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     var searching by rememberSaveable { mutableStateOf(false) }
-    var menuOpen by remember { mutableStateOf(false) }
     var naming by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val anyRunning = state.sections.values.any { list -> list.any { it.runningSince != null } }
@@ -118,11 +114,8 @@ fun ProjectsScreen(
                     if (!searching) {
                         IconButton(onClick = { searching = true }) { Icon(Icons.Outlined.Search, stringResource(R.string.action_search)) }
                     }
-                    IconButton(onClick = { menuOpen = true }, modifier = Modifier.testTag("menu")) {
-                        Icon(Icons.Outlined.MoreVert, stringResource(R.string.action_more))
-                    }
-                    DropdownMenu(menuOpen, onDismissRequest = { menuOpen = false }) {
-                        DropdownMenuItem(text = { Text(stringResource(R.string.settings_title)) }, onClick = { menuOpen = false; onOpenSettings() })
+                    IconButton(onClick = onOpenSettings, modifier = Modifier.testTag("settings")) {
+                        Icon(Icons.Outlined.Settings, stringResource(R.string.settings_title))
                     }
                 },
             )

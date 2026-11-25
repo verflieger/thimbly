@@ -32,7 +32,7 @@ screens, fields and tabs).
 ## 2. Navigation
 
 - **Home = project list** (§3.1). No bottom bar.
-- Top bar: search, and a menu with **Settings**. At the bottom: **Library** and **+ New project**.
+- Top bar: search and a **Settings** icon. At the bottom: **Library** and **+ New project**.
 - **Library:** one screen with three tabs (Patterns, People, Machines; opens on Patterns), each a list with a "+" button. Patterns,
   machines, settings and people can also be created right from a project, so the Library is only needed to edit or
   delete them.

@@ -165,8 +165,7 @@ class ProjectFlowTest {
 
     @Test
     fun timeTrackingOffHidesTheTimer() {
-        compose.onNodeWithTag("menu").performClick()
-        compose.onNodeWithText("Settings").performClick()
+        compose.onNodeWithTag("settings").performClick()
         compose.onNodeWithTag("trackTime").performClick()
         back()
         compose.onNodeWithTag("newProject").performClick()

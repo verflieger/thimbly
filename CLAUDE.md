@@ -36,7 +36,7 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
 - **Layers**: `data/` (Room entities/DAOs in `data/db`, repositories, DataStore `SettingsRepository`),
   `domain/` (pure Kotlin, no Android deps), `ui/` (`projects/` = home list + project page, `library/` = patterns,
   people, machines, settings ("setups"); navigation in `ui/SewFarRoot.kt`, theme in `ui/theme/Theme.kt`).
-- Navigation: no bottom bar; the project list is home, Library and Settings come from its menu. Keep the short slide
+- Navigation: no bottom bar; the project list is home; Library (bottom button) and Settings (top-bar icon) open from it. Keep the short slide
   transitions in `SewFarRoot` (the 700 ms default fades made the app feel laggy).
 - **Data rules** (SPEC 1, 6, 7): UUID string keys. Delete through `SoftDeleter`, which stamps `deletedAt` on the row
   and its cascade (SPEC 6) and returns a `DeletionToken`; the UI passes it to `messages.showUndo(text, token)`,

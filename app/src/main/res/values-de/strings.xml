@@ -23,7 +23,6 @@
     <string name="action_cancel">Abbrechen</string>
     <string name="action_undo">Rückgängig</string>
     <string name="action_remove">Entfernen</string>
-    <string name="action_more">Weitere Optionen</string>
     <string name="action_search">Suchen</string>
     <string name="action_take_photo">Foto aufnehmen</string>
     <string name="action_pick_photos">Aus Galerie</string>
