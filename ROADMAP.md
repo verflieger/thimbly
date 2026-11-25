@@ -16,7 +16,9 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 - Deadlines on projects (event/birthday), shown on cards.
 - Costs per project.
 - Statistics: time and projects per month/year, most-sewn patterns.
-- Measurements per person; size sewn per pattern.
+- Size per pattern for outfits with several patterns (today: one size per project).
+- Share a photo from the photo viewer (Android share sheet: gallery, messenger, mail; no new permission). Today
+  photos only leave the app inside a backup zip, named by ID and resized to 2048 px.
 - Pattern PDFs stored in the app (separate, optional backup part because of size).
 
 ## v2 — fabric stash
