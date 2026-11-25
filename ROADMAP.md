@@ -12,9 +12,14 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 
 ## v1.x — small additions
 
-- Fabrics (see v2) are the next big step: they become a second home tab (Projects | Fabrics).
+- Fabrics (see v2) are the next big step: they become a fourth Library tab (Patterns, Fabrics, People, Machines);
+  home stays the project list.
 - Deadlines on projects (event/birthday), shown on cards.
 - Costs per project.
+- Tags on projects: any number per project, picked or created like patterns; ships with suggestions (Repair,
+  Upcycling, Alteration, Gift, Costume) instead of a separate project-type field. An empty tag row folds into the
+  "Add" row. Home list: one row of filter chips (tags and people); tap filters, tap again clears. No saved filters,
+  tag colours or AND/OR.
 - Statistics: time and projects per month/year, most-sewn patterns.
 - Size per pattern for outfits with several patterns (today: one size per project).
 - Share a photo from the photo viewer (Android share sheet: gallery, messenger, mail; no new permission). Today
