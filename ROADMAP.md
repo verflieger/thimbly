@@ -20,6 +20,11 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 - Share a photo from the photo viewer (Android share sheet: gallery, messenger, mail; no new permission). Today
   photos only leave the app inside a backup zip, named by ID and resized to 2048 px.
 - Pattern PDFs stored in the app (separate, optional backup part because of size).
+- Ribbing (Bündchen) calculator: opening length × stretch factor = ribbing length; remembers the last factor.
+  A tool reachable from the project page, no new data.
+- Size suggestion from measurements: patterns get a size chart (size → body measurements), and the project page
+  suggests a size from the person's newest measurements. Heavier: needs a new table, chart entry per pattern, and
+  rules for between-size cases. Only a suggestion; the Size field stays free text.
 
 ## v2 — fabric stash
 
@@ -28,7 +33,7 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 - Projects link stash fabrics (like patterns today); finishing a project subtracts the used amount. The project's
   free-text Fabric field (v1) stays beside the linked fabrics for extras; nothing is converted.
 - Machine settings link to fabrics: "which setting worked for this fabric?".
-- Notions (zippers, elastic, ribbing/Bündchen) and a ribbing calculator.
+- Notions (zippers, elastic, ribbing/Bündchen).
 - Shopping list.
 
 ## v3 — sync & online (opt-in)
