@@ -34,7 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -58,6 +57,7 @@ import at.mtr.sewfar.R
 import at.mtr.sewfar.data.db.PhotoEntity
 import at.mtr.sewfar.domain.Durations
 import at.mtr.sewfar.domain.ProjectStatus
+import at.mtr.sewfar.ui.common.LabeledTextField
 import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.SectionLabel
 import at.mtr.sewfar.ui.common.format
@@ -151,15 +151,13 @@ private fun AddTimeDialog(onAdd: (LocalDate, Int) -> Unit, onDismiss: () -> Unit
         title = { Text(stringResource(R.string.time_add)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    text, { text = it },
-                    label = { Text(stringResource(R.string.time_duration)) },
-                    placeholder = { Text("1:30") },
-                    supportingText = { Text(stringResource(R.string.time_duration_hint)) },
+                LabeledTextField(
+                    text, { text = it }, stringResource(R.string.time_duration),
+                    fieldModifier = Modifier.testTag("duration"),
+                    placeholder = "1:30",
+                    supportingText = stringResource(R.string.time_duration_hint),
                     isError = text.isNotBlank() && minutes == null,
-                    singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                    modifier = Modifier.fillMaxWidth().testTag("duration"),
                 )
                 OutlinedButton(onClick = { pickingDate = true }) { Text(date.format()) }
             }

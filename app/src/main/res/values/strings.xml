@@ -149,6 +149,8 @@
     </plurals>
     <string name="backup_error_prototype">This backup is from SewFar 1.0, whose data can\'t be restored in this version.</string>
     <string name="action_save">Save</string>
+    <string name="action_later">Later</string>
+    <string name="finish_title">Done – well sewn!</string>
     <string name="action_edit">Edit</string>
     <string name="discard_title">Discard changes?</string>
     <string name="action_discard">Discard</string>

@@ -183,7 +183,7 @@ fun PatternScreen(viewModel: PatternViewModel, onBack: () -> Unit, onOpenProject
         onSave = viewModel::save,
         edit = { _, d, set ->
             FormField(d.getValue("name"), { set("name", it) }, stringResource(R.string.pattern_name))
-            FormField(d.getValue("designer"), { set("designer", it) }, stringResource(R.string.pattern_designer))
+            FormField(d.getValue("designer"), { set("designer", it) }, stringResource(R.string.pattern_designer), tag = "field-designer")
             FormField(d.getValue("notes"), { set("notes", it) }, stringResource(R.string.pattern_notes), singleLine = false)
         },
     ) { pattern ->

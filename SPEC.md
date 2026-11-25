@@ -42,6 +42,8 @@ screens, fields and tabs).
     "Discard changes?" first if something was changed.
   - Status, timer, photos, linking or unlinking patterns, person and settings, stars and a machine's type apply
     immediately.
+  - Every text field has its label fixed above it (as on the read-only page), never floating inside, so fields
+    keep their size when focused. Search fields have only a placeholder.
 - Pickers (pattern, person, machine setting, machine) have a search field and a "Create “…”" row that creates the
   item from the typed name.
 - Back: the system back gesture or the arrow in the top bar.
@@ -87,7 +89,8 @@ timer; leaving Done clears the finish date.
 
 ### 3.4 Completion
 
-No separate completion screen: setting Done shows rating and "What I learned" on the project page.
+Setting a project to Done opens a dialog asking for the rating and "What I learned" (**Save** or **Later**; typed
+text is not dropped without asking). Both stay editable on the project page while it is Done.
 
 ### 3.5 Photos
 

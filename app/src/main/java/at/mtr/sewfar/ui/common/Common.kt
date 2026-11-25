@@ -1,6 +1,7 @@
 package at.mtr.sewfar.ui.common
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -35,6 +36,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
@@ -151,13 +155,11 @@ fun TextDialog(
         onDismissRequest = cancel,
         title = { Text(title) },
         text = {
-            OutlinedTextField(
-                text, { text = it },
-                label = { Text(label) },
+            LabeledTextField(
+                text, { text = it }, label,
                 singleLine = singleLine,
                 minLines = if (singleLine) 1 else 4,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag("dialogText"),
+                fieldModifier = Modifier.focusRequester(focus).testTag("dialogText"),
             )
         },
         confirmButton = {
@@ -189,15 +191,47 @@ fun FormField(
     label: String,
     modifier: Modifier = Modifier.fillMaxWidth(),
     singleLine: Boolean = true,
+    /** Test tag of the field itself. */
+    tag: String? = null,
 ) {
-    OutlinedTextField(
-        value, onChange,
-        label = { Text(label) },
-        singleLine = singleLine,
-        minLines = if (singleLine) 1 else 3,
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-        modifier = modifier,
+    LabeledTextField(
+        value, onChange, label, modifier, fieldModifier = tag?.let { Modifier.testTag(it) } ?: Modifier,
+        singleLine = singleLine, minLines = if (singleLine) 1 else 3,
     )
+}
+
+/**
+ * The one text input of the app (SPEC 2): its [label] always sits above the field, like on the read-only page, so a
+ * field never changes size when focused. TalkBack reads the label as the field's description. [modifier] sizes the
+ * whole, [fieldModifier] goes to the field itself (focus, test tag).
+ */
+@Composable
+fun LabeledTextField(
+    value: String,
+    onChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    fieldModifier: Modifier = Modifier,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    placeholder: String? = null,
+    supportingText: String? = null,
+    isError: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        SectionLabel(label, Modifier.clearAndSetSemantics {})
+        OutlinedTextField(
+            value, onChange,
+            placeholder = placeholder?.let { { Text(it) } },
+            supportingText = supportingText?.let { { Text(it) } },
+            isError = isError,
+            singleLine = singleLine,
+            minLines = minLines,
+            keyboardOptions = keyboardOptions,
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = label }.then(fieldModifier),
+        )
+    }
 }
 
 /** "3 h 20 min", "45 min" (SPEC 3.3). */

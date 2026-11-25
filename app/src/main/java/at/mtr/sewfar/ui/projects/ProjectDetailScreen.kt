@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,12 +31,14 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +50,9 @@ import at.mtr.sewfar.R
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.domain.ProjectStatus
 import at.mtr.sewfar.ui.common.DetailScaffold
+import at.mtr.sewfar.ui.common.DiscardDialog
 import at.mtr.sewfar.ui.common.EntityPicker
+import at.mtr.sewfar.ui.common.LabeledTextField
 import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.TextDialog
 import at.mtr.sewfar.ui.common.PickerItem
@@ -68,6 +73,8 @@ private sealed interface Picking {
     data object Rename : Picking
     data object Notes : Picking
     data object Learned : Picking
+    /** Just set to Done: ask for rating and "What I learned" (SPEC 3.4). */
+    data object Finish : Picking
 }
 
 /** One project on one screen, edited in place (SPEC 3). */
@@ -120,7 +127,10 @@ fun ProjectDetailScreen(
                 ProjectStatus.entries.forEachIndexed { i, status ->
                     SegmentedButton(
                         selected = project.status == status,
-                        onClick = { viewModel.setStatus(status) },
+                        onClick = {
+                            if (status == ProjectStatus.DONE && project.status != ProjectStatus.DONE) picking = Picking.Finish
+                            viewModel.setStatus(status)
+                        },
                         shape = SegmentedButtonDefaults.itemShape(i, ProjectStatus.entries.size),
                         modifier = Modifier.testTag("status-$status"),
                     ) { Text(stringResource(status.label), maxLines = 1) }
@@ -155,17 +165,7 @@ fun ProjectDetailScreen(
             if (project.status == ProjectStatus.DONE) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SectionLabel(stringResource(R.string.project_rating))
-                    Row {
-                        (1..5).forEach { stars ->
-                            IconButton(onClick = { viewModel.setRating(if (project.rating == stars) null else stars) }, modifier = Modifier.testTag("star-$stars")) {
-                                Icon(
-                                    if ((project.rating ?: 0) >= stars) Icons.Outlined.Star else Icons.Outlined.StarOutline,
-                                    stringResource(R.string.project_stars, stars),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-                    }
+                    StarRating(project.rating, "star", viewModel::setRating)
                     TextBlock(stringResource(R.string.project_learned), project.learned, stringResource(R.string.learned_add), "learned") {
                         picking = Picking.Learned
                     }
@@ -258,8 +258,67 @@ fun ProjectDetailScreen(
             stringResource(R.string.project_learned), stringResource(R.string.project_learned), initial = project.learned,
             singleLine = false, required = false, onSave = { viewModel.setLearned(it); picking = null }, onDismiss = { picking = null },
         )
+        Picking.Finish -> FinishDialog(
+            initialRating = project.rating, initialLearned = project.learned,
+            onSave = { rating, learned -> viewModel.finish(rating, learned); picking = null },
+            onDismiss = { picking = null },
+        )
         null -> Unit
     }
+}
+
+/** 1–5 stars; tapping the current rating again clears it (SPEC 3.2). */
+@Composable
+private fun StarRating(rating: Int?, tagPrefix: String, onChange: (Int?) -> Unit) {
+    Row {
+        (1..5).forEach { stars ->
+            IconButton(onClick = { onChange(if (rating == stars) null else stars) }, modifier = Modifier.testTag("$tagPrefix-$stars")) {
+                Icon(
+                    if ((rating ?: 0) >= stars) Icons.Outlined.Star else Icons.Outlined.StarOutline,
+                    stringResource(R.string.project_stars, stars),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Shown when a project is set to Done (SPEC 3.4): rating and "What I learned", Save or Later. Like any text dialog,
+ * typed text is not dropped without asking.
+ */
+@Composable
+private fun FinishDialog(initialRating: Int?, initialLearned: String, onSave: (Int?, String) -> Unit, onDismiss: () -> Unit) {
+    var rating by rememberSaveable { mutableStateOf(initialRating) }
+    var learned by rememberSaveable { mutableStateOf(initialLearned) }
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    val later = { if (rating != initialRating || learned != initialLearned) confirmDiscard = true else onDismiss() }
+    if (confirmDiscard) {
+        DiscardDialog(onDiscard = onDismiss, onKeep = { confirmDiscard = false })
+        return
+    }
+    AlertDialog(
+        onDismissRequest = later,
+        title = { Text(stringResource(R.string.finish_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column {
+                    SectionLabel(stringResource(R.string.project_rating))
+                    StarRating(rating, "finishStar") { rating = it }
+                }
+                LabeledTextField(
+                    learned, { learned = it }, stringResource(R.string.project_learned),
+                    fieldModifier = Modifier.testTag("finishLearned"), singleLine = false, minLines = 4,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(rating, learned.trim()) }, modifier = Modifier.testTag("finishSave")) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = { TextButton(onClick = later, modifier = Modifier.testTag("finishLater")) { Text(stringResource(R.string.action_later)) } },
+    )
 }
 
 /** A text of the project shown read-only with an edit button; [addLabel] while it is empty. */

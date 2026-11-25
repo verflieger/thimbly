@@ -169,7 +169,7 @@ fun SetupScreen(
                         row.forEach { key ->
                             FormField(
                                 d.getValue("$ValuePrefix$key"), { set("$ValuePrefix$key", it) }, stringResource(fieldLabel(key)),
-                                Modifier.weight(1f).testTag("field-$key"),
+                                Modifier.weight(1f), tag = "field-$key",
                             )
                         }
                         if (row.size == 1) Spacer(Modifier.weight(1f))

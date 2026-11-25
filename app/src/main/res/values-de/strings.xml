@@ -147,6 +147,8 @@
     </plurals>
     <string name="backup_error_prototype">Diese Sicherung stammt von SewFar 1.0; deren Daten können in dieser Version nicht wiederhergestellt werden.</string>
     <string name="action_save">Speichern</string>
+    <string name="action_later">Später</string>
+    <string name="finish_title">Fertig – gut genäht!</string>
     <string name="action_edit">Bearbeiten</string>
     <string name="discard_title">Änderungen verwerfen?</string>
     <string name="action_discard">Verwerfen</string>

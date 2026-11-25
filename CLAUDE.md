@@ -62,6 +62,7 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   Photo tests need `@GraphicsMode(NATIVE)`.
 - **UI conventions**: ViewModels are created with `viewModel { XViewModel(container) }`; their writes run in
   `container.appScope` so edits saved while leaving a screen survive.
+  Text inputs use `LabeledTextField`/`FormField` (label fixed above the field; tests find fields by tag, not label).
   Snackbars (incl. Undo) go through `LocalMessages`. Pickers are `EntityPicker` (search + "Create …" from the typed
   name, no extra form); show only one dialog at a time. After a suspend call, navigate inside `withContext(Dispatchers.Main)`.
 - Tests use `TestDb` (in-memory Room + `FakeTime`) under Robolectric. UI flow tests keep Robolectric's default screen

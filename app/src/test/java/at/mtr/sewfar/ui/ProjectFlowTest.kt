@@ -2,6 +2,7 @@ package at.mtr.sewfar.ui
 
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -46,7 +47,7 @@ class ProjectFlowTest {
         compose.onNodeWithText("New setting “Jersey seam”").performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Overlock")
         compose.onNodeWithText("Create “Overlock”").performClick()
-        waitFor("Stitch length")
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("field-stitch_length").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("field-stitch_length").performTextInput("3")
         compose.onNodeWithTag("save").performClick()
         waitFor("Overlock") // view mode: machine chip
@@ -75,7 +76,7 @@ class ProjectFlowTest {
         compose.onNodeWithTag("dialogSave").performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Raglan")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("edit").performClick()
-        compose.onNodeWithText("Designer").performTextReplacement("Studio X")
+        compose.onNodeWithTag("field-designer").performTextReplacement("Studio X")
         compose.waitForIdle() // on a phone there is always a frame between typing and back
         back()
         compose.waitForIdle()
@@ -83,5 +84,20 @@ class ProjectFlowTest {
         compose.onNodeWithText("Keep editing").performClick()
         compose.onNodeWithTag("save").performClick()
         waitFor("Studio X")
+    }
+
+    @Test
+    fun settingDoneAsksForRatingAndWhatILearned() {
+        compose.onNodeWithTag("newProject").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Skirt")
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("Sewn for")
+
+        compose.onNodeWithTag("status-DONE").performClick()
+        compose.onNodeWithTag("finishStar-4").performClick()
+        compose.onNodeWithTag("finishLearned").performTextInput("Grade the seams")
+        compose.onNodeWithTag("finishSave").performClick()
+        waitFor("Grade the seams")
+        compose.onNodeWithTag("finishSave").assertDoesNotExist()
     }
 }
