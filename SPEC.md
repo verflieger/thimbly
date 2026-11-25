@@ -21,8 +21,9 @@ screens, fields and tabs).
 - **No runtime permissions:** camera via `TakePicture` (works without `CAMERA` only while the merged manifest does
   not declare it), gallery via the Photo Picker. A build check fails if the merged manifest contains `INTERNET` or
   `CAMERA`.
-- **Sync-ready data:** UUID string keys; `createdAt`, `updatedAt`, `deletedAt` on every row; rows are never
-  hard-deleted (soft delete, §6). Re-adding a removed link or value revives its old row. Photo files are immutable.
+- **Sync-ready data:** UUID string keys; `createdAt`, `updatedAt`, `deletedAt` on every row. Deleted data is really
+  removed after the Undo window; `deletion_log` remembers which rows were removed, so a future sync can pass
+  deletions on (§6). Photo files are immutable.
 - Theme: Material 3 with an own calm, textile-inspired colour scheme, light/dark following the system; a setting
   switches to dynamic colour.
 - Screen changes use short (250 ms) slide transitions, also for the predictive back gesture; the default 700 ms fades
@@ -101,8 +102,8 @@ text is not dropped without asking). Both stay editable on the project page whil
 - Cover: the pinned photo, otherwise the newest one.
 - Pipeline: decode, apply EXIF orientation, downscale to at most 2048 px on the long edge, re-encode as JPEG 85 (drops
   all EXIF, including location), store as `filesDir/photos/<photoId>.jpg`. The row is inserted after the file is
-  written. Files of deleted photos and orphan files are removed after the 60 s Undo window (on start and after
-  deletions).
+  written. A deleted photo's file is removed with its row after the 60 s Undo window (§6); files without a row
+  (e.g. after a crash) are removed once older than that window.
 
 ## 4. Library: patterns and people
 
@@ -145,12 +146,17 @@ Name, type (sewing machine, overlocker, coverstitch, embroidery, other), notes, 
 
 - Delete = soft delete with cascade; the snackbar offers Undo, which restores exactly the rows of that deletion.
   A deletion never contains a running timer (§3.3), so Undo needs no further checks.
+- **Purge (2026-11-25):** 60 s after a deletion (and on every start) rows deleted longer ago are removed for good,
+  children first, together with any row that still refers to them through the cascade. Each removed row is recorded
+  in `deletion_log` (table, row ID, deletion time; never pruned). A deleted person's projects stay and lose the
+  person. Re-adding a removed link or value within the window revives its row.
 - Cascade: project → pattern links, setting links, time entries, photos; pattern → its project links and photos;
   machine → settings; setting → values and project links.
 
 ## 7. Data model (Room)
 
 Every table: `id` (UUID text), `createdAt`, `updatedAt`, `deletedAt`. Unique indexes span deleted rows (revival).
+Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 
 - `person` (name, notes)
 - `pattern` (name, designer, notes)
@@ -164,16 +170,19 @@ Every table: `id` (UUID text), `createdAt`, `updatedAt`, `deletedAt`. Unique ind
 - `project_setup` (projectId, setupId, sortOrder; unique pair)
 
 The database file is `sewfar2.db`; the incompatible `sewfar.db` of the 1.0 prototype is deleted on start.
-Enums are stored by name; never rename or remove an entry. Schema version 1 is frozen once released
-(`SchemaFreezeTest`); every later change needs a new version, a migration and a migration test.
+Enums are stored by name; never rename or remove an entry. Until the first real release, schema version 1 is edited
+in place (installed test copies clear their data); from then on it is frozen (`SchemaFreezeTest`) and every change
+needs a new version, a migration and a migration test.
 
 ## 8. Backup
 
 ### 8.1 Format
 
-A zip with `backup.json` (`{ "format": 1, "appVersion", "exportedAt", "tables": { "<table>": [rows] } }`, including
-soft-deleted rows, read in one transaction) and `photos/<photoId>.jpg` for every live photo. Preferences are not
-included. Every app version reads every older format; each format has a fixture in
+A zip with `backup.json` (`{ "format": 1, "appVersion", "exportedAt", "tables": { "<table>": [rows] } }`, read in
+one transaction) and `photos/<photoId>.jpg` for every live photo. Tables hold live rows only (rows inside the Undo
+window are left out, references to them cleared) plus `deletion_log`; importing an older backup drops its deleted
+rows the same way. Preferences are not
+included. Until the first real release format 1 is edited in place; after it, every app version reads every older format; each format has a fixture in
 `src/test/resources/backup/format<n>.zip`. Backups of the discarded 1.0 prototype (also "format 1", but other tables)
 are rejected with their own message.
 

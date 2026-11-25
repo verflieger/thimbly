@@ -10,24 +10,18 @@ import at.mtr.sewfar.data.TimeSource
 @JvmInline
 value class DeletionToken(val stamp: Long)
 
-/** Soft delete with cascade and undo (SPEC 6). Rows are never removed from the database. */
-class SoftDeleter(private val db: SewFarDatabase, private val time: TimeSource) {
+/**
+ * Delete with cascade, undo, and purge (SPEC 6). A deletion only stamps `deletedAt`, so Undo can restore it; once the
+ * Undo window has passed, [purge] removes the rows for good and records them in `deletion_log`.
+ *
+ * @param onDelete called after every deletion (the app schedules a purge for when the Undo window has passed).
+ */
+class SoftDeleter(
+    private val db: SewFarDatabase,
+    private val time: TimeSource,
+    private val onDelete: () -> Unit = {},
+) {
     private var lastStamp = 0L
-
-    /** Child rows that a deletion of a row in the key table also deletes (SPEC 6, cascade table). */
-    private val cascade: Map<String, List<Child>> = mapOf(
-        "project" to listOf(
-            Child("project_pattern", "projectId"),
-            Child("project_setup", "projectId"),
-            Child("time_entry", "projectId"),
-            Child("photo", "ownerId", ownerType = "PROJECT"),
-        ),
-        "pattern" to listOf(Child("project_pattern", "patternId"), Child("photo", "ownerId", ownerType = "PATTERN")),
-        "machine" to listOf(Child("setup", "machineId")),
-        "setup" to listOf(Child("setup_value", "setupId"), Child("project_setup", "setupId")),
-    )
-
-    private data class Child(val table: String, val column: String, val ownerType: String? = null)
 
     /**
      * Soft-deletes the live row [id] of [table] and its cascade in one transaction.
@@ -35,7 +29,7 @@ class SoftDeleter(private val db: SewFarDatabase, private val time: TimeSource) 
      */
     suspend fun delete(table: String, id: String): DeletionToken? {
         require(table in AllTables) { "Unknown table $table" }
-        return db.withTransaction {
+        val token = db.withTransaction {
             val stamp = nextStamp()
             val sql = db.openHelper.writableDatabase
             val changed = sql.compileStatement(
@@ -52,11 +46,10 @@ class SoftDeleter(private val db: SewFarDatabase, private val time: TimeSource) 
             val queue = ArrayDeque(listOf(table))
             while (queue.isNotEmpty()) {
                 val parent = queue.removeFirst()
-                for (child in cascade[parent].orEmpty()) {
-                    val ownerFilter = child.ownerType?.let { "ownerType = '$it' AND " } ?: ""
+                for (child in Cascade[parent].orEmpty()) {
                     sql.execSQL(
                         "UPDATE ${child.table} SET deletedAt = ?, updatedAt = ? " +
-                            "WHERE deletedAt IS NULL AND $ownerFilter${child.column} IN " +
+                            "WHERE deletedAt IS NULL AND ${child.filter}${child.column} IN " +
                             "(SELECT id FROM $parent WHERE deletedAt = ?)",
                         arrayOf(stamp, stamp, stamp),
                     )
@@ -65,6 +58,8 @@ class SoftDeleter(private val db: SewFarDatabase, private val time: TimeSource) 
             }
             DeletionToken(stamp)
         }
+        if (token != null) onDelete()
+        return token
     }
 
     /** Restores every row the deletion [token] removed; rows deleted earlier or later stay deleted. */
@@ -81,6 +76,54 @@ class SoftDeleter(private val db: SewFarDatabase, private val time: TimeSource) 
         }
     }
 
+    /**
+     * Removes rows deleted more than [UndoWindowMillis] ago for good, with every row that still refers to them
+     * through the cascade (e.g. a link restored by its own Undo after its project was deleted), and logs each one in
+     * `deletion_log`. References that don't cascade ([Detach]) are cleared. Photo files of removed rows become
+     * orphans, which `PhotoRepository.purgeFiles` removes. Returns the number of rows removed.
+     */
+    suspend fun purge(): Int = db.withTransaction {
+        val now = time.nowMillis()
+        val cutoff = now - UndoWindowMillis
+        val sql = db.openHelper.writableDatabase
+        fun ids(query: String, args: Array<Any>): Set<String> = sql.query(query, args).use { c ->
+            buildSet { while (c.moveToNext()) add(c.getString(0)) }
+        }
+        // AllTables runs parents first (TableRegistryTest), so a parent's set is complete before its children's.
+        val doomed = linkedMapOf<String, Set<String>>()
+        for (table in AllTables) {
+            val own = ids("SELECT id FROM $table WHERE deletedAt IS NOT NULL AND deletedAt < ?", arrayOf(cutoff))
+            val inherited = Cascade.flatMap { (parent, children) ->
+                children.filter { it.table == table }.flatMap { child ->
+                    doomed[parent].orEmpty().chunked(MaxArgs).flatMap { chunk ->
+                        ids(
+                            "SELECT id FROM $table WHERE ${child.filter}${child.column} IN (${chunk.joinToString { "?" }})",
+                            chunk.toTypedArray(),
+                        )
+                    }
+                }
+            }
+            doomed[table] = own + inherited
+        }
+        for ((parent, refs) in Detach) for (ref in refs) for (chunk in doomed[parent].orEmpty().chunked(MaxArgs)) {
+            sql.execSQL(
+                "UPDATE ${ref.table} SET ${ref.column} = NULL, updatedAt = ? WHERE ${ref.column} IN (${chunk.joinToString { "?" }})",
+                (listOf<Any>(now) + chunk).toTypedArray(),
+            )
+        }
+        for (table in AllTables.reversed()) for (chunk in doomed.getValue(table).chunked(MaxArgs)) {
+            val marks = chunk.joinToString { "?" }
+            // A row that never had a deletedAt (an inherited child) is logged with the purge time.
+            sql.execSQL(
+                "INSERT OR REPLACE INTO deletion_log (rowId, tableName, deletedAt) " +
+                    "SELECT id, '$table', COALESCE(deletedAt, ?) FROM $table WHERE id IN ($marks)",
+                (listOf<Any>(now) + chunk).toTypedArray(),
+            )
+            sql.execSQL("DELETE FROM $table WHERE id IN ($marks)", chunk.toTypedArray())
+        }
+        doomed.values.sumOf { it.size }
+    }
+
     /** Strictly increasing within the process, so two deletions never share a stamp. */
     @Synchronized
     private fun nextStamp(): Long {
@@ -89,11 +132,44 @@ class SoftDeleter(private val db: SewFarDatabase, private val time: TimeSource) 
         return stamp
     }
 
+    /** A column of [table] that refers to a parent row; [ownerType] narrows a polymorphic reference (photos). */
+    data class Ref(val table: String, val column: String, val ownerType: String? = null) {
+        internal val filter get() = ownerType?.let { "ownerType = '$it' AND " } ?: ""
+    }
+
     companion object {
-        /** Every table; a new table must be added here (backup, undo) and to the cascade if it has a parent. */
+        /** Longer than any Undo snackbar, so a restored row (and its photo file) is still there. */
+        const val UndoWindowMillis = 60_000L
+
+        /** SQLite's limit on bound arguments is 999. */
+        private const val MaxArgs = 500
+
+        /**
+         * Every soft-deletable table, parents before children (backup restore and the purge rely on that order).
+         * A new table goes here (backup, undo, purge) and into [Cascade] or [Detach] for each foreign key;
+         * `TableRegistryTest` checks both against the schema.
+         */
         val AllTables = listOf(
             "person", "pattern", "project", "project_pattern", "time_entry", "photo",
             "machine", "setup", "setup_value", "project_setup",
+        )
+
+        /** Child rows that a deletion of a row in the key table also deletes (SPEC 6, cascade table). */
+        val Cascade: Map<String, List<Ref>> = mapOf(
+            "project" to listOf(
+                Ref("project_pattern", "projectId"),
+                Ref("project_setup", "projectId"),
+                Ref("time_entry", "projectId"),
+                Ref("photo", "ownerId", ownerType = "PROJECT"),
+            ),
+            "pattern" to listOf(Ref("project_pattern", "patternId"), Ref("photo", "ownerId", ownerType = "PATTERN")),
+            "machine" to listOf(Ref("setup", "machineId")),
+            "setup" to listOf(Ref("setup_value", "setupId"), Ref("project_setup", "setupId")),
+        )
+
+        /** References that survive their parent's deletion; the purge clears them (a deleted person's projects stay). */
+        val Detach: Map<String, List<Ref>> = mapOf(
+            "person" to listOf(Ref("project", "personId")),
         )
     }
 }

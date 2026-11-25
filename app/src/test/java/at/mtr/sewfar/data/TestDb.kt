@@ -10,9 +10,6 @@ import at.mtr.sewfar.domain.Ids
 import android.graphics.Bitmap
 import java.io.File
 import java.time.LocalDate
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 
 /** Clock under test control. */
@@ -34,13 +31,16 @@ class TestDb {
     val persons = PersonRepository(db, deleter, time)
     val machines = MachineRepository(db, deleter, time)
 
-    /** Delayed photo cleanup jobs; cancelled in [close]. */
-    val cleanupScope = CoroutineScope(SupervisorJob())
     val photoFiles = PhotoFiles(File(ApplicationProvider.getApplicationContext<android.content.Context>().cacheDir, "test-${Ids.random()}"))
-    val photos = PhotoRepository(db, deleter, photoFiles, time, cleanupScope)
+    val photos = PhotoRepository(db, deleter, photoFiles, time)
+
+    /** What the app runs after the Undo window: purge deleted rows, then files left without a row. */
+    suspend fun purge() {
+        deleter.purge()
+        photos.purgeFiles()
+    }
 
     fun close() {
-        cleanupScope.cancel()
         db.close()
         photoFiles.dir.deleteRecursively()
     }

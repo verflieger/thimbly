@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "809c1b9d6bf8f0a3bdb91849be14f6cb",
+    "identityHash": "fcc8caecdd33e88ab65b54a91eec0b62",
     "entities": [
       {
         "tableName": "person",
@@ -762,11 +762,41 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "deletion_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowId` TEXT NOT NULL, `tableName` TEXT NOT NULL, `deletedAt` INTEGER NOT NULL, PRIMARY KEY(`rowId`))",
+        "fields": [
+          {
+            "fieldPath": "rowId",
+            "columnName": "rowId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tableName",
+            "columnName": "tableName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deletedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "rowId"
+          ]
+        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '809c1b9d6bf8f0a3bdb91849be14f6cb')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fcc8caecdd33e88ab65b54a91eec0b62')"
     ]
   }
 }

@@ -1,5 +1,6 @@
 package at.mtr.sewfar.data
 
+import at.mtr.sewfar.data.db.SoftDeleter
 import at.mtr.sewfar.domain.PhotoOwner
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -68,14 +69,14 @@ class PhotoRepositoryTest {
         val photo = addPhoto(projectId)
         val token = t.photos.delete(photo)!!
 
-        t.photos.purgeFiles()
+        t.purge()
         assertTrue("still inside the Undo window", t.photoFiles.file(photo).exists())
         t.deleter.undo(token)
         assertEquals(listOf(photo), photosOf(PhotoOwner.PROJECT, projectId).map { it.id })
 
         t.photos.delete(photo)
-        t.time.advance(PhotoRepository.UndoWindowMillis + 1_000)
-        t.photos.purgeFiles()
+        t.time.advance(SoftDeleter.UndoWindowMillis + 1_000)
+        t.purge()
         assertFalse(t.photoFiles.file(photo).exists())
     }
 
@@ -85,8 +86,8 @@ class PhotoRepositoryTest {
         val photo = addPhoto(projectId)
         t.projects.delete(projectId)
 
-        t.time.advance(PhotoRepository.UndoWindowMillis + 1_000)
-        t.photos.purgeFiles()
+        t.time.advance(SoftDeleter.UndoWindowMillis + 1_000)
+        t.purge()
 
         assertFalse(t.photoFiles.file(photo).exists())
     }
@@ -94,10 +95,10 @@ class PhotoRepositoryTest {
     @Test
     fun oldOrphanFilesArePurgedFreshOnesKept() = runTest {
         t.photoFiles.write("orphan-old") { image.inputStream() }
-        t.photoFiles.file("orphan-old").setLastModified(t.time.now - PhotoRepository.UndoWindowMillis - 10_000)
+        t.photoFiles.file("orphan-old").setLastModified(t.time.now - SoftDeleter.UndoWindowMillis - 10_000)
         t.photoFiles.write("orphan-fresh") { image.inputStream() }
 
-        t.photos.purgeFiles()
+        t.purge()
 
         assertFalse(t.photoFiles.file("orphan-old").exists())
         assertTrue("may belong to an import in progress", t.photoFiles.file("orphan-fresh").exists())

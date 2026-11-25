@@ -41,8 +41,9 @@ data class ImportPlan(val file: File, val format: Int, val exportedAt: String, v
 private val PhotoEntry = Regex("""^photos/[A-Za-z0-9-]+\.jpg$""")
 
 /**
- * Backup zip (SPEC 8): `backup.json` with every table (including soft-deleted rows) and `photos/<id>.jpg` for every
- * live photo. Tables are copied column by column, so the format follows the Room schema without per-entity code.
+ * Backup zip (SPEC 8): `backup.json` with the live rows of every table plus `deletion_log`, and `photos/<id>.jpg` for
+ * every live photo. Rows still inside the Undo window are left out, as if already purged. Tables are copied column by
+ * column, so the format follows the Room schema without per-entity code.
  */
 class BackupRepository(
     private val db: SewFarDatabase,
@@ -63,13 +64,13 @@ class BackupRepository(
 
     /** Writes a complete backup to [out]. Tables are read in one transaction, so the snapshot is consistent. */
     suspend fun export(out: OutputStream) = withContext(Dispatchers.IO) {
-        val (tables, livePhotoIds) = db.withTransaction {
-            val sql = db.openHelper.readableDatabase
-            val data = SoftDeleter.AllTables.associateWith { table ->
-                sql.query("SELECT * FROM $table").use { cursor -> JsonArray(cursor.rows()) }
-            }
-            data to sql.query("SELECT id FROM photo WHERE deletedAt IS NULL").use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
-        }
+        val tables = liveRows(
+            db.withTransaction {
+                val sql = db.openHelper.readableDatabase
+                BackupTables.associateWith { table -> sql.query("SELECT * FROM $table").use { cursor -> JsonArray(cursor.rows()) } }
+            },
+        )
+        val livePhotoIds = livePhotoIds(JsonObject(tables))
         val root = JsonObject(
             mapOf(
                 "format" to JsonPrimitive(FORMAT),
@@ -139,14 +140,12 @@ class BackupRepository(
         if (format > FORMAT) throw BackupException(BackupException.Reason.NEWER_FORMAT, "Format $format is newer than $FORMAT")
         val tables = backup["tables"] as? JsonObject ?: throw BackupException(BackupException.Reason.NOT_A_BACKUP, "No tables")
         // Backups of the 1.0 prototype also say format 1 but have other tables; they can't be restored (SPEC 8.1).
-        if (!SoftDeleter.AllTables.containsAll(tables.keys)) {
-            throw BackupException(BackupException.Reason.PROTOTYPE, "Unknown tables ${tables.keys - SoftDeleter.AllTables.toSet()}")
+        if (!BackupTables.containsAll(tables.keys)) {
+            throw BackupException(BackupException.Reason.PROTOTYPE, "Unknown tables ${tables.keys - BackupTables.toSet()}")
         }
         // Photo rows without a file are accepted (the photo shows as missing), so one lost file never makes every
         // later backup unrestorable (SPEC 8.2).
-        val counts = tables.mapValues { (_, rows) ->
-            rows.jsonArray.count { row -> row.jsonObject["deletedAt"]?.let { it is JsonNull } ?: true }
-        }
+        val counts = liveRows(tables).filterKeys { it in SoftDeleter.AllTables }.mapValues { (_, rows) -> rows.size }
         return ImportPlan(file, format, backup["exportedAt"]?.jsonPrimitive?.contentOrNull.orEmpty(), counts)
     }
 
@@ -178,7 +177,8 @@ class BackupRepository(
 
         // 6. Replace the tables. The marker lists the backup's live photo IDs: after a crash, recovery compares them
         // with the committed database to tell whether this import committed.
-        val tables = backup["tables"] as JsonObject
+        // Older backups also hold deleted rows; they are dropped as the purge would have.
+        val tables = JsonObject(liveRows(backup["tables"] as JsonObject))
         swapMarker.writeText(livePhotoIds(tables).sorted().joinToString("\n"))
         try {
             replaceTables(tables)
@@ -232,8 +232,8 @@ class BackupRepository(
             val sql = db.openHelper.writableDatabase
             // Rows arrive in any order; foreign keys are checked at commit (SPEC 8).
             sql.execSQL("PRAGMA defer_foreign_keys = ON")
-            SoftDeleter.AllTables.forEach { sql.execSQL("DELETE FROM $it") }
-            for (table in SoftDeleter.AllTables) {
+            BackupTables.forEach { sql.execSQL("DELETE FROM $it") }
+            for (table in BackupTables) {
                 val columns = sql.query("PRAGMA table_info($table)").use { c ->
                     val name = c.getColumnIndexOrThrow("name")
                     buildSet { while (c.moveToNext()) add(c.getString(name)) }
@@ -254,6 +254,39 @@ class BackupRepository(
     private fun livePhotoIds(tables: JsonObject): List<String> = tables["photo"]?.jsonArray.orEmpty().mapNotNull { row ->
         val obj = row.jsonObject
         obj["id"]?.jsonPrimitive?.contentOrNull?.takeIf { (obj["deletedAt"] ?: JsonNull) is JsonNull }
+    }
+
+    /**
+     * What a backup holds: the live rows, minus rows whose cascade parent is not live, with detached references to
+     * rows not kept cleared (SoftDeleter.Cascade / Detach, the same rules as the purge). Parents come first in
+     * AllTables, so each table is filtered against its already filtered parents. `deletion_log` passes unchanged.
+     */
+    private fun liveRows(tables: Map<String, JsonElement>): Map<String, JsonArray> {
+        val kept = linkedMapOf<String, JsonArray>()
+        val keptIds = mutableMapOf<String, Set<String>>()
+        fun JsonObject.text(key: String) = (this[key] as? JsonPrimitive)?.contentOrNull
+        for (table in SoftDeleter.AllTables) {
+            val rows = tables[table]?.jsonArray.orEmpty().map { it.jsonObject }
+                .filter { (it["deletedAt"] ?: JsonNull) is JsonNull }
+                .filter { row ->
+                    SoftDeleter.Cascade.all { (parent, refs) ->
+                        refs.filter { it.table == table && (it.ownerType == null || it.ownerType == row.text("ownerType")) }
+                            .all { ref -> row.text(ref.column) in keptIds[parent].orEmpty() }
+                    }
+                }
+                .map { row ->
+                    SoftDeleter.Detach.entries.fold(row) { acc, (parent, refs) ->
+                        refs.filter { it.table == table }.fold(acc) { r, ref ->
+                            val value = r.text(ref.column)
+                            if (value == null || value in keptIds[parent].orEmpty()) r else JsonObject(r + (ref.column to JsonNull))
+                        }
+                    }
+                }
+            kept[table] = JsonArray(rows)
+            keptIds[table] = rows.mapNotNull { it.text("id") }.toSet()
+        }
+        kept[LogTable] = tables[LogTable]?.jsonArray ?: JsonArray(emptyList())
+        return kept
     }
 
     private fun readJson(file: File): JsonObject = ZipInputStream(file.inputStream().buffered()).use { zip ->
@@ -298,8 +331,15 @@ class BackupRepository(
     }
 
     companion object {
-        /** Backup format version (SPEC 8.1). Frozen once released; newer apps must read every older format. */
+        /**
+         * Backup format version (SPEC 8.1). Until the first real release, changes edit format 1 in place; from then on
+         * it is frozen and newer apps must read every older format.
+         */
         const val FORMAT = 1
+        private const val LogTable = "deletion_log"
+
+        /** Tables in a backup, in restore order. */
+        private val BackupTables = SoftDeleter.AllTables + LogTable
         const val JSON_ENTRY = "backup.json"
         const val PHOTOS_DIR = "photos/"
 

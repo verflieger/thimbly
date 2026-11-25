@@ -9,9 +9,10 @@ import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.domain.ProjectStatus
 import java.time.LocalDate
 
-// SPEC 7. Every table: UUID string id, createdAt/updatedAt (epoch millis UTC), deletedAt (soft delete, null = live).
-// Foreign keys have no ON DELETE action (rows are never hard-deleted); every FK column is indexed.
-// Unique indexes are on all rows, not only live ones: re-adding a link revives its tombstone (SPEC 1).
+// SPEC 7. Every table (except deletion_log): UUID string id, createdAt/updatedAt (epoch millis UTC), deletedAt (soft
+// delete, null = live). Deleted rows are removed for good after the Undo window (SoftDeleter.purge, SPEC 6).
+// Foreign keys have no ON DELETE action (the purge removes children first); every FK column is indexed.
+// Unique indexes are on all rows, not only live ones: re-adding a link within the Undo window revives its row.
 
 @Entity(tableName = "person")
 data class PersonEntity(
@@ -166,4 +167,15 @@ data class ProjectSetupEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
+)
+
+/**
+ * One row removed for good by the purge (SPEC 6): which table, which row, when it was deleted. Kept for a future sync,
+ * so another device can learn about the deletion; never pruned.
+ */
+@Entity(tableName = "deletion_log")
+data class DeletionLogEntity(
+    @PrimaryKey val rowId: String,
+    val tableName: String,
+    val deletedAt: Long,
 )

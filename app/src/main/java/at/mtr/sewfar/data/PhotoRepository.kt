@@ -9,25 +9,20 @@ import at.mtr.sewfar.data.photos.PhotoFiles
 import at.mtr.sewfar.domain.Ids
 import at.mtr.sewfar.domain.PhotoOwner
 import java.io.InputStream
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
  * Photos of projects and patterns (SPEC 3.5). The image is processed and stored first, then the
- * row is inserted; a crash in between leaves only an orphan file, which [purgeFiles] removes.
- *
- * @param cleanupScope runs the delayed file cleanup after a deletion (outlives screens).
+ * row is inserted; a crash in between leaves only an orphan file, which [purgeFiles] removes. A deleted photo's
+ * row is removed by the purge after the Undo window (SoftDeleter.purge), which makes its file an orphan too.
  */
 class PhotoRepository(
     private val db: SewFarDatabase,
     private val deleter: SoftDeleter,
     private val files: PhotoFiles,
     private val time: TimeSource,
-    private val cleanupScope: CoroutineScope,
 ) {
     private val dao = db.photoDao()
 
@@ -46,16 +41,14 @@ class PhotoRepository(
         return id
     }
 
-    /** Deletes a photo; its file goes once the Undo window has passed. */
+    /** Deletes a photo; row and file go once the Undo window has passed. */
     suspend fun delete(photoId: String): DeletionToken? {
         val photo = dao.get(photoId) ?: return null
-        val token = db.withTransaction {
+        return db.withTransaction {
             deleter.delete("photo", photoId).also {
                 if (photo.ownerType == PhotoOwner.PROJECT) db.projectDao().touch(photo.ownerId, time.nowMillis())
             }
         }
-        scheduleCleanup()
-        return token
     }
 
 
@@ -67,30 +60,17 @@ class PhotoRepository(
     }
 
     /**
-     * Removes files of photos deleted longer than [UndoWindowMillis] ago (including photos deleted by a cascade) and
-     * orphan files without any row (SPEC 6). Called on start and after deletions.
+     * Removes photo files without a row (SPEC 3.5): photos purged after the Undo window, and files a crash left before
+     * their row was inserted. Files younger than the Undo window stay, as their row may still be on its way.
      */
     suspend fun purgeFiles() = withContext(Dispatchers.IO) {
-        val cutoff = time.nowMillis() - UndoWindowMillis
-        dao.deletedBefore(cutoff).forEach(files::delete)
+        val cutoff = time.nowMillis() - SoftDeleter.UndoWindowMillis
         val known = dao.allIds().toSet()
         files.stored().forEach { (id, modified) -> if (id !in known && modified < cutoff) files.delete(id) }
     }
 
-    private fun scheduleCleanup() {
-        cleanupScope.launch {
-            delay(UndoWindowMillis + 1_000)
-            purgeFiles()
-        }
-    }
-
     private suspend fun store(open: () -> InputStream): String = withContext(Dispatchers.IO) {
         Ids.random().also { id -> files.write(id, open) }
-    }
-
-    companion object {
-        /** Longer than any Undo snackbar, so a restored photo still has its file. */
-        const val UndoWindowMillis = 60_000L
     }
 }
 

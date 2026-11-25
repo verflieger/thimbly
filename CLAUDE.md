@@ -40,25 +40,28 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   people, machines, settings ("setups"); navigation in `ui/SewFarRoot.kt`, theme in `ui/theme/Theme.kt`).
 - Navigation: no bottom bar; the project list is home, Library and Settings come from its menu. Keep the short slide
   transitions in `SewFarRoot` (the 700 ms default fades made the app feel laggy; same fix as in LogMyGut).
-- **Data rules** (SPEC 1, 6, 7): UUID string keys. Rows are never hard-deleted: delete through `SoftDeleter`, which
-  cascades per the SPEC 6 list and returns a `DeletionToken`; the UI passes it to `messages.showUndo(text, token)`,
-  which undoes through `AppContainer.undo` (repositories have no `undo`). A deletion must never contain a running
-  time entry (SPEC 3.3). Add any new table to `AllTables` and, if it
-  has a parent, to the `cascade` map. Re-adding a removed link/value revives its tombstone (unique indexes span
-  deleted rows). Child-row changes must call `ProjectDao.touch` (`lastActivityAt`). Status changes only via
+- **Data rules** (SPEC 1, 6, 7): UUID string keys. Delete through `SoftDeleter`, which stamps `deletedAt` on the row
+  and its cascade (SPEC 6) and returns a `DeletionToken`; the UI passes it to `messages.showUndo(text, token)`,
+  which undoes through `AppContainer.undo` (repositories have no `undo`). After the 60 s Undo window
+  `SoftDeleter.purge` removes the rows for good and logs each in `deletion_log` (for a future sync); the app runs it
+  on start and after each deletion. A deletion must never contain a running time entry (SPEC 3.3). Add any new table
+  to `AllTables` (parents first) and each of its foreign keys to `Cascade` or `Detach`; `TableRegistryTest` checks
+  this against the schema. Re-adding a removed link/value within the Undo window revives its row (unique indexes
+  span deleted rows). Child-row changes must call `ProjectDao.touch` (`lastActivityAt`). Status changes only via
   `ProjectRepository.setStatus`.
 - **Creating and editing** (SPEC 2): "+" asks for the name (`TextDialog`), creates the row, opens the page. Texts are
   shown read-only and edited in a form with Save (`DetailScaffold` editing mode; library pages via `RecordScreen`
   with a draft map) or a `TextDialog`; state changes (status, timer, links, photos, stars) are written at once.
-- **Frozen formats** (SPEC 7, 8): database schema 1 and backup format 1 are released. A schema change needs a new
-  `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and a migration test (`SchemaFreezeTest`
-  checks the frozen v1 hash and that every version step has an exported schema and a migration); a
-  backup format change needs a new `BackupRepository.FORMAT`, reading of all older formats, and a new fixture.
+- **Formats** (SPEC 7, 8): until the first real release (decided 2026-11-25: nobody uses the app yet), schema and
+  backup changes edit version 1 / format 1 in place: update the hash in `SchemaFreezeTest` and, if needed, the
+  fixture; installed test copies clear their data. From that release on they freeze again: a schema change needs a
+  new `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and a migration test; a backup format
+  change needs a new `BackupRepository.FORMAT`, reading of all older formats, and a new fixture.
 - Raw SQL writes (`openHelper.writableDatabase.execSQL`) only inside `db.withTransaction`, so they run off the main
   thread and Room observers are notified.
 - **Photos** (SPEC 3.5): `PhotoRepository` stores the processed file first (`PhotoFiles`, `ImageProcessor`: EXIF
   orientation, ≤ 2048 px, JPEG 85, no EXIF), then inserts the row. Files are immutable; replacing = new row.
-  Files of deleted photos and old orphan files are purged after `UndoWindowMillis` (on start and after deletions).
+  The purge removes a deleted photo's row; `purgeFiles` then removes files without a row older than the Undo window.
   UI: `rememberTakePhoto` (TakePicture → cache temp file via FileProvider, no CAMERA permission),
   `rememberPickPhotos` (Photo Picker), `PhotoImage` (via `LocalPhotoLoader`), `PhotoStrip`, `PhotoViewerRoute`.
   Photo tests need `@GraphicsMode(NATIVE)`.

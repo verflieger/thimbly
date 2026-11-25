@@ -171,8 +171,6 @@ interface PhotoDao {
     fun observeAllOfType(ownerType: PhotoOwner): Flow<List<PhotoEntity>>
 
     /** Photos deleted before [cutoff]: their Undo window has passed, so the files can go (SPEC 6). */
-    @Query("SELECT id FROM photo WHERE deletedAt IS NOT NULL AND deletedAt < :cutoff")
-    suspend fun deletedBefore(cutoff: Long): List<String>
 
     /** IDs of all photo rows, live or deleted. */
     @Query("SELECT id FROM photo")

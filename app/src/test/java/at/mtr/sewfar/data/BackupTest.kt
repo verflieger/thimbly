@@ -14,6 +14,14 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -61,7 +69,7 @@ class BackupTest {
         t.projects.addPattern(project, pattern)
         t.projects.addTime(project, t.time.day, 30)
         val gone = t.projects.observeTime(project).first().single().id
-        t.projects.deleteTime(gone) // tombstones are part of the backup
+        t.projects.deleteTime(gone) // deleted: not part of the backup
         val photo = t.photos.add(PhotoOwner.PROJECT, project) { image.inputStream() }
         return project to photo
     }
@@ -89,7 +97,48 @@ class BackupTest {
         assertTrue(t.photoFiles.file(photo).readBytes().contentEquals(image) || t.photoFiles.file(photo).length() > 0)
         assertTrue(photoBytes(zip, photo).contentEquals(t.photoFiles.file(photo).readBytes()))
         assertNotNull(t.projects.get(project))
-        assertEquals(1, t.count("time_entry", "projectId = '$project'", live = false) - t.count("time_entry", "projectId = '$project'"))
+    }
+
+    @Test
+    fun exportHoldsLiveRowsAndTheDeletionLog() = runTest {
+        val (project, _) = sampleData()
+        val person = t.projects.get(project)!!.personId!!
+        val purged = t.patterns.create("Old")
+        t.patterns.delete(purged)
+        t.time.advance(at.mtr.sewfar.data.db.SoftDeleter.UndoWindowMillis + 1_000)
+        t.deleter.purge()
+        t.persons.delete(person) // still inside the Undo window: left out, and the project no longer points at it
+
+        val tables = Json.parseToJsonElement(tablesJson(exportBytes()).substringBeforeLast("}")).jsonObject
+        assertEquals(0, tables.getValue("time_entry").jsonArray.size)
+        assertEquals(0, tables.getValue("person").jsonArray.size)
+        assertEquals(JsonNull, tables.getValue("project").jsonArray.single().jsonObject["personId"])
+        // The pattern and the time entry deleted in sampleData, both past the Undo window.
+        val logged = tables.getValue("deletion_log").jsonArray.map { it.jsonObject.getValue("rowId").jsonPrimitive.content }
+        assertEquals(2, logged.size)
+        assertTrue(purged in logged)
+
+        backup.import(backup.prepareImport(exportBytes().inputStream()))
+        assertEquals(2, t.count("deletion_log", live = false))
+    }
+
+    @Test
+    fun importSkipsDeletedRowsOfOlderBackups() = runTest {
+        val (project, photo) = sampleData()
+        val zip = exportBytes()
+        // An older backup: the pattern is marked deleted (its project link then has no parent).
+        val root = ZipInputStream(zip.inputStream()).use { z -> generateSequence { z.nextEntry }.first { it.name == "backup.json" }; z.readBytes() }
+            .decodeToString().let { Json.parseToJsonElement(it).jsonObject }
+        val tables = root.getValue("tables").jsonObject
+        val deletedPattern = JsonObject(tables.getValue("pattern").jsonArray.single().jsonObject + ("deletedAt" to JsonPrimitive(5L)))
+        val older = JsonObject(root + ("tables" to JsonObject(tables + ("pattern" to JsonArray(listOf(deletedPattern))))))
+        val file = zipOf("backup.json" to older.toString().toByteArray(), "photos/$photo.jpg" to image)
+
+        backup.import(backup.prepareImport(file.inputStream()))
+
+        assertNotNull(t.projects.get(project))
+        assertEquals(0, t.count("pattern", live = false))
+        assertEquals(0, t.count("project_pattern", live = false))
     }
 
     @Test

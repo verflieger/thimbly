@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** Creates and owns long-lived objects (database, repositories, settings). */
@@ -30,7 +31,7 @@ class AppContainer(private val context: Context) {
 
     val database: SewFarDatabase by lazy { SewFarDatabase.create(context) }
 
-    private val deleter: SoftDeleter by lazy { SoftDeleter(database, time) }
+    private val deleter: SoftDeleter by lazy { SoftDeleter(database, time, onDelete = ::schedulePurge) }
 
     val projects: ProjectRepository by lazy { ProjectRepository(database, deleter, time) }
     val patterns: PatternRepository by lazy { PatternRepository(database, deleter, time) }
@@ -38,7 +39,7 @@ class AppContainer(private val context: Context) {
     val machines: MachineRepository by lazy { MachineRepository(database, deleter, time) }
 
     private val photoFiles: PhotoFiles by lazy { PhotoFiles(context.filesDir) }
-    val photos: PhotoRepository by lazy { PhotoRepository(database, deleter, photoFiles, time, appScope) }
+    val photos: PhotoRepository by lazy { PhotoRepository(database, deleter, photoFiles, time) }
     val photoLoader: PhotoLoader by lazy { PhotoLoader(photoFiles) }
 
     val backup: BackupRepository by lazy {
@@ -73,13 +74,26 @@ class AppContainer(private val context: Context) {
     }
 
     /**
-     * On start: finish or roll back a photo swap an interrupted import left behind (SPEC 8.2), then remove files of
-     * photos whose Undo window has passed and orphan files (SPEC 6). Order matters: the purge must see the final folder.
+     * On start: finish or roll back a photo swap an interrupted import left behind (SPEC 8.2), then purge what was
+     * deleted before the Undo window (SPEC 6). Order matters: the file purge must see the final folder.
      */
-    fun purgePhotoFilesInBackground() {
+    fun purgeInBackground() {
         appScope.launch {
             runCatching { backup.recoverPhotoSwap() }.onFailure { android.util.Log.e("SewFar", "Photo swap recovery failed", it) }
-            photos.purgeFiles()
+            purge()
         }
+    }
+
+    /** After a deletion: purge once its Undo window has passed (a restart before then purges on start). */
+    private fun schedulePurge() {
+        appScope.launch {
+            delay(SoftDeleter.UndoWindowMillis + 1_000)
+            purge()
+        }
+    }
+
+    /** Removes deleted rows whose Undo window has passed, then the photo files left without a row (SPEC 6). */
+    private suspend fun purge() {
+        runCatching { deleter.purge(); photos.purgeFiles() }.onFailure { android.util.Log.e("SewFar", "Purge failed", it) }
     }
 }
