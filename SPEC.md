@@ -78,6 +78,10 @@ One scrolling page. The top bar shows the name with ✎ (rename dialog) and dele
 8. When Done: rating (1–5 stars, tap the same star again to clear) and "What I learned" (like notes).
 9. Started / finished dates (read-only).
 
+Sections 4–7 show only once filled (2026-11-25): empty ones fold into one "Add" row of chips below them (pattern,
+size, fabric, person, machine setting, notes), so a new project shows little more than status and photos. A filled
+section keeps its own add chip where more can be linked (patterns, settings).
+
 Removing a link, the person or a time entry offers Undo.
 
 **Status effects:** In progress or Done sets the start date if missing; Done sets the finish date and stops a running
@@ -85,6 +89,8 @@ timer; leaving Done clears the finish date.
 
 ### 3.3 Time tracking
 
+- **Time tracking** can be switched off in Settings (§9; on by default). Off hides the Time section and the cards'
+  timer button and total; a running timer still shows its Stop. Recorded entries stay (and stay in backups).
 - Start/stop on the project page and on the list card; a Done project shows no Start (time can still be added by
   hand). Only one timer runs at a time: starting one stops the other.
   Starting the timer moves a Planned project to In progress. Deleting a project stops its timer first, so
@@ -213,7 +219,7 @@ are rejected with their own message.
 
 ## 9. Settings
 
-Appearance (dynamic colour), Photos ("Fine photos": new photos at up to 4096 px, §3.5), Backup (§8.2, plus the note that switching phones needs a manual backup), About
+Appearance (dynamic colour), Time ("Time tracking", §3.3), Photos ("Fine photos": new photos at up to 4096 px, §3.5), Backup (§8.2, plus the note that switching phones needs a manual backup), About
 (version, licence).
 
 ## 10. Quality

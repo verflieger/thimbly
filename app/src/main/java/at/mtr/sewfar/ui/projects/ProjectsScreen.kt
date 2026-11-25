@@ -73,6 +73,8 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ProjectsScreen(
     viewModel: ProjectListViewModel,
+    /** Off: no timer button or time on the cards, except to stop a running timer (SPEC 9). */
+    trackTime: Boolean,
     onOpenProject: (id: String) -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -173,7 +175,7 @@ fun ProjectsScreen(
                 if (!collapsed) {
                     items(projects, key = { it.id }) { project ->
                         ProjectCard(
-                            project, now,
+                            project, now, trackTime,
                             onOpen = { onOpenProject(project.id) },
                             onTimer = { if (project.runningSince != null) viewModel.stopTimer(project.id) else viewModel.startTimer(project.id) },
                         )
@@ -199,7 +201,7 @@ private fun NewProjectDialog(onCreate: (String) -> Unit, onDismiss: () -> Unit) 
 }
 
 @Composable
-private fun ProjectCard(project: ProjectSummary, now: Long, onOpen: () -> Unit, onTimer: () -> Unit) {
+private fun ProjectCard(project: ProjectSummary, now: Long, trackTime: Boolean, onOpen: () -> Unit, onTimer: () -> Unit) {
     val px = with(LocalDensity.current) { 112.dp.roundToPx() }
     Card(Modifier.fillMaxWidth().clickable(onClick = onOpen)) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -223,14 +225,14 @@ private fun ProjectCard(project: ProjectSummary, now: Long, onOpen: () -> Unit, 
                     )
                 }
                 val total = project.timeMillis + (project.runningSince?.let { (now - it).coerceAtLeast(0) } ?: 0)
-                if (total > 0 || project.runningSince != null) {
+                if ((trackTime && total > 0) || project.runningSince != null) {
                     Text(
                         formatDuration(total), style = MaterialTheme.typography.bodySmall,
                         color = if (project.runningSince != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-            if (project.status != at.mtr.sewfar.domain.ProjectStatus.DONE || project.runningSince != null) {
+            if ((trackTime && project.status != at.mtr.sewfar.domain.ProjectStatus.DONE) || project.runningSince != null) {
                 IconButton(onClick = onTimer, modifier = Modifier.testTag("timer-${project.id}")) {
                     if (project.runningSince != null) Icon(Icons.Outlined.Stop, stringResource(R.string.timer_stop), tint = MaterialTheme.colorScheme.primary)
                     else Icon(Icons.Outlined.PlayArrow, stringResource(R.string.timer_start))

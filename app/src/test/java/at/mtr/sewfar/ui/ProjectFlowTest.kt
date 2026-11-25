@@ -1,5 +1,7 @@
 package at.mtr.sewfar.ui
 
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -10,6 +12,9 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import at.mtr.sewfar.MainActivity
+import at.mtr.sewfar.SewFarApp
+import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,6 +32,11 @@ class ProjectFlowTest {
     private fun waitFor(text: String) =
         compose.waitUntil(5_000) { compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty() }
 
+    private fun pageOpen() =
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("status-DONE").fetchSemanticsNodes().isNotEmpty() }
+
+    @After fun resetSettings() = runBlocking { (compose.activity.application as SewFarApp).container.settings.setTrackTime(true) }
+
     private fun back() = compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
 
     @Test
@@ -34,7 +44,7 @@ class ProjectFlowTest {
         compose.onNodeWithTag("newProject").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Hoodie")
         compose.onNodeWithTag("dialogSave").performClick()
-        waitFor("Sewn for")
+        pageOpen()
 
         compose.onNodeWithTag("addPattern").performScrollTo().performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Raglan")
@@ -61,7 +71,7 @@ class ProjectFlowTest {
         waitFor("In progress (1)")
 
         compose.onNodeWithText("Hoodie").performClick()
-        waitFor("Sewn for") // the project page is open, not still sliding in
+        pageOpen() // the project page is open, not still sliding in
         compose.onNodeWithTag("delete").performClick()
         waitFor("Project deleted")
         compose.onNodeWithText("Undo").performClick()
@@ -73,7 +83,7 @@ class ProjectFlowTest {
         compose.onNodeWithTag("newProject").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Skirt")
         compose.onNodeWithTag("dialogSave").performClick()
-        waitFor("Sewn for")
+        pageOpen()
         compose.onNodeWithTag("delete").performClick()
         waitFor("Project deleted")
 
@@ -108,7 +118,7 @@ class ProjectFlowTest {
         compose.onNodeWithTag("newProject").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Skirt")
         compose.onNodeWithTag("dialogSave").performClick()
-        waitFor("Sewn for")
+        pageOpen()
 
         compose.onNodeWithTag("status-DONE").performClick()
         compose.onNodeWithTag("finishStar-4").performClick()
@@ -123,7 +133,7 @@ class ProjectFlowTest {
         compose.onNodeWithTag("newProject").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Dress for Lena")
         compose.onNodeWithTag("dialogSave").performClick()
-        waitFor("Sewn for")
+        pageOpen()
         compose.onNodeWithTag("addPerson").performScrollTo().performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Lena")
         compose.onNodeWithText("Create “Lena”").performClick()
@@ -147,7 +157,7 @@ class ProjectFlowTest {
         compose.onNodeWithTag("newProject").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Hoodie")
         compose.onNodeWithTag("dialogSave").performClick()
-        waitFor("Sewn for")
+        pageOpen()
         compose.onNodeWithTag("edit-size").performScrollTo().performClick()
         compose.onNodeWithTag("dialogText").performTextInput("122")
         compose.onNodeWithTag("dialogSave").performClick()
@@ -156,5 +166,49 @@ class ProjectFlowTest {
         compose.onNodeWithTag("dialogSave").performClick()
         waitFor("1,5 m jersey")
         compose.onNodeWithText("122").assertExists()
+    }
+
+    @Test
+    fun emptySectionsFoldIntoTheAddRow() {
+        compose.onNodeWithTag("newProject").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Apron")
+        compose.onNodeWithTag("dialogSave").performClick()
+        pageOpen()
+        compose.onNodeWithText("Sewn for").assertDoesNotExist() // empty person section folded into the Add row
+        compose.onNodeWithTag("edit-notes").performScrollTo().performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Pocket left")
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("Pocket left")
+    }
+
+    @Test
+    fun timeTrackingOffHidesTheTimer() {
+        compose.onNodeWithTag("menu").performClick()
+        compose.onNodeWithText("Settings").performClick()
+        compose.onNodeWithTag("trackTime").performClick()
+        back()
+        compose.onNodeWithTag("newProject").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Apron")
+        compose.onNodeWithTag("dialogSave").performClick()
+        pageOpen()
+        compose.onNodeWithTag("timer").assertDoesNotExist()
+        compose.onNodeWithTag("timeTotal").assertDoesNotExist()
+        back()
+        waitFor("Planned (1)")
+        compose.onAllNodes(hasContentDescription("Start")).assertCountEquals(0)
+    }
+
+    @Test
+    fun aRunningTimerStaysStoppableWhenTimeTrackingIsOff() {
+        compose.onNodeWithTag("newProject").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Apron")
+        compose.onNodeWithTag("dialogSave").performClick()
+        pageOpen()
+        compose.onNodeWithTag("timer").performScrollTo().performClick()
+        waitFor("Stop")
+        runBlocking { (compose.activity.application as SewFarApp).container.settings.setTrackTime(false) }
+        compose.waitForIdle()
+        compose.onNodeWithTag("timer").performScrollTo().performClick() // Stop
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("timer").fetchSemanticsNodes().isEmpty() }
     }
 }

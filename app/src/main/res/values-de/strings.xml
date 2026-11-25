@@ -45,6 +45,8 @@
     <string name="person_deleted">Person gelöscht</string>
     <string name="action_add">Hinzufügen</string>
     <string name="action_delete">Löschen</string>
+    <string name="settings_track_time">Zeiterfassung</string>
+    <string name="settings_track_time_summary">Stoppuhr und Zeiten bei den Projekten zeigen. Bereits erfasste Zeiten bleiben erhalten.</string>
     <string name="settings_photos">Fotos</string>
     <string name="settings_fine_photos">Feine Fotos</string>
     <string name="settings_fine_photos_summary">Neue Fotos mit bis zu 4096 statt 2048 px speichern, für schärferes Zoomen. Jedes Foto braucht etwa 3–4 MB.</string>
@@ -132,9 +134,7 @@
     <string name="project_finished_on">Fertig am %1$s</string>
     <string name="project_learned">Was ich gelernt habe</string>
     <string name="project_size">Größe</string>
-    <string name="size_add">Größe eintragen</string>
     <string name="project_fabric">Stoff</string>
-    <string name="fabric_add">Stoff eintragen</string>
     <string name="project_notes">Notizen</string>
     <string name="project_patterns">Schnittmuster</string>
     <string name="project_person">Genäht für</string>
@@ -175,7 +175,6 @@
     <string name="keep_editing">Weiter bearbeiten</string>
     <string name="setup_no_values">Noch keine Werte. Tippe auf ✎, um sie einzutragen.</string>
     <string name="photo_add">Foto hinzufügen</string>
-    <string name="notes_add">Notizen hinzufügen</string>
     <string name="learned_add">Gelerntes hinzufügen</string>
     <string name="project_rename">Projekt umbenennen</string>
 </resources>

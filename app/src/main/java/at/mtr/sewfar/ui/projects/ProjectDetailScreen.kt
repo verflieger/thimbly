@@ -88,6 +88,8 @@ private sealed interface Picking {
 @Composable
 fun ProjectDetailScreen(
     viewModel: ProjectDetailViewModel,
+    /** Off: no Time section, unless this project's timer is running (SPEC 9). */
+    trackTime: Boolean,
     onBack: () -> Unit,
     onOpenPhoto: (String) -> Unit,
     onOpenPattern: (String) -> Unit,
@@ -143,51 +145,75 @@ fun ProjectDetailScreen(
                 }
             }
 
-            TimeSection(state, viewModel, onRemove = { id -> removeWithUndo { viewModel.deleteTime(id) } })
+            if (trackTime || state.running != null) TimeSection(state, viewModel, onRemove = { id -> removeWithUndo { viewModel.deleteTime(id) } })
 
             PhotoStrip(
                 state.photos, viewModel::addPhotos, viewModel::deletePhoto, onOpenPhoto,
                 coverId = state.coverPhotoId, pinnedId = project.coverPhotoId, setCover = viewModel::setCover,
             )
 
-            Links(stringResource(R.string.project_patterns), stringResource(R.string.project_add_pattern), "addPattern",
-                state.patterns.map { Triple(it.linkId, it.name, it.patternId) },
-                onOpen = onOpenPattern, onRemove = { link -> removeWithUndo { viewModel.removePattern(link) } },
-                onAdd = { picking = Picking.Pattern })
+            // Empty sections fold into one "Add" row below the filled ones (SPEC 3.2).
+            val addChips = mutableListOf<@Composable () -> Unit>()
 
-            TextBlock(stringResource(R.string.project_size), project.size, stringResource(R.string.size_add), "size") { picking = Picking.Size }
-            TextBlock(stringResource(R.string.project_fabric), project.fabric, stringResource(R.string.fabric_add), "fabric") { picking = Picking.Fabric }
+            if (state.patterns.isNotEmpty()) {
+                Links(stringResource(R.string.project_patterns), stringResource(R.string.project_add_pattern), "addPattern",
+                    state.patterns.map { Triple(it.linkId, it.name, it.patternId) },
+                    onOpen = onOpenPattern, onRemove = { link -> removeWithUndo { viewModel.removePattern(link) } },
+                    onAdd = { picking = Picking.Pattern })
+            } else addChips += { AddChip(stringResource(R.string.project_add_pattern), "addPattern") { picking = Picking.Pattern } }
 
-            Links(stringResource(R.string.project_person), stringResource(R.string.project_add_person), "addPerson",
-                listOfNotNull(state.person?.let { Triple(it.id, it.name, it.id) }),
-                onOpen = onOpenPerson,
-                onRemove = { personId ->
-                    viewModel.setPerson(null)
-                    messages.showUndo(removedText) { viewModel.setPerson(personId) }
-                },
-                onAdd = { picking = Picking.Person }, canAdd = state.person == null)
-            // Read-only here; they are edited on the person's page (SPEC 3.2).
+            if (project.size.isNotBlank()) {
+                TextBlock(stringResource(R.string.project_size), project.size, "size") { picking = Picking.Size }
+            } else addChips += { AddChip(stringResource(R.string.project_size), "edit-size") { picking = Picking.Size } }
+            if (project.fabric.isNotBlank()) {
+                TextBlock(stringResource(R.string.project_fabric), project.fabric, "fabric") { picking = Picking.Fabric }
+            } else addChips += { AddChip(stringResource(R.string.project_fabric), "edit-fabric") { picking = Picking.Fabric } }
+
             val person = state.person
-            val m = state.measurements
-            if (person != null && m != null && m.valuesCm.isNotEmpty()) {
-                MeasurementsView(
-                    stringResource(R.string.measurements_from, m.measuredOn.format()), m,
-                    Modifier.fillMaxWidth().clickable { onOpenPerson(person.id) }.testTag("measurements"),
-                )
+            if (person != null) {
+                Links(stringResource(R.string.project_person), "", "addPerson",
+                    listOf(Triple(person.id, person.name, person.id)),
+                    onOpen = onOpenPerson,
+                    onRemove = { personId ->
+                        viewModel.setPerson(null)
+                        messages.showUndo(removedText) { viewModel.setPerson(personId) }
+                    },
+                    onAdd = {}, canAdd = false)
+                // Read-only here; they are edited on the person's page (SPEC 3.2).
+                val m = state.measurements
+                if (m != null && m.valuesCm.isNotEmpty()) {
+                    MeasurementsView(
+                        stringResource(R.string.measurements_from, m.measuredOn.format()), m,
+                        Modifier.fillMaxWidth().clickable { onOpenPerson(person.id) }.testTag("measurements"),
+                    )
+                }
+            } else addChips += { AddChip(stringResource(R.string.project_add_person), "addPerson") { picking = Picking.Person } }
+
+            if (state.setups.isNotEmpty()) {
+                Links(stringResource(R.string.project_setups), stringResource(R.string.project_add_setup), "addSetup",
+                    state.setups.map { Triple(it.linkId, setupLabel(it.title, it.machineName), it.setupId) },
+                    onOpen = onOpenSetup, onRemove = { link -> removeWithUndo { viewModel.removeSetup(link) } },
+                    onAdd = { picking = Picking.Setup })
+            } else addChips += { AddChip(stringResource(R.string.project_add_setup), "addSetup") { picking = Picking.Setup } }
+
+            if (project.notes.isNotBlank()) {
+                TextBlock(stringResource(R.string.project_notes), project.notes, "notes") { picking = Picking.Notes }
+            } else addChips += { AddChip(stringResource(R.string.project_notes), "edit-notes") { picking = Picking.Notes } }
+
+            if (addChips.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    SectionLabel(stringResource(R.string.action_add))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        addChips.forEach { it() }
+                    }
+                }
             }
-
-            Links(stringResource(R.string.project_setups), stringResource(R.string.project_add_setup), "addSetup",
-                state.setups.map { Triple(it.linkId, setupLabel(it.title, it.machineName), it.setupId) },
-                onOpen = onOpenSetup, onRemove = { link -> removeWithUndo { viewModel.removeSetup(link) } },
-                onAdd = { picking = Picking.Setup })
-
-            TextBlock(stringResource(R.string.project_notes), project.notes, stringResource(R.string.notes_add), "notes") { picking = Picking.Notes }
 
             if (project.status == ProjectStatus.DONE) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SectionLabel(stringResource(R.string.project_rating))
                     StarRating(project.rating, "star", viewModel::setRating)
-                    TextBlock(stringResource(R.string.project_learned), project.learned, stringResource(R.string.learned_add), "learned") {
+                    TextBlock(stringResource(R.string.project_learned), project.learned, "learned", stringResource(R.string.learned_add)) {
                         picking = Picking.Learned
                     }
                 }
@@ -352,7 +378,7 @@ private fun FinishDialog(initialRating: Int?, initialLearned: String, onSave: (I
 
 /** A text of the project shown read-only with an edit button; [addLabel] while it is empty. */
 @Composable
-private fun TextBlock(title: String, text: String, addLabel: String, tag: String, onEdit: () -> Unit) {
+private fun TextBlock(title: String, text: String, tag: String, addLabel: String = "", onEdit: () -> Unit) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             SectionLabel(title, Modifier.weight(1f))
@@ -365,14 +391,19 @@ private fun TextBlock(title: String, text: String, addLabel: String, tag: String
         if (text.isNotBlank()) {
             Text(text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit))
         } else {
-            AssistChip(
-                onClick = onEdit,
-                label = { Text(addLabel) },
-                leadingIcon = { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)) },
-                modifier = Modifier.testTag("edit-$tag"),
-            )
+            AddChip(addLabel, "edit-$tag", onEdit)
         }
     }
+}
+
+@Composable
+private fun AddChip(label: String, tag: String, onClick: () -> Unit) {
+    AssistChip(
+        onClick = onClick,
+        label = { Text(label) },
+        leadingIcon = { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)) },
+        modifier = Modifier.testTag(tag),
+    )
 }
 
 @Composable
@@ -414,14 +445,7 @@ private fun Links(
                     },
                 )
             }
-            if (canAdd) {
-                AssistChip(
-                    onClick = onAdd,
-                    label = { Text(addLabel) },
-                    leadingIcon = { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)) },
-                    modifier = Modifier.testTag(addTag),
-                )
-            }
+            if (canAdd) AddChip(addLabel, addTag, onAdd)
         }
     }
 }

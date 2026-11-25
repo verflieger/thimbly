@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
@@ -88,6 +89,8 @@ fun SewFarRoot(container: AppContainer) {
     val undoLabel = stringResource(R.string.action_undo)
     val messages = remember(snackbarHost, scope, undoLabel) { Messages(snackbarHost, scope, undoLabel, container::undo) }
     val openProject = { id: String -> nav.navigate(ProjectRoute(id)) }
+    // null until DataStore answers: no time controls flash up for people who switched them off.
+    val trackTime = container.settings.trackTime.collectAsStateWithLifecycle(initialValue = null).value == true
 
     CompositionLocalProvider(LocalMessages provides messages) {
         Scaffold(contentWindowInsets = WindowInsets(0), snackbarHost = { SnackbarHost(snackbarHost) }) { _ ->
@@ -105,6 +108,7 @@ fun SewFarRoot(container: AppContainer) {
                 composable<ProjectsRoute> {
                     ProjectsScreen(
                         viewModel = viewModel { ProjectListViewModel(container) },
+                        trackTime = trackTime,
                         onOpenProject = { id -> nav.navigate(ProjectRoute(id)) },
                         onOpenLibrary = { nav.navigate(LibraryRoute()) },
                         onOpenSettings = { nav.navigate(SettingsRoute) { launchSingleTop = true } },
@@ -114,6 +118,7 @@ fun SewFarRoot(container: AppContainer) {
                     val route = entry.toRoute<ProjectRoute>()
                     ProjectDetailScreen(
                         viewModel = viewModel { ProjectDetailViewModel(container, route.id) },
+                        trackTime = trackTime,
                         onBack = { nav.popFrom(entry) },
                         onOpenPhoto = { photoId -> nav.navigate(PhotoViewerRoute(PhotoOwner.PROJECT.name, route.id, photoId)) },
                         onOpenPattern = { nav.navigate(PatternRoute(it)) },

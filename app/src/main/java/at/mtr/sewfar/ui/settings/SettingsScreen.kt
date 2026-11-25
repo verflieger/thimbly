@@ -36,6 +36,7 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
     val versionName = container.versionName
     val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle(initialValue = false)
     val finePhotos by settings.finePhotos.collectAsStateWithLifecycle(initialValue = false)
+    val trackTime by settings.trackTime.collectAsStateWithLifecycle(initialValue = true)
     val scope = rememberCoroutineScope()
     Scaffold(
         topBar = {
@@ -58,6 +59,19 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
                     Switch(
                         checked = dynamicColor,
                         onCheckedChange = { enabled -> scope.launch { settings.setDynamicColor(enabled) } },
+                    )
+                },
+            )
+            HorizontalDivider()
+            SectionHeader(stringResource(R.string.project_time))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_track_time)) },
+                supportingContent = { Text(stringResource(R.string.settings_track_time_summary)) },
+                trailingContent = {
+                    Switch(
+                        checked = trackTime,
+                        onCheckedChange = { enabled -> scope.launch { settings.setTrackTime(enabled) } },
+                        modifier = Modifier.testTag("trackTime"),
                     )
                 },
             )

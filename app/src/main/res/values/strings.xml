@@ -46,6 +46,8 @@
     <string name="person_deleted">Person deleted</string>
     <string name="action_add">Add</string>
     <string name="action_delete">Delete</string>
+    <string name="settings_track_time">Time tracking</string>
+    <string name="settings_track_time_summary">Show the timer and times on projects. Times already recorded are kept.</string>
     <string name="settings_photos">Photos</string>
     <string name="settings_fine_photos">Fine photos</string>
     <string name="settings_fine_photos_summary">Store new photos at up to 4096 px instead of 2048 px for sharper zoom. Each photo takes about 3–4 MB.</string>
@@ -133,9 +135,7 @@
     <string name="project_finished_on">Finished %1$s</string>
     <string name="project_learned">What I learned</string>
     <string name="project_size">Size</string>
-    <string name="size_add">Add size</string>
     <string name="project_fabric">Fabric</string>
-    <string name="fabric_add">Add fabric</string>
     <string name="project_notes">Notes</string>
     <string name="project_patterns">Patterns</string>
     <string name="project_person">Sewn for</string>
@@ -176,7 +176,6 @@
     <string name="keep_editing">Keep editing</string>
     <string name="setup_no_values">No values yet. Tap ✎ to fill them in.</string>
     <string name="photo_add">Add photo</string>
-    <string name="notes_add">Add notes</string>
     <string name="learned_add">Add what you learned</string>
     <string name="project_rename">Rename project</string>
 </resources>

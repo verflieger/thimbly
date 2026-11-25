@@ -31,6 +31,13 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[FinePhotos] = enabled }
     }
 
+    /** Timer and times on projects (SPEC 3.3, 9); off for people who don't track time. */
+    val trackTime: Flow<Boolean> = store.data.map { it[TrackTime] ?: true }
+
+    suspend fun setTrackTime(enabled: Boolean) {
+        store.edit { it[TrackTime] = enabled }
+    }
+
     /** Collapsed sections of the project list (SPEC 3.1); Done is collapsed until the user opens it. */
     val collapsedSections: Flow<Set<ProjectStatus>> = store.data.map { prefs ->
         prefs[CollapsedSections]?.mapNotNull { name -> ProjectStatus.entries.firstOrNull { it.name == name } }?.toSet()
@@ -77,6 +84,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val CollapsedSections = stringSetPreferencesKey("collapsed_sections")
         private val DynamicColor = booleanPreferencesKey("dynamic_color")
         private val FinePhotos = booleanPreferencesKey("fine_photos")
+        private val TrackTime = booleanPreferencesKey("track_time")
 
         fun create(context: Context) = SettingsRepository(context.applicationContext.dataStore)
     }
