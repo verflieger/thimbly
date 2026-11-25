@@ -1,4 +1,4 @@
-SewFar is a simple, private tracker for your sewing projects: what you are sewing, how long it takes, which pattern and machine settings you used, and how it turned out.
+Thimbly is a simple, private tracker for your sewing projects: what you are sewing, how long it takes, which pattern and machine settings you used, and how it turned out.
 
 <b>One page per project</b>
 • Status: planned, in progress, done
@@ -14,7 +14,7 @@ SewFar is a simple, private tracker for your sewing projects: what you are sewin
 Patterns with photos, people, and your machines with reusable settings (stitch, tensions, differential feed …), each showing the projects that used them.
 
 <b>Backup</b>
-Save or share a backup file at any time, or let SewFar back up weekly into a folder of your choice.
+Save or share a backup file at any time, or let Thimbly back up weekly into a folder of your choice.
 
 <b>Private by design</b>
 No internet permission, no ads, no tracking, no account. Your data stays on your phone until you export it yourself.

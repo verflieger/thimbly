@@ -2,7 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-SewFar is a private, fully offline Android sewing project tracker (Kotlin, Jetpack Compose, Room, DataStore).
+Thimbly (German UI: Fingerhut) is a private, fully offline Android sewing project tracker (Kotlin, Jetpack Compose,
+Room, DataStore). The package `at.mtr.sewfar` and class names (`SewFarApp` …) keep the
+working title SewFar; user-visible texts say Thimbly / Fingerhut.
 **`SPEC.md` is the source of truth** for behaviour, data model, backup format and wording; code comments cite it as
 "SPEC 3.2" etc. Update SPEC.md alongside behaviour changes.
 

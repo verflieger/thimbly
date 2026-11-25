@@ -343,7 +343,7 @@ class BackupRepository(
         const val JSON_ENTRY = "backup.json"
         const val PHOTOS_DIR = "photos/"
 
-        /** `sewfar-backup-YYYY-MM-DD-HHmmss.zip` / `sewfar-auto-…` (SPEC 8.2). */
+        /** `thimbly-backup-YYYY-MM-DD-HHmmss.zip` / `thimbly-auto-…` (SPEC 8.2). */
         fun fileName(prefix: String, at: java.time.LocalDateTime): String =
             "$prefix-" + at.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")) + ".zip"
     }

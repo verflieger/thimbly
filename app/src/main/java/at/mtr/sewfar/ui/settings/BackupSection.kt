@@ -98,7 +98,7 @@ fun BackupSection(container: AppContainer) {
         }
     }
 
-    fun fileName() = BackupRepository.fileName("sewfar-backup", LocalDateTime.now())
+    fun fileName() = BackupRepository.fileName("thimbly-backup", LocalDateTime.now())
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri: Uri? ->
         if (uri != null) work(savedText) { context.contentResolver.openOutputStream(uri)!!.use { backup.export(it) } }

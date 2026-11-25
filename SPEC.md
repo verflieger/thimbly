@@ -1,6 +1,6 @@
-# SewFar — Specification
+# Thimbly — Specification
 
-SewFar is a private, offline Android tracker for sewing projects: what you are sewing, how long it takes, which
+Thimbly (German: **Fingerhut**) is a private, offline Android tracker for sewing projects: what you are sewing, how long it takes, which
 pattern and machine settings you used, and how it turned out.
 
 **Guiding rule: keep it simple.** One home screen, one page per project, everything a project needs can be added
@@ -202,12 +202,12 @@ are rejected with their own message.
 
 ### 8.2 Export, import, automatic backup
 
-- **Export:** save via the system dialog (`sewfar-backup-YYYY-MM-DD-HHmmss.zip`) or share.
+- **Export:** save via the system dialog (`thimbly-backup-YYYY-MM-DD-HHmmss.zip`) or share.
 - **Import replaces all data:** reject zip slip and newer formats; validate one `backup.json`; confirm with counts;
   write a safety export (restorable via "Undo last restore"); extract photos to `photos.new`; replace all tables in
   one transaction; swap the photo folders, guarded by a marker file so an interrupted swap is completed or rolled back
   on the next start. Photo rows without a file are accepted.
-- **Automatic backup:** optional, weekly, into a folder the user picks once (`sewfar-auto-*.zip`, newest 5 kept,
+- **Automatic backup:** optional, weekly, into a folder the user picks once (`thimbly-auto-*.zip`, newest 5 kept,
   nothing else touched). Errors (e.g. folder gone) are shown in Settings with "Choose folder again".
 
 ## 9. Settings

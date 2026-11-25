@@ -28,7 +28,7 @@ interface BackupFolder {
     fun delete(name: String)
 }
 
-/** Weekly automatic backup (SPEC 8.2): write, then keep the newest [Keep] `sewfar-auto-*.zip` files. */
+/** Weekly automatic backup (SPEC 8.2): write, then keep the newest [Keep] `thimbly-auto-*.zip` files. */
 class AutoBackup(private val backups: BackupRepository) {
     /** Runs one backup into [folder]; throws [IOException] with a user-facing reason on failure. */
     suspend fun run(folder: BackupFolder, now: LocalDateTime) {
@@ -51,13 +51,13 @@ class AutoBackup(private val backups: BackupRepository) {
     }
 
     companion object {
-        const val Prefix = "sewfar-auto"
+        const val Prefix = "thimbly-auto"
         const val Keep = 5
 
         /** Stored error codes, shown translated in Settings. */
         const val ERROR_FOLDER = "folder_unavailable"
         const val ERROR_FAILED = "failed"
-        private val AutoName = Regex("""^sewfar-auto-\d{4}-\d{2}-\d{2}-\d{6}\.zip$""")
+        private val AutoName = Regex("""^thimbly-auto-\d{4}-\d{2}-\d{2}-\d{6}\.zip$""")
     }
 }
 

@@ -1,4 +1,4 @@
-# SewFar roadmap
+# Thimbly roadmap
 
 The current app is specified in [SPEC.md](SPEC.md). This file collects what may come after, roughly in priority
 order. Nothing here is decided in detail. Every addition must keep the project page simple (SPEC, guiding rule).

@@ -324,15 +324,15 @@ class BackupTest {
 
     @Test
     fun autoBackupKeepsNewestFiveAndTouchesNothingElse() = runTest {
-        val old = (1..6).map { "sewfar-auto-2026-01-0$it-120000.zip" }
-        val folder = FakeFolder(names = old + listOf("holiday.jpg", "sewfar-backup-2026-01-01-120000.zip", "sewfar-auto-notes.txt"))
+        val old = (1..6).map { "thimbly-auto-2026-01-0$it-120000.zip" }
+        val folder = FakeFolder(names = old + listOf("holiday.jpg", "thimbly-backup-2026-01-01-120000.zip", "thimbly-auto-notes.txt"))
 
         AutoBackup(backup).run(folder, LocalDateTime.of(2026, 2, 1, 9, 30, 0))
 
-        val autos = folder.files.filter { it.startsWith("sewfar-auto-2026") }.sorted()
-        assertEquals(listOf("sewfar-auto-2026-01-03-120000.zip", "sewfar-auto-2026-01-04-120000.zip", "sewfar-auto-2026-01-05-120000.zip",
-            "sewfar-auto-2026-01-06-120000.zip", "sewfar-auto-2026-02-01-093000.zip"), autos)
-        assertTrue(folder.files.containsAll(listOf("holiday.jpg", "sewfar-backup-2026-01-01-120000.zip", "sewfar-auto-notes.txt")))
+        val autos = folder.files.filter { it.startsWith("thimbly-auto-2026") }.sorted()
+        assertEquals(listOf("thimbly-auto-2026-01-03-120000.zip", "thimbly-auto-2026-01-04-120000.zip", "thimbly-auto-2026-01-05-120000.zip",
+            "thimbly-auto-2026-01-06-120000.zip", "thimbly-auto-2026-02-01-093000.zip"), autos)
+        assertTrue(folder.files.containsAll(listOf("holiday.jpg", "thimbly-backup-2026-01-01-120000.zip", "thimbly-auto-notes.txt")))
     }
 
     @Test
