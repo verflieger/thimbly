@@ -95,7 +95,7 @@ class ProjectFlowTest {
     }
 
     @Test
-    fun cancellingAnEditFormAsksBeforeDiscarding() {
+    fun backFromAnEditFormSaves() {
         compose.onNodeWithTag("library").performClick()
         compose.onNodeWithTag("tab-PATTERNS").performClick()
         compose.onNodeWithTag("add").performClick()
@@ -106,11 +106,8 @@ class ProjectFlowTest {
         compose.onNodeWithTag("field-designer").performTextReplacement("Studio X")
         compose.waitForIdle() // on a phone there is always a frame between typing and back
         back()
-        compose.waitForIdle()
-        compose.onNodeWithText("Discard changes?").assertExists()
-        compose.onNodeWithText("Keep editing").performClick()
-        compose.onNodeWithTag("save").performClick()
         waitFor("Studio X")
+        compose.onNodeWithTag("save").assertDoesNotExist()
     }
 
     @Test

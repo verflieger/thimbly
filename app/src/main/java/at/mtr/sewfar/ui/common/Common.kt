@@ -43,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import at.mtr.sewfar.R
 
 /** Centered hint shown while a list is empty. */
@@ -73,8 +74,8 @@ fun ReadOnlyField(label: String, value: String, placeholder: String? = null) {
 }
 
 /**
- * Frame of a detail page (SPEC 2). Viewing: back, [title], edit (if [onEdit]) and delete. Editing: ✕ and Save; back
- * or ✕ discards, asking first when [dirty].
+ * Frame of a detail page (SPEC 2). Viewing: back, [title], edit (if [onEdit]) and delete. Editing: ✕ discards and
+ * Save saves; back saves when [dirty] (and does nothing while the form can't be saved, so nothing typed is lost).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,16 +91,14 @@ fun DetailScaffold(
     onCancel: () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    var confirmDiscard by remember { mutableStateOf(false) }
-    val cancel = { if (dirty) confirmDiscard = true else onCancel() }
-    BackHandler(enabled = editing) { cancel() }
+    BackHandler(enabled = editing) { if (!dirty) onCancel() else if (canSave) onSave() }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     if (editing) {
-                        IconButton(onClick = cancel, modifier = Modifier.testTag("cancel")) {
+                        IconButton(onClick = onCancel, modifier = Modifier.testTag("cancel")) {
                             Icon(Icons.Outlined.Close, stringResource(R.string.action_cancel))
                         }
                     } else {
@@ -126,11 +125,11 @@ fun DetailScaffold(
         },
         content = content,
     )
-    if (confirmDiscard) DiscardDialog(onDiscard = { confirmDiscard = false; onCancel() }, onKeep = { confirmDiscard = false })
 }
 
 /**
  * Asks for one text (a name, notes) with Save and Cancel (SPEC 2). Save is disabled while [required] text is blank.
+ * A tap outside does nothing, so typed text is never lost by accident; Cancel and back discard.
  */
 @Composable
 fun TextDialog(
@@ -143,16 +142,10 @@ fun TextDialog(
     onDismiss: () -> Unit,
 ) {
     var text by rememberSaveable { mutableStateOf(initial) }
-    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
-    // Typed text is never dropped silently (SPEC 2): Cancel, back and tapping outside ask first.
-    val cancel = { if (text != initial) confirmDiscard = true else onDismiss() }
-    if (confirmDiscard) {
-        DiscardDialog(onDiscard = onDismiss, onKeep = { confirmDiscard = false })
-        return
-    }
     AlertDialog(
-        onDismissRequest = cancel,
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(dismissOnClickOutside = false),
         title = { Text(title) },
         text = {
             LabeledTextField(
@@ -167,20 +160,9 @@ fun TextDialog(
                 Text(stringResource(R.string.action_save))
             }
         },
-        dismissButton = { TextButton(onClick = cancel) { Text(stringResource(R.string.action_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
-}
-
-/** "Discard changes?" with Discard and Keep editing. */
-@Composable
-fun DiscardDialog(onDiscard: () -> Unit, onKeep: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onKeep,
-        title = { Text(stringResource(R.string.discard_title)) },
-        confirmButton = { TextButton(onClick = onDiscard) { Text(stringResource(R.string.action_discard)) } },
-        dismissButton = { TextButton(onClick = onKeep) { Text(stringResource(R.string.keep_editing)) } },
-    )
 }
 
 /** Text field of an edit form. */

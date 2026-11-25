@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import at.mtr.sewfar.R
 import at.mtr.sewfar.domain.Durations
 import at.mtr.sewfar.domain.ProjectStatus
@@ -128,6 +129,7 @@ private fun AddTimeDialog(onAdd: (LocalDate, Int) -> Unit, onDismiss: () -> Unit
     }
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = DialogProperties(dismissOnClickOutside = false),
         title = { Text(stringResource(R.string.time_add)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

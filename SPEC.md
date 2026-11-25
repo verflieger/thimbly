@@ -39,8 +39,9 @@ screens, fields and tabs).
 - **Creating:** "+" asks only for the name (dialog with Save), creates the record and opens its page.
 - **Editing (2026-11-24):** real edits use an explicit form; state changes apply at once.
   - Texts (names, notes, a pattern's designer, a setting's values) are shown read-only. ✎ opens the edit form (or a
-    text dialog for a project's name, size, fabric and notes); **Save** stores, ✕ or back discards, asking
-    "Discard changes?" first if something was changed.
+    text dialog for a project's name, size, fabric and notes); **Save** stores. Nothing asks "Discard changes?"
+    (2026-11-25): a tap outside a dialog does nothing, Cancel or back in a dialog discards; in a form ✕ discards and
+    back saves (while the form can't be saved, e.g. a measurement is not a number, back does nothing).
   - Status, timer, photos, linking or unlinking patterns, person and settings, and a machine's type apply
     immediately.
   - Every text field has its label fixed above it (as on the read-only page), never floating inside, so fields

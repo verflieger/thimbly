@@ -165,9 +165,6 @@
     <string name="backup_error_prototype">Diese Sicherung stammt von einem frühen Prototyp (1.0); deren Daten können in dieser Version nicht wiederhergestellt werden.</string>
     <string name="action_save">Speichern</string>
     <string name="action_edit">Bearbeiten</string>
-    <string name="discard_title">Änderungen verwerfen?</string>
-    <string name="action_discard">Verwerfen</string>
-    <string name="keep_editing">Weiter bearbeiten</string>
     <string name="setup_no_values">Noch keine Werte. Tippe auf ✎, um sie einzutragen.</string>
     <string name="photo_add">Foto hinzufügen</string>
     <string name="project_rename">Projekt umbenennen</string>
