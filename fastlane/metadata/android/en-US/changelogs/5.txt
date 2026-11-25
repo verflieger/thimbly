@@ -1,0 +1,1 @@
+Time tracking can be switched off in Settings, empty sections on the project page fold into one "Add" row, and the Undo bar is shorter (6 s) and no longer queues up.

@@ -1,0 +1,1 @@
+Die Zeiterfassung lässt sich in den Einstellungen ausschalten, leere Abschnitte auf der Projektseite sind in einer Zeile „Hinzufügen“ zusammengefasst, und die Rückgängig-Leiste ist kürzer (6 s) und stapelt sich nicht mehr.
