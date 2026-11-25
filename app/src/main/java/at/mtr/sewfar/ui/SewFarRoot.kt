@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
@@ -87,7 +88,12 @@ fun SewFarRoot(container: AppContainer) {
     val snackbarHost = shell.snackbarHost
     val scope = shell.viewModelScope
     val undoLabel = stringResource(R.string.action_undo)
-    val messages = remember(snackbarHost, scope, undoLabel) { Messages(snackbarHost, scope, undoLabel, container::undo) }
+    val a11y = LocalAccessibilityManager.current
+    val undoMillis = a11y?.calculateRecommendedTimeoutMillis(Messages.UndoMillis, containsText = true, containsControls = true)
+        ?: Messages.UndoMillis
+    val messages = remember(snackbarHost, scope, undoLabel, undoMillis) {
+        Messages(snackbarHost, scope, undoLabel, container::undo, undoMillis)
+    }
     val openProject = { id: String -> nav.navigate(ProjectRoute(id)) }
     // null until DataStore answers: no time controls flash up for people who switched them off.
     val trackTime = container.settings.trackTime.collectAsStateWithLifecycle(initialValue = null).value == true

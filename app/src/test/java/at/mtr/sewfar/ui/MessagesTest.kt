@@ -19,9 +19,9 @@ class MessagesTest {
     fun undoSnackbarClosesBeforeThePurge() = runTest {
         val host = SnackbarHostState()
         val undone = mutableListOf<DeletionToken>()
-        val messages = Messages(host, backgroundScope, "Undo") { undone += it }
+        // A very long accessibility timeout is still capped before the purge.
+        val messages = Messages(host, backgroundScope, "Undo", { undone += it }, undoMillis = Long.MAX_VALUE)
 
-        // No SnackbarHost is shown, so like a very long accessibility timeout the snackbar never closes by itself.
         messages.showUndo("Deleted", DeletionToken(1))
         runCurrent()
         assertNotNull(host.currentSnackbarData)
@@ -34,5 +34,20 @@ class MessagesTest {
         host.currentSnackbarData!!.performAction()
         runCurrent()
         assertEquals(listOf(DeletionToken(2)), undone)
+    }
+
+    @Test
+    fun undoBarClosesAfter6sAndANewOneReplacesTheOld() = runTest {
+        val host = SnackbarHostState()
+        val messages = Messages(host, backgroundScope, "Undo", {})
+
+        messages.showUndo("First", DeletionToken(1))
+        runCurrent()
+        messages.showUndo("Second", DeletionToken(2))
+        runCurrent()
+        assertEquals("Second", host.currentSnackbarData?.visuals?.message)
+
+        advanceTimeBy(Messages.UndoMillis + 1)
+        assertNull(host.currentSnackbarData)
     }
 }
