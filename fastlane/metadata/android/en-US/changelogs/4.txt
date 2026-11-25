@@ -1,0 +1,1 @@
+Fine photos setting (up to 4096 px), Library button on the home screen, Undo survives rotating the phone, small fixes.
