@@ -50,7 +50,7 @@ import at.mtr.sewfar.ui.projects.ProjectDetailViewModel
 import at.mtr.sewfar.ui.projects.ProjectListViewModel
 import at.mtr.sewfar.ui.projects.ProjectsScreen
 import at.mtr.sewfar.ui.settings.SettingsScreen
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -207,8 +207,10 @@ fun SewFarRoot(container: AppContainer) {
                     val route = entry.toRoute<PhotoViewerRoute>()
                     val owner = PhotoOwner.valueOf(route.ownerType)
                     val photos by container.photos.observe(owner, route.ownerId).collectAsState(initial = null)
-                    val isProject = owner == PhotoOwner.PROJECT
-                    val project by (if (isProject) container.projects.observe(route.ownerId) else flowOf(null)).collectAsState(initial = null)
+                    val pinnedId by (
+                        if (owner == PhotoOwner.PROJECT) container.projects.observe(route.ownerId).map { it?.coverPhotoId }
+                        else container.patterns.observe(route.ownerId).map { it?.coverPhotoId }
+                        ).collectAsState(initial = null)
                     val messages = LocalMessages.current
                     val deletedText = stringResource(R.string.photo_deleted)
                     val scope = rememberCoroutineScope()
@@ -218,8 +220,8 @@ fun SewFarRoot(container: AppContainer) {
                             onDelete = { id ->
                                 scope.launch { container.runInApp { container.photos.delete(id) }?.let { messages.showUndo(deletedText, it) } }
                             },
-                            pinnedId = project?.coverPhotoId,
-                            onSetCover = if (isProject) { id -> container.appScope.launch { container.photos.setCover(route.ownerId, id) } } else null,
+                            pinnedId = pinnedId,
+                            onSetCover = { id -> container.appScope.launch { container.photos.setCover(owner, route.ownerId, id) } },
                         )
                     }
                 }

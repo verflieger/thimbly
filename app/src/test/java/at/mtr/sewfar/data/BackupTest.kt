@@ -206,6 +206,20 @@ class BackupTest {
         assertEquals("1.3", t.machines.observeValues(setup.setupId).first().single().value)
         assertEquals(mapOf("waist" to 74.5), t.persons.observeMeasurements(project.personId!!).first()!!.valuesCm)
         for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables) assertTrue(table, t.count(table) > 0)
+        assertEquals("format 1 has no pinned pattern cover", null, t.patterns.observeAll().first().single().coverPhotoId)
+    }
+
+    /** Format 2 adds the pinned pattern cover (SPEC 8.1); the fixture pins the newer of two pattern photos. */
+    @Test
+    fun formatTwoFixtureKeepsPinnedPatternCover() = runTest {
+        val fixture = javaClass.classLoader!!.getResourceAsStream("backup/format2.zip")!!
+        backup.import(backup.prepareImport(fixture))
+        val pattern = t.patterns.observeAll().first().single()
+        val photos = t.photos.observe(PhotoOwner.PATTERN, pattern.id).first()
+        assertEquals(2, photos.size)
+        assertTrue(photos.all { t.photoFiles.file(it.id).exists() })
+        assertEquals("60bddf07-e804-4122-b6c9-4e7cd824ea89", pattern.coverPhotoId)
+        assertEquals(pattern.coverPhotoId, patternCovers(listOf(pattern), photos)[pattern.id])
     }
 
     @Test
@@ -285,7 +299,7 @@ class BackupTest {
             writeBytes(String(readBytes(), Charsets.ISO_8859_1).replace("backup.jsoX", "backup.json").toByteArray(Charsets.ISO_8859_1))
         }
         assertRejected(BackupException.Reason.NOT_A_BACKUP, duplicate)
-        val newer = json.decodeToString().replaceFirst("\"format\":1", "\"format\":99").toByteArray()
+        val newer = json.decodeToString().replaceFirst("\"format\":${BackupRepository.FORMAT}", "\"format\":99").toByteArray()
         assertRejected(BackupException.Reason.NEWER_FORMAT, zipOf("backup.json" to newer))
     }
 

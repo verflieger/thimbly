@@ -5,9 +5,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * SPEC 7. Schema version 1 is frozen since v0.1 (`SchemaFreezeTest` pins its identity hash). Every schema change raises
+ * SPEC 7. Schema version 1 is frozen since v0.1, version 2 adds `pattern.coverPhotoId` (`SchemaFreezeTest` pins its identity hash). Every schema change raises
  * the version, ships a migration in [MIGRATIONS] and a migration test; the database is never dropped.
  */
 @Database(
@@ -28,10 +30,15 @@ abstract class SewFarDatabase : RoomDatabase() {
 
     companion object {
         /** Current schema version. Raise it with every schema change (and add a migration). */
-        const val VERSION = 1
+        const val VERSION = 2
 
-        /** Migrations between schema versions (none yet). */
-        val MIGRATIONS: Array<androidx.room.migration.Migration> = emptyArray()
+        /** Migrations between schema versions. */
+        val MIGRATIONS: Array<Migration> = arrayOf(
+            // 2: pinnable pattern cover (SPEC 3.5).
+            object : Migration(1, 2) {
+                override fun migrate(db: SupportSQLiteDatabase) = db.execSQL("ALTER TABLE pattern ADD COLUMN coverPhotoId TEXT")
+            },
+        )
 
         /**
          * The 1.0 prototype used `sewfar.db` with an incompatible schema that also had version 1; its data is not

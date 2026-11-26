@@ -39,6 +39,7 @@ import at.mtr.sewfar.data.db.PatternEntity
 import at.mtr.sewfar.data.db.PersonEntity
 import at.mtr.sewfar.data.db.PhotoEntity
 import at.mtr.sewfar.data.db.ProjectPhoto
+import at.mtr.sewfar.data.patternCovers
 import at.mtr.sewfar.data.db.ProjectRef
 import at.mtr.sewfar.domain.MeasurementFields
 import at.mtr.sewfar.domain.Measurements
@@ -189,6 +190,9 @@ class PatternViewModel(container: AppContainer, private val id: String) : Record
     override val projectsFlow = repo.observeProjects(id)
     val photos: StateFlow<List<PhotoEntity>> = container.photos.observe(PhotoOwner.PATTERN, id)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    /** The cover (SPEC 3.5): pinned, else the oldest photo; null without photos. */
+    val coverPhotoId: StateFlow<String?> = combine(repo.observe(id), photos) { p, ps -> p?.let { patternCovers(listOf(it), ps)[it.id] } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val projectPhotos: StateFlow<List<ProjectPhoto>> = repo.observeProjectPhotos(id)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -203,6 +207,8 @@ class PatternViewModel(container: AppContainer, private val id: String) : Record
     }
 
     suspend fun deletePhoto(photoId: String) = container.runInApp { container.photos.delete(photoId) }
+
+    fun setCover(photoId: String?) = write { container.photos.setCover(PhotoOwner.PATTERN, id, photoId) }
 }
 
 @Composable
@@ -212,13 +218,17 @@ fun PatternScreen(
 ) {
     val photos by viewModel.photos.collectAsStateWithLifecycle()
     val projectPhotos by viewModel.projectPhotos.collectAsStateWithLifecycle()
+    val coverId by viewModel.coverPhotoId.collectAsStateWithLifecycle()
     RecordScreen(
         viewModel, startEditing = false, stringResource(R.string.pattern_deleted), onBack, onOpenProject,
         titleOf = { it.name }, nameOf = { it.name }, nameLabel = stringResource(R.string.pattern_name), onRename = viewModel::rename,
     ) { pattern, _ ->
         EditableText(stringResource(R.string.pattern_designer), pattern.designer, "designer", singleLine = true, onSave = viewModel::setDesigner)
         EditableText(stringResource(R.string.pattern_notes), pattern.notes, "notes", onSave = viewModel::setNotes)
-        PhotoStrip(photos, viewModel::addPhotos, viewModel::deletePhoto, onOpenPhoto)
+        PhotoStrip(
+            photos, viewModel::addPhotos, viewModel::deletePhoto, onOpenPhoto,
+            coverId = coverId, pinnedId = pattern.coverPhotoId, setCover = viewModel::setCover,
+        )
         if (projectPhotos.isNotEmpty()) {
             ReadOnlyPhotoRow(stringResource(R.string.pattern_project_photos), projectPhotos.map { it.photoId }, onOpenProjectPhoto)
         }

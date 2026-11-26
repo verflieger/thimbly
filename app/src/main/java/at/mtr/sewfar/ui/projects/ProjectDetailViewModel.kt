@@ -82,7 +82,7 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     val choices: StateFlow<Choices> = combine(
         container.persons.observeAll(), container.patterns.observeAll(),
         container.machines.observeSetups(), container.machines.observeAll(), container.photos.observeAllOfType(PhotoOwner.PATTERN),
-    ) { persons, patterns, setups, machines, photos -> Choices(persons, patterns, setups, machines, patternCovers(photos)) }
+    ) { persons, patterns, setups, machines, photos -> Choices(persons, patterns, setups, machines, patternCovers(patterns, photos)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Choices())
 
     private fun write(block: suspend () -> Unit) {
@@ -131,7 +131,7 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     }
 
     suspend fun deletePhoto(photoId: String): DeletionToken? = run { container.photos.delete(photoId) }
-    fun setCover(photoId: String?) = write { container.photos.setCover(id, photoId) }
+    fun setCover(photoId: String?) = write { container.photos.setCover(PhotoOwner.PROJECT, id, photoId) }
 
     suspend fun delete(): DeletionToken? = run { projects.delete(id) }
 }

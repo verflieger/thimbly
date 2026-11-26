@@ -66,7 +66,7 @@ class PhotoRepositoryTest {
         val newest = addPhoto(projectId)
         assertEquals(newest, cover(projectId))
 
-        t.photos.setCover(projectId, first)
+        t.photos.setCover(PhotoOwner.PROJECT, projectId, first)
         assertEquals(first, cover(projectId))
 
         t.photos.delete(first)
@@ -74,17 +74,23 @@ class PhotoRepositoryTest {
     }
 
     @Test
-    fun patternCoverIsOldestPhoto() = runTest {
+    fun patternCoverIsOldestPhotoUntilPinned() = runTest {
         val raglan = t.patterns.create("Raglan")
         val dress = t.patterns.create("Dress")
         val add = { id: String -> suspend { t.photos.add(PhotoOwner.PATTERN, id) { image.inputStream() } } }
         val envelope = add(raglan)()
-        add(raglan)()
+        val finished = add(raglan)()
         val dressPhoto = add(dress)()
         val noPhoto = t.patterns.create("Skirt")
-        val covers = patternCovers(t.photos.observeAllOfType(PhotoOwner.PATTERN).first())
-        assertEquals(mapOf(raglan to envelope, dress to dressPhoto), covers)
-        assertEquals(null, covers[noPhoto])
+        val covers = suspend { patternCovers(t.patterns.observeAll().first(), t.photos.observeAllOfType(PhotoOwner.PATTERN).first()) }
+        assertEquals(mapOf(raglan to envelope, dress to dressPhoto), covers())
+        assertEquals(null, covers()[noPhoto])
+
+        t.photos.setCover(PhotoOwner.PATTERN, raglan, finished)
+        assertEquals(finished, covers()[raglan])
+
+        t.photos.delete(finished)
+        assertEquals("pinned photo deleted: oldest again", envelope, covers()[raglan])
     }
 
     @Test

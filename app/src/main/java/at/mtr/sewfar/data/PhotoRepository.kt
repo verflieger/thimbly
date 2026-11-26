@@ -2,6 +2,7 @@ package at.mtr.sewfar.data
 
 import androidx.room.withTransaction
 import at.mtr.sewfar.data.db.DeletionToken
+import at.mtr.sewfar.data.db.PatternEntity
 import at.mtr.sewfar.data.db.PhotoEntity
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
@@ -55,11 +56,15 @@ class PhotoRepository(
     }
 
 
-    /** Pins a cover (SPEC 3.5); null returns to the automatic cover. */
-    suspend fun setCover(projectId: String, photoId: String?) = db.withTransaction {
-        val project = db.projectDao().get(projectId) ?: return@withTransaction
+    /** Pins the cover of a project or pattern (SPEC 3.5); null returns to the automatic cover. */
+    suspend fun setCover(ownerType: PhotoOwner, ownerId: String, photoId: String?) = db.withTransaction {
         val now = time.nowMillis()
-        db.projectDao().update(project.copy(coverPhotoId = photoId, updatedAt = now, lastActivityAt = now))
+        when (ownerType) {
+            PhotoOwner.PROJECT -> db.projectDao().get(ownerId)
+                ?.let { db.projectDao().update(it.copy(coverPhotoId = photoId, updatedAt = now, lastActivityAt = now)) }
+            PhotoOwner.PATTERN -> db.patternDao().get(ownerId)
+                ?.let { db.patternDao().update(it.copy(coverPhotoId = photoId, updatedAt = now)) }
+        }
     }
 
     /**
@@ -82,6 +87,14 @@ class PhotoRepository(
 fun coverOf(photos: List<PhotoEntity>, pinnedId: String?): String? =
     photos.firstOrNull { it.id == pinnedId }?.id ?: photos.maxByOrNull { it.sortOrder }?.id
 
-/** Pattern ID → cover photo ID (SPEC 3.5): each pattern's oldest photo, usually the envelope taken first. */
-fun patternCovers(photos: List<PhotoEntity>): Map<String, String> =
-    photos.groupBy { it.ownerId }.mapValues { (_, ps) -> ps.minBy { it.sortOrder }.id }
+/**
+ * Pattern ID → cover photo ID (SPEC 3.5): the pinned photo if it still exists, else the oldest one (usually the
+ * envelope, taken first). Patterns without photos have no entry.
+ */
+fun patternCovers(patterns: List<PatternEntity>, photos: List<PhotoEntity>): Map<String, String> {
+    val byPattern = photos.groupBy { it.ownerId }
+    return patterns.mapNotNull { p ->
+        val own = byPattern[p.id] ?: return@mapNotNull null
+        p.id to (own.firstOrNull { it.id == p.coverPhotoId } ?: own.minBy { it.sortOrder }).id
+    }.toMap()
+}

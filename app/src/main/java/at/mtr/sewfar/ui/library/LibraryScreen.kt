@@ -67,7 +67,7 @@ class LibraryViewModel(private val container: AppContainer, initialTab: LibraryT
         container.photos.observeAllOfType(PhotoOwner.PATTERN),
     ) { patterns, machines, setups, persons, photos ->
         val setupCount = setups.groupingBy { it.machineId }.eachCount()
-        val covers = patternCovers(photos)
+        val covers = patternCovers(patterns, photos)
         mapOf(
             LibraryTab.PATTERNS to patterns.map { LibraryItem(it.id, it.name, it.designer, covers[it.id]) },
             LibraryTab.MACHINES to machines.map { LibraryItem(it.id, it.name, (setupCount[it.id] ?: 0).toString()) },

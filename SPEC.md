@@ -112,10 +112,11 @@ from an imported older backup) is appended to the notes.
 
 - Projects and patterns have any number of photos. The photo row shows the newest photo first and ends with one "Add
   photo" tile, which offers "Take photo" or "From gallery". Tap opens the full-screen viewer (swipe, pinch zoom), whose top bar has "Use as cover"
-  (project; the star is filled while the shown photo is the pinned cover, tap again to choose automatically) and
+  (projects and patterns; the star is filled while the shown photo is the pinned cover, tap again to choose automatically) and
   delete (with Undo); long-press in the row offers the same as a shortcut.
-- Cover: the pinned photo, otherwise the newest one. A pattern's cover is its oldest photo, usually the envelope taken
-  first (2026-11-26, no pinning); it shows as a thumbnail in the Library pattern list and the pattern picker.
+- Cover: the pinned photo, otherwise the newest one. A pattern's cover is the pinned photo, otherwise its oldest one,
+  usually the envelope taken first (2026-11-26); it shows as a thumbnail in the Library pattern list and the pattern
+  picker.
 - Pipeline: decode, apply EXIF orientation, downscale to at most 2048 px on the long edge (4096 px
   with the "Fine photos" setting, §9; photos already stored keep their size), re-encode as JPEG 85 (drops
   all EXIF, including location), store as `filesDir/photos/<photoId>.jpg`. The row is inserted after the file is
@@ -192,7 +193,7 @@ Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 
 - `person` (name, notes)
 - `measurement` (personId, measuredOn) and `measurement_value` (measurementId, key, valueCm; unique pair)
-- `pattern` (name, designer, notes)
+- `pattern` (name, designer, notes, coverPhotoId? — schema 2, 2026-11-26)
 - `project` (name, status, personId?, size, fabric, notes, startedOn?, finishedOn?, rating? and learned (both unused since
   2026-11-25, §3.4), coverPhotoId?, lastActivityAt)
 - `project_pattern` (projectId, patternId, sortOrder; unique pair)
@@ -205,17 +206,19 @@ Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 
 The database file is `sewfar2.db`; the incompatible `sewfar.db` of the 1.0 prototype is deleted on start.
 Enums are stored by name; never rename or remove an entry. Schema version 1 is frozen since v0.1
-(`SchemaFreezeTest`); every change needs a new version, a migration and a migration test.
+(`SchemaFreezeTest`); every change needs a new version, a migration and a migration test (`MigrationTest`).
+Version 2 adds `pattern.coverPhotoId`.
 
 ## 8. Backup
 
 ### 8.1 Format
 
-A zip with `backup.json` (`{ "format": 1, "appVersion", "exportedAt", "tables": { "<table>": [rows] } }`, read in
+A zip with `backup.json` (`{ "format": 2, "appVersion", "exportedAt", "tables": { "<table>": [rows] } }`, read in
 one transaction) and `photos/<photoId>.jpg` for every live photo. Tables hold live rows only (rows inside the Undo
 window are left out, references to them cleared) plus `deletion_log`; importing an older backup drops its deleted
 rows the same way. Preferences are not
-included. Format 1 is frozen since v0.1; every app version reads every older format; each format has a fixture in
+included. Format 1 is frozen since v0.1, format 2 adds `pattern.coverPhotoId`
+(a format 1 backup restores without pinned pattern covers); every app version reads every older format; each format has a fixture in
 `src/test/resources/backup/format<n>.zip`. Backups of the discarded 1.0 prototype (also "format 1", but other tables)
 are rejected with their own message.
 

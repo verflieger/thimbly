@@ -61,6 +61,8 @@ data class PatternEntity(
     val name: String,
     val designer: String = "",
     val notes: String = "",
+    // Pinned cover (SPEC 3.5, schema 2); no FK, like project.coverPhotoId.
+    val coverPhotoId: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
