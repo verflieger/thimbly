@@ -114,6 +114,9 @@ from an imported older backup) is appended to the notes.
   photo" tile, which offers "Take photo" or "From gallery". Tap opens the full-screen viewer (swipe, pinch zoom), whose top bar has "Use as cover"
   (projects and patterns; the star is filled while the shown photo is the pinned cover, tap again to choose automatically) and
   delete (with Undo); long-press in the row offers the same as a shortcut.
+- Share (2026-11-26): the viewer's top bar also has share (every viewer, also "From projects", §4.1). A copy of the
+  stored JPEG (`thimbly-<id prefix>.jpg`, at most 2048/4096 px, no EXIF) goes to the Android share sheet via the cache's
+  share folder, like a shared backup (§8.2); no permission needed.
 - Cover: the pinned photo, otherwise the newest one. A pattern's cover is the pinned photo, otherwise its oldest one,
   usually the envelope taken first (2026-11-26); it shows as a thumbnail in the Library pattern list and the pattern
   picker.

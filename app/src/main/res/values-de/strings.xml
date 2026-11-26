@@ -29,6 +29,8 @@
     <string name="photo_set_cover">Als Titelbild verwenden</string>
     <string name="photo_unpin_cover">Titelbild automatisch wählen</string>
     <string name="photo_cover">Titelbild</string>
+    <string name="photo_share">Foto teilen</string>
+    <string name="photo_share_failed">Das Foto konnte nicht geteilt werden</string>
     <string name="photo_delete">Foto löschen</string>
     <string name="photo_deleted">Foto gelöscht</string>
     <string name="picker_create_new">„%1$s“ anlegen</string>

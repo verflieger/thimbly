@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,7 +48,7 @@ private const val DoubleTapZoom = 2.5f
 /**
  * Full-screen viewer (SPEC 3.5): swipe between [photoIds], pinch or double-tap to zoom.
  * Panning is only active while zoomed, so swipes at normal size go to the pager.
- * Top right: "Use as cover" (with [onSetCover]; filled while the shown photo is [pinnedId]) and delete (with [onDelete]).
+ * Top right: share (with [onShare]), "Use as cover" (with [onSetCover]; filled while the shown photo is [pinnedId]) and delete (with [onDelete]).
  * With [captionOf], the shown photo's caption sits at the bottom; a tap calls [onCaption] (gallery: opens the project).
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -61,6 +62,7 @@ fun PhotoViewerScreen(
     onSetCover: ((String?) -> Unit)? = null,
     captionOf: ((String) -> String)? = null,
     onCaption: (String) -> Unit = {},
+    onShare: ((String) -> Unit)? = null,
 ) {
     if (photoIds.isEmpty()) {
         LaunchedEffect(Unit) { onClose() }
@@ -73,11 +75,20 @@ fun PhotoViewerScreen(
             ZoomablePhoto(photoIds[page], active = pager.currentPage == page)
         }
         Box(Modifier.fillMaxSize().safeDrawingPadding()) {
-            IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopStart)) {
-                Icon(Icons.Filled.Close, stringResource(R.string.action_close), tint = Color.White)
+            // The counter sits next to ×, not centred, so large text never runs into the buttons on the right.
+            Row(Modifier.align(Alignment.TopStart), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Filled.Close, stringResource(R.string.action_close), tint = Color.White)
+                }
+                if (photoIds.size > 1) Text(stringResource(R.string.photo_counter, pager.currentPage + 1, photoIds.size), color = Color.White)
             }
             val current = photoIds[pager.currentPage.coerceAtMost(photoIds.lastIndex)]
             Row(Modifier.align(Alignment.TopEnd)) {
+                if (onShare != null) {
+                    IconButton(onClick = { onShare(current) }, modifier = Modifier.testTag("photoShare")) {
+                        Icon(Icons.Outlined.Share, stringResource(R.string.photo_share), tint = Color.White)
+                    }
+                }
                 if (onSetCover != null) {
                     val pinned = current == pinnedId
                     IconButton(onClick = { onSetCover(if (pinned) null else current) }, modifier = Modifier.testTag("photoCover")) {
@@ -99,13 +110,6 @@ fun PhotoViewerScreen(
                     colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp).testTag("photoCaption"),
                 ) { Text(captionOf(current)) }
-            }
-            if (photoIds.size > 1) {
-                Text(
-                    stringResource(R.string.photo_counter, pager.currentPage + 1, photoIds.size),
-                    color = Color.White,
-                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 14.dp),
-                )
             }
         }
     }

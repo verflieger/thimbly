@@ -1,6 +1,5 @@
 package at.mtr.sewfar.ui.settings
 
-import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,7 +36,7 @@ import at.mtr.sewfar.data.backup.ImportPlan
 import at.mtr.sewfar.data.backup.SafBackupFolder
 import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.currentLocale
-import java.io.File
+import at.mtr.sewfar.ui.common.shareFile
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -128,17 +126,7 @@ fun BackupSection(container: AppContainer) {
         ListItem(
             headlineContent = { Text(stringResource(R.string.backup_share)) },
             modifier = Modifier.clickable(enabled = !busy) {
-                work(null) {
-                    // Older shares are removed after a day; a share still being read by another app stays intact.
-                    val dir = File(context.cacheDir, "exports").apply { mkdirs() }
-                    dir.listFiles().orEmpty().filter { it.lastModified() < System.currentTimeMillis() - 86_400_000L }.forEach { it.delete() }
-                    val file = File(dir, fileName())
-                    file.outputStream().use { backup.export(it) }
-                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.camera", file)
-                    val send = Intent(Intent.ACTION_SEND).setType("application/zip").putExtra(Intent.EXTRA_STREAM, uri)
-                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    context.startActivity(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                }
+                work(null) { shareFile(context, fileName(), "application/zip") { backup.export(it) } }
             },
         )
         ListItem(

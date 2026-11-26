@@ -30,6 +30,8 @@
     <string name="photo_set_cover">Use as cover</string>
     <string name="photo_unpin_cover">Choose cover automatically</string>
     <string name="photo_cover">Cover</string>
+    <string name="photo_share">Share photo</string>
+    <string name="photo_share_failed">The photo could not be shared</string>
     <string name="photo_delete">Delete photo</string>
     <string name="photo_deleted">Photo deleted</string>
     <string name="picker_create_new">Create “%1$s”</string>

@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalAccessibilityManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
@@ -32,6 +33,7 @@ import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.ui.common.LocalMessages
+import at.mtr.sewfar.ui.common.shareFile
 import at.mtr.sewfar.ui.common.Messages
 import at.mtr.sewfar.ui.library.LibraryScreen
 import at.mtr.sewfar.ui.library.LibraryTab
@@ -50,6 +52,7 @@ import at.mtr.sewfar.ui.projects.ProjectDetailViewModel
 import at.mtr.sewfar.ui.projects.ProjectListViewModel
 import at.mtr.sewfar.ui.projects.ProjectsScreen
 import at.mtr.sewfar.ui.settings.SettingsScreen
+import java.io.IOException
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -101,6 +104,19 @@ fun SewFarRoot(container: AppContainer) {
         Messages(snackbarHost, scope, undoLabel, container::undo, undoMillis)
     }
     val openProject = { id: String -> nav.navigate(ProjectRoute(id)) }
+    val context = LocalContext.current
+    val shareFailed = stringResource(R.string.photo_share_failed)
+    // SPEC 3.5: a copy goes to the share sheet; a missing file shows a message instead of crashing.
+    val sharePhoto = { id: String ->
+        scope.launch {
+            try {
+                shareFile(context, "thimbly-${id.take(8)}.jpg", "image/jpeg") { out -> container.photoFiles.file(id).inputStream().use { it.copyTo(out) } }
+            } catch (_: IOException) {
+                messages.show(shareFailed)
+            }
+        }
+        Unit
+    }
     // null until DataStore answers: no time controls flash up for people who switched them off.
     val trackTime = container.settings.trackTime.collectAsStateWithLifecycle(initialValue = null).value == true
 
@@ -197,6 +213,7 @@ fun SewFarRoot(container: AppContainer) {
                             list.map { it.photoId }, route.photoId, onClose = { nav.popFrom(entry) },
                             captionOf = { id -> byId[id]?.projectName?.ifBlank { untitled }.orEmpty() },
                             onCaption = { id -> byId[id]?.let { openProject(it.projectId) } },
+                            onShare = sharePhoto,
                         )
                     }
                 }
@@ -222,6 +239,7 @@ fun SewFarRoot(container: AppContainer) {
                             },
                             pinnedId = pinnedId,
                             onSetCover = { id -> container.appScope.launch { container.photos.setCover(owner, route.ownerId, id) } },
+                            onShare = sharePhoto,
                         )
                     }
                 }

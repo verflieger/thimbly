@@ -79,6 +79,18 @@ class PhotoViewerTest {
     }
 
     @Test
+    fun sharesTheShownPhoto() {
+        var shared: String? = null
+        compose.setContent {
+            CompositionLocalProvider(LocalPhotoLoader provides PhotoLoader(files)) {
+                PhotoViewerScreen(ids, "p3", onClose = {}, onShare = { shared = it })
+            }
+        }
+        compose.onNodeWithContentDescription("Share photo").performClick()
+        assertEquals("p3", shared)
+    }
+
+    @Test
     fun opensAtInitialPhotoAndCloses() {
         var closed = false
         show(initial = "p3") { closed = true }
