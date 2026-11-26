@@ -38,5 +38,6 @@ class ShareFileTest {
         assertEquals("image/jpeg", send.type)
         @Suppress("DEPRECATION") val uri = send.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)!!
         assertEquals(listOf<Byte>(1, 2, 3), app.contentResolver.openInputStream(uri)!!.use { it.readBytes() }.toList())
+        assertEquals("preview", uri, send.clipData!!.getItemAt(0).uri)
     }
 }

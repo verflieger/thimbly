@@ -1,5 +1,6 @@
 package at.mtr.sewfar.ui.common
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
@@ -20,5 +21,6 @@ suspend fun shareFile(context: Context, name: String, mimeType: String, write: s
     }
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.camera", file)
     val send = Intent(Intent.ACTION_SEND).setType(mimeType).putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        .apply { clipData = ClipData.newRawUri(null, uri) } // lets the share sheet show a preview
     withContext(Dispatchers.Main) { context.startActivity(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
 }

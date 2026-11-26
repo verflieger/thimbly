@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import at.mtr.sewfar.R
 import at.mtr.sewfar.data.db.DeletionToken
@@ -131,9 +132,17 @@ fun AddPhotoTile(takePhoto: () -> Unit, pickPhotos: () -> Unit) {
                 .clickable { open = true }.testTag("addPhoto"),
             contentAlignment = Alignment.Center,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Outlined.AddAPhoto, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                Text(stringResource(R.string.photo_add), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                val style = MaterialTheme.typography.labelMedium
+                val fontScale = LocalDensity.current.fontScale
+                // The label grows with the font size up to 130 %: beyond, "hinzufügen" would break mid-word in the 96 dp tile (SPEC 10).
+                Text(
+                    stringResource(R.string.photo_add),
+                    style = style.copy(fontSize = style.fontSize * (minOf(fontScale, MaxLabelScale) / fontScale)),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
         DropdownMenu(open, onDismissRequest = { open = false }) {
@@ -150,3 +159,5 @@ fun AddPhotoTile(takePhoto: () -> Unit, pickPhotos: () -> Unit) {
         }
     }
 }
+
+private const val MaxLabelScale = 1.3f

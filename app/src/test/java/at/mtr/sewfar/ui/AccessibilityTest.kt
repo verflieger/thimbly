@@ -58,6 +58,21 @@ class AccessibilityTest {
     }
 
     @Test
+    fun addPhotoTileLabelFitsAtDoubleFontSize() {
+        compose.onNodeWithTag("newProject").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Rock")
+        compose.onNodeWithTag("dialogSave").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Foto hinzufügen")).fetchSemanticsNodes().isNotEmpty() }
+        val layout = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithText("Foto hinzufügen", useUnmergedTree = true).performScrollTo()
+            .fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layout)
+        val l = layout.single()
+        // Two lines are fine; a word broken across lines ("hinzufüge|n") is not.
+        val lines = (0 until l.lineCount).map { l.layoutInput.text.substring(l.getLineStart(it), l.getLineEnd(it)).trim() }
+        assertEquals(listOf("Foto", "hinzufügen"), lines)
+    }
+
+    @Test
     fun removeOnALinkChipIsBigEnoughToHit() {
         compose.onNodeWithTag("newProject").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Rock")
