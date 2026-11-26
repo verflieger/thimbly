@@ -14,7 +14,6 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 
 - Fabrics (see v2) are the next big step: they become a fourth Library tab (Patterns, Fabrics, People, Machines);
   home stays the project list.
-- Deadlines on projects (event/birthday), shown on cards.
 - Costs per project.
 - Tags on projects: any number per project, picked or created like patterns; ships with suggestions (Repair,
   Upcycling, Alteration, Gift, Costume) instead of a separate project-type field. An empty tag row folds into the
