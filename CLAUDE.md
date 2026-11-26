@@ -58,7 +58,9 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   of all older formats, and a new fixture.
 - **Releases:** raise `versionCode` and `versionName` in `app/build.gradle.kts`, add
   `fastlane/metadata/android/{en-US,de-DE}/changelogs/<versionCode>.txt`, tag `v<versionName>`. The release key lives
-  outside the repository (`~/.config/sewfar/keystore.properties`).
+  outside the repository (`~/.config/sewfar/keystore.properties`). Versions follow semver (from 0.1.3 on): before 1.0,
+  new features or a schema/backup format change raise the minor (0.2.0), fixes only the patch (0.2.1); from 1.0, the
+  major only rises when an update loses or breaks something for users (a data-keeping migration is a minor).
 - Raw SQL writes (`openHelper.writableDatabase.execSQL`) only inside `db.withTransaction`, so they run off the main
   thread and Room observers are notified.
 - **Photos** (SPEC 3.5): `PhotoRepository` stores the processed file first (`PhotoFiles`, `ImageProcessor`: EXIF
