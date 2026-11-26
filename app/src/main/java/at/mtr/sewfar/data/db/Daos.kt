@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.Flow
 /** A project linked to a pattern, person or setup, for "Used in" lists. */
 data class ProjectRef(val id: String, val name: String, val status: ProjectStatus)
 
+/** A photo of a project that uses a pattern (SPEC 4.1, gallery). */
+data class ProjectPhoto(val photoId: String, val projectId: String, val projectName: String)
+
 /** A pattern linked to a project. */
 data class LinkedPattern(val linkId: String, val patternId: String, val name: String, val designer: String)
 
@@ -88,6 +91,15 @@ interface PatternDao {
             "WHERE pp.patternId = :id AND pp.deletedAt IS NULL AND p.deletedAt IS NULL ORDER BY p.lastActivityAt DESC",
     )
     fun observeProjects(id: String): Flow<List<ProjectRef>>
+
+    /** Photos of the projects linking pattern [id], newest first. */
+    @Query(
+        "SELECT ph.id AS photoId, p.id AS projectId, p.name AS projectName FROM project_pattern pp " +
+            "JOIN project p ON p.id = pp.projectId JOIN photo ph ON ph.ownerType = 'PROJECT' AND ph.ownerId = p.id " +
+            "WHERE pp.patternId = :id AND pp.deletedAt IS NULL AND p.deletedAt IS NULL AND ph.deletedAt IS NULL " +
+            "ORDER BY ph.createdAt DESC, ph.sortOrder DESC",
+    )
+    fun observeProjectPhotos(id: String): Flow<List<ProjectPhoto>>
 }
 
 @Dao

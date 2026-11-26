@@ -107,6 +107,20 @@ fun PhotoStrip(
     }
 }
 
+/** A read-only photo row (SPEC 4.1: photos of the projects using a pattern); tap opens one. */
+@Composable
+fun ReadOnlyPhotoRow(title: String, photoIds: List<String>, onOpen: (String) -> Unit) {
+    val px = with(LocalDensity.current) { 192.dp.roundToPx() }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        SectionLabel(title)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(photoIds, key = { it }) { id ->
+                PhotoImage(id, minEdgePx = px, modifier = Modifier.size(96.dp).clip(RoundedCornerShape(8.dp)).clickable { onOpen(id) })
+            }
+        }
+    }
+}
+
 /** Last tile of a photo row (SPEC 3.5): one "Add photo" button that asks for camera or gallery. */
 @Composable
 fun AddPhotoTile(takePhoto: () -> Unit, pickPhotos: () -> Unit) {

@@ -38,6 +38,7 @@ import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.PatternEntity
 import at.mtr.sewfar.data.db.PersonEntity
 import at.mtr.sewfar.data.db.PhotoEntity
+import at.mtr.sewfar.data.db.ProjectPhoto
 import at.mtr.sewfar.data.db.ProjectRef
 import at.mtr.sewfar.domain.MeasurementFields
 import at.mtr.sewfar.domain.Measurements
@@ -56,6 +57,7 @@ import at.mtr.sewfar.ui.common.formatCm
 import at.mtr.sewfar.ui.common.label
 import at.mtr.sewfar.ui.common.measurementLabel
 import at.mtr.sewfar.ui.photos.PhotoStrip
+import at.mtr.sewfar.ui.photos.ReadOnlyPhotoRow
 import java.io.InputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -187,6 +189,8 @@ class PatternViewModel(container: AppContainer, private val id: String) : Record
     override val projectsFlow = repo.observeProjects(id)
     val photos: StateFlow<List<PhotoEntity>> = container.photos.observe(PhotoOwner.PATTERN, id)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val projectPhotos: StateFlow<List<ProjectPhoto>> = repo.observeProjectPhotos(id)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     override suspend fun delete() = container.runInApp { repo.delete(id) }
 
@@ -202,8 +206,12 @@ class PatternViewModel(container: AppContainer, private val id: String) : Record
 }
 
 @Composable
-fun PatternScreen(viewModel: PatternViewModel, onBack: () -> Unit, onOpenProject: (String) -> Unit, onOpenPhoto: (String) -> Unit) {
+fun PatternScreen(
+    viewModel: PatternViewModel, onBack: () -> Unit, onOpenProject: (String) -> Unit, onOpenPhoto: (String) -> Unit,
+    onOpenProjectPhoto: (String) -> Unit,
+) {
     val photos by viewModel.photos.collectAsStateWithLifecycle()
+    val projectPhotos by viewModel.projectPhotos.collectAsStateWithLifecycle()
     RecordScreen(
         viewModel, startEditing = false, stringResource(R.string.pattern_deleted), onBack, onOpenProject,
         titleOf = { it.name }, nameOf = { it.name }, nameLabel = stringResource(R.string.pattern_name), onRename = viewModel::rename,
@@ -211,6 +219,9 @@ fun PatternScreen(viewModel: PatternViewModel, onBack: () -> Unit, onOpenProject
         EditableText(stringResource(R.string.pattern_designer), pattern.designer, "designer", singleLine = true, onSave = viewModel::setDesigner)
         EditableText(stringResource(R.string.pattern_notes), pattern.notes, "notes", onSave = viewModel::setNotes)
         PhotoStrip(photos, viewModel::addPhotos, viewModel::deletePhoto, onOpenPhoto)
+        if (projectPhotos.isNotEmpty()) {
+            ReadOnlyPhotoRow(stringResource(R.string.pattern_project_photos), projectPhotos.map { it.photoId }, onOpenProjectPhoto)
+        }
     }
 }
 

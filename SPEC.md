@@ -129,6 +129,10 @@ from an imported older backup) is appended to the notes.
 Name, designer, notes, photos, and "Used in" (projects linking it). Deleting a pattern removes it from its projects
 (with Undo).
 
+**From projects (2026-11-26):** below its own photos, the pattern page shows a read-only row of all photos of the
+projects linking it, newest first ("how did it turn out last time, and on whom?"). A tap opens them in the viewer
+without cover or delete; the shown photo's project name sits at the bottom and opens that project.
+
 ### 4.2 People
 
 Name, measurements, notes, "Used in". A deleted person no longer shows on projects.

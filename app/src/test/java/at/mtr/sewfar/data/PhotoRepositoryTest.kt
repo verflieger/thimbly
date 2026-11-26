@@ -3,6 +3,7 @@ package at.mtr.sewfar.data
 import at.mtr.sewfar.data.db.SoftDeleter
 import at.mtr.sewfar.domain.PhotoOwner
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -84,6 +85,30 @@ class PhotoRepositoryTest {
         val covers = patternCovers(t.photos.observeAllOfType(PhotoOwner.PATTERN).first())
         assertEquals(mapOf(raglan to envelope, dress to dressPhoto), covers)
         assertEquals(null, covers[noPhoto])
+    }
+
+    @Test
+    fun patternGalleryShowsLivePhotosOfLinkedProjectsNewestFirst() = runTest {
+        val pattern = t.patterns.create("Raglan")
+        val dress = t.projects.create("Dress")
+        val shirt = t.projects.create("Shirt")
+        val unlinked = t.projects.create("Coat")
+        t.projects.addPattern(dress, pattern)
+        t.projects.addPattern(shirt, pattern)
+        val dressPhoto = addPhoto(dress)
+        t.time.advance()
+        val shirtPhoto = addPhoto(shirt)
+        t.time.advance()
+        val deletedPhoto = addPhoto(shirt)
+        t.photos.delete(deletedPhoto)
+        addPhoto(unlinked)
+        t.photos.add(PhotoOwner.PATTERN, pattern) { image.inputStream() } // the pattern's own photo is not a project photo
+
+        val gallery = { runBlocking { t.patterns.observeProjectPhotos(pattern).first() } }
+        assertEquals(listOf(shirtPhoto to "Shirt", dressPhoto to "Dress"), gallery().map { it.photoId to it.projectName })
+
+        t.projects.delete(shirt)
+        assertEquals(listOf(dressPhoto), gallery().map { it.photoId })
     }
 
     @Test

@@ -65,6 +65,20 @@ class PhotoViewerTest {
     }
 
     @Test
+    fun galleryIsReadOnlyAndCaptionOpensTheProject() {
+        var opened: String? = null
+        compose.setContent {
+            CompositionLocalProvider(LocalPhotoLoader provides PhotoLoader(files)) {
+                PhotoViewerScreen(ids, "p2", onClose = {}, captionOf = { "Project of $it" }, onCaption = { opened = it })
+            }
+        }
+        compose.onNodeWithTag("photoDelete").assertDoesNotExist()
+        compose.onNodeWithTag("photoCover").assertDoesNotExist()
+        compose.onNodeWithText("Project of p2").performClick()
+        assertEquals("p2", opened)
+    }
+
+    @Test
     fun opensAtInitialPhotoAndCloses() {
         var closed = false
         show(initial = "p3") { closed = true }

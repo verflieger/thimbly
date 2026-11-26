@@ -3,6 +3,7 @@ package at.mtr.sewfar.data
 import androidx.room.withTransaction
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.PatternEntity
+import at.mtr.sewfar.data.db.ProjectPhoto
 import at.mtr.sewfar.data.db.ProjectRef
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
@@ -16,6 +17,7 @@ class PatternRepository(private val db: SewFarDatabase, private val deleter: Sof
     fun observeAll(): Flow<List<PatternEntity>> = dao.observeAll()
     fun observe(id: String): Flow<PatternEntity?> = dao.observeOne(id)
     fun observeProjects(id: String): Flow<List<ProjectRef>> = dao.observeProjects(id)
+    fun observeProjectPhotos(id: String): Flow<List<ProjectPhoto>> = dao.observeProjectPhotos(id)
 
     suspend fun create(name: String = ""): String {
         val id = Ids.random()

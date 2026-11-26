@@ -20,6 +20,8 @@ import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,7 +47,8 @@ private const val DoubleTapZoom = 2.5f
 /**
  * Full-screen viewer (SPEC 3.5): swipe between [photoIds], pinch or double-tap to zoom.
  * Panning is only active while zoomed, so swipes at normal size go to the pager.
- * Top right: "Use as cover" (with [onSetCover]; filled while the shown photo is [pinnedId]) and delete.
+ * Top right: "Use as cover" (with [onSetCover]; filled while the shown photo is [pinnedId]) and delete (with [onDelete]).
+ * With [captionOf], the shown photo's caption sits at the bottom; a tap calls [onCaption] (gallery: opens the project).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -53,9 +56,11 @@ fun PhotoViewerScreen(
     photoIds: List<String>,
     initialPhotoId: String?,
     onClose: () -> Unit,
-    onDelete: (String) -> Unit = {},
+    onDelete: ((String) -> Unit)? = null,
     pinnedId: String? = null,
     onSetCover: ((String?) -> Unit)? = null,
+    captionOf: ((String) -> String)? = null,
+    onCaption: (String) -> Unit = {},
 ) {
     if (photoIds.isEmpty()) {
         LaunchedEffect(Unit) { onClose() }
@@ -82,9 +87,18 @@ fun PhotoViewerScreen(
                         )
                     }
                 }
-                IconButton(onClick = { onDelete(current) }, modifier = Modifier.testTag("photoDelete")) {
-                    Icon(Icons.Outlined.Delete, stringResource(R.string.photo_delete), tint = Color.White)
+                if (onDelete != null) {
+                    IconButton(onClick = { onDelete(current) }, modifier = Modifier.testTag("photoDelete")) {
+                        Icon(Icons.Outlined.Delete, stringResource(R.string.photo_delete), tint = Color.White)
+                    }
                 }
+            }
+            if (captionOf != null) {
+                TextButton(
+                    onClick = { onCaption(current) },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp).testTag("photoCaption"),
+                ) { Text(captionOf(current)) }
             }
             if (photoIds.size > 1) {
                 Text(

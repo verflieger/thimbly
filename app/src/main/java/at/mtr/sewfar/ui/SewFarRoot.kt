@@ -67,6 +67,9 @@ import kotlinx.serialization.Serializable
 /** All photos of one owner, opened at [photoId] (SPEC 3.5). [ownerType] is a [PhotoOwner] name. */
 @Serializable data class PhotoViewerRoute(val ownerType: String, val ownerId: String, val photoId: String? = null)
 
+/** Read-only viewer of the photos of the projects using a pattern, opened at [photoId] (SPEC 4.1). */
+@Serializable data class PatternGalleryRoute(val patternId: String, val photoId: String)
+
 /** Short slides instead of the default 700 ms fades, which made screen changes feel sluggish. */
 private const val TransitionMillis = 250
 
@@ -158,6 +161,7 @@ fun SewFarRoot(container: AppContainer) {
                         viewModel = viewModel { PatternViewModel(container, route.id) },
                         onBack = { nav.popFrom(entry) }, onOpenProject = openProject,
                         onOpenPhoto = { photoId -> nav.navigate(PhotoViewerRoute(PhotoOwner.PATTERN.name, route.id, photoId)) },
+                        onOpenProjectPhoto = { photoId -> nav.navigate(PatternGalleryRoute(route.id, photoId)) },
                     )
                 }
                 composable<PersonRoute> { entry ->
@@ -182,6 +186,19 @@ fun SewFarRoot(container: AppContainer) {
                         onBack = { nav.popFrom(entry) }, onOpenProject = openProject,
                         onOpenMachine = { nav.navigate(MachineRoute(it)) },
                     )
+                }
+                composable<PatternGalleryRoute> { entry ->
+                    val route = entry.toRoute<PatternGalleryRoute>()
+                    val photos by container.patterns.observeProjectPhotos(route.patternId).collectAsState(initial = null)
+                    val untitled = stringResource(R.string.project_untitled)
+                    photos?.let { list ->
+                        val byId = list.associateBy { it.photoId }
+                        PhotoViewerScreen(
+                            list.map { it.photoId }, route.photoId, onClose = { nav.popFrom(entry) },
+                            captionOf = { id -> byId[id]?.projectName?.ifBlank { untitled }.orEmpty() },
+                            onCaption = { id -> byId[id]?.let { openProject(it.projectId) } },
+                        )
+                    }
                 }
                 composable<SettingsRoute> { entry ->
                     SettingsScreen(container, onBack = { nav.popFrom(entry) })
