@@ -51,10 +51,10 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   shown read-only and edited in a `TextDialog` (library pages: `EditableText`, rename via ✎ in `RecordScreen`). Only
   groups of values (measurements, setting values) use a form (`DetailScaffold` editing mode, `RecordScreen` draft
   map); state changes (status, timer, links, photos) are written at once.
-- **Frozen formats** (SPEC 7, 8): database schema 1 and backup format 1 are released (v0.1; testers use real data).
-  A schema change needs a new `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and a migration
-  test (`SchemaFreezeTest` pins the v1 hash and requires an exported schema and a migration for every step); never
-  edit a released schema or drop the database. A backup format change needs a new `BackupRepository.FORMAT`, reading
+- **Frozen formats** (SPEC 7, 8): database schemas 1–2 and backup formats 1–2 are released (v0.1, v0.1.3; testers
+  use real data). A schema change needs a new `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and
+  a case in `MigrationTest` (`SchemaFreezeTest` pins the v1 hash and requires an exported schema and a migration for
+  every step); never edit a released schema or drop the database. A backup format change needs a new `BackupRepository.FORMAT`, reading
   of all older formats, and a new fixture.
 - **Releases:** raise `versionCode` and `versionName` in `app/build.gradle.kts`, add
   `fastlane/metadata/android/{en-US,de-DE}/changelogs/<versionCode>.txt`, tag `v<versionName>`. The release key lives
@@ -64,10 +64,11 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
 - Raw SQL writes (`openHelper.writableDatabase.execSQL`) only inside `db.withTransaction`, so they run off the main
   thread and Room observers are notified.
 - **Photos** (SPEC 3.5): `PhotoRepository` stores the processed file first (`PhotoFiles`, `ImageProcessor`: EXIF
-  orientation, ≤ 2048 px, JPEG 85, no EXIF), then inserts the row. Files are immutable; replacing = new row.
+  orientation, ≤ 2048 px, JPEG 85, no EXIF), forces it and its folder to storage (`syncToStorage`), then inserts the
+  row; any file the database comes to depend on (also in a restore) is synced first. Files are immutable; replacing = new row.
   The purge removes a deleted photo's row; `purgeFiles` then removes files without a row older than the Undo window.
   UI: `rememberTakePhoto` (TakePicture → cache temp file via FileProvider, no CAMERA permission),
-  `rememberPickPhotos` (Photo Picker), `PhotoImage` (via `LocalPhotoLoader`), `PhotoStrip`, `PhotoViewerRoute`.
+  `rememberPickPhotos` (Photo Picker), `PhotoImage` (via `LocalPhotoLoader`), `PhotoStrip`, `PhotoViewerRoute`; sharing (photos, backups) goes through `shareFile`.
   Photo tests need `@GraphicsMode(NATIVE)`.
 - **UI conventions**: ViewModels are created with `viewModel { XViewModel(container) }`; their writes run in
   `container.appScope` so edits saved while leaving a screen survive.
