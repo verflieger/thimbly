@@ -1,5 +1,6 @@
 package at.mtr.sewfar.data.photos
 
+import at.mtr.sewfar.data.syncToStorage
 import java.io.File
 import java.io.InputStream
 
@@ -9,13 +10,18 @@ class PhotoFiles(filesDir: File) {
 
     fun file(photoId: String) = File(dir, "$photoId.jpg")
 
-    /** Processes the image and stores it under [photoId]; atomic, so a crash never leaves a half-written photo. */
+    /**
+     * Processes the image and stores it under [photoId]; atomic and on storage when this returns, so a crash never
+     * leaves a half-written or missing photo behind the row inserted next.
+     */
     fun write(photoId: String, maxEdge: Int = ImageProcessor.MaxEdge, open: () -> InputStream) {
-        dir.mkdirs()
+        if (dir.mkdirs()) dir.parentFile?.syncToStorage() // the very first photo also creates the folder
         val temp = File(dir, "$photoId.jpg.tmp")
         try {
             ImageProcessor.process(open, temp, maxEdge)
+            temp.syncToStorage()
             if (!temp.renameTo(file(photoId))) throw PhotoImportException("Could not store photo")
+            dir.syncToStorage()
         } finally {
             temp.delete()
         }

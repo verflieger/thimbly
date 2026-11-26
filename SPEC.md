@@ -119,7 +119,8 @@ from an imported older backup) is appended to the notes.
 - Pipeline: decode, apply EXIF orientation, downscale to at most 2048 px on the long edge (4096 px
   with the "Fine photos" setting, §9; photos already stored keep their size), re-encode as JPEG 85 (drops
   all EXIF, including location), store as `filesDir/photos/<photoId>.jpg`. The row is inserted after the file is
-  written. A deleted photo's file is removed with its row after the 60 s Undo window (§6); files without a row
+  written and forced to storage (fsync of the file and its folder, 2026-11-26: without it a crash or power loss
+  seconds later left the row with an empty or missing file). A deleted photo's file is removed with its row after the 60 s Undo window (§6); files without a row
   (e.g. after a crash) are removed once older than that window.
 
 ## 4. Library: patterns and people
@@ -224,7 +225,7 @@ are rejected with their own message.
 - **Import replaces all data:** reject newer formats; only flat `photos/<id>.jpg` entries are
   extracted, other entries are ignored (no zip slip); validate one `backup.json`; confirm with counts;
   write a safety export (restorable via "Undo last restore"); extract photos to `photos.new`; replace all tables in
-  one transaction; swap the photo folders, guarded by a marker file so an interrupted swap is completed or rolled back
+  one transaction once the safety export, the extracted photos and the marker are forced to storage; swap the photo folders, guarded by a marker file so an interrupted swap is completed or rolled back
   on the next start. Photo rows without a file are accepted.
 - **Automatic backup:** optional, weekly, into a folder the user picks once (`thimbly-auto-*.zip`, newest 5 kept,
   nothing else touched). Errors (e.g. folder gone) are shown in Settings with "Choose folder again".

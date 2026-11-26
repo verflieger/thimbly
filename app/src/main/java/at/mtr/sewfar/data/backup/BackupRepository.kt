@@ -6,6 +6,7 @@ import at.mtr.sewfar.data.TimeSource
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
 import at.mtr.sewfar.data.photos.PhotoFiles
+import at.mtr.sewfar.data.syncToStorage
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -160,6 +161,7 @@ class BackupRepository(
         // 4. Safety export of the current data, kept until the next import.
         val safetyTemp = File(filesDir, "import-safety.zip.tmp")
         safetyTemp.outputStream().use { export(it) }
+        safetyTemp.syncToStorage()
         safetyExport.delete()
         if (!safetyTemp.renameTo(safetyExport)) throw IOException("Could not store the safety export")
 
@@ -169,7 +171,7 @@ class BackupRepository(
         ZipInputStream(plan.file.inputStream().buffered()).use { zip ->
             generateSequence { zip.nextEntry }.forEach { entry ->
                 if (!entry.isDirectory && PhotoEntry.matches(entry.name)) {
-                    File(photosNew, entry.name.removePrefix(PHOTOS_DIR)).outputStream().use { zip.copyTo(it) }
+                    File(photosNew, entry.name.removePrefix(PHOTOS_DIR)).apply { outputStream().use { zip.copyTo(it) } }.syncToStorage()
                 }
             }
         }
@@ -179,6 +181,10 @@ class BackupRepository(
         // Older backups also hold deleted rows; they are dropped as the purge would have.
         val tables = JsonObject(liveRows(backup["tables"] as JsonObject))
         swapMarker.writeText(livePhotoIds(tables).sorted().joinToString("\n"))
+        swapMarker.syncToStorage()
+        // Photos, marker and safety export must be on storage before the commit makes the database depend on them.
+        photosNew.syncToStorage()
+        filesDir.syncToStorage()
         try {
             replaceTables(tables)
         } catch (e: Exception) {
@@ -221,6 +227,7 @@ class BackupRepository(
             photosOld.deleteRecursively()
             if (photos.exists() && !photos.renameTo(photosOld)) throw IOException("Could not move photos aside")
             if (!photosNew.renameTo(photos)) throw IOException("Could not move imported photos in place")
+            filesDir.syncToStorage() // the swap is on storage before the old photos go
         }
         photosOld.deleteRecursively()
         swapMarker.delete()
