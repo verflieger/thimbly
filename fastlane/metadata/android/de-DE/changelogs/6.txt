@@ -1,0 +1,1 @@
+Schnittmuster bekommen ein Titelfoto (mit dem Stern festlegen) und zeigen die Fotos der damit genähten Projekte. Fotos lassen sich aus der Ansicht teilen. Ein Foto wird jetzt sicher gespeichert, auch wenn das Handy gleich nach der Aufnahme ausgeht. Deine Daten bleiben erhalten; nach diesem Update können ältere Versionen sie nicht mehr öffnen.

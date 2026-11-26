@@ -1,0 +1,1 @@
+Patterns get a cover photo (pin one with the star) and show the photos of the projects sewn with them. Photos can be shared from the viewer. A photo is now stored safely even if the phone switches off right after taking it. Your data is kept; after this update older versions can no longer open it.
