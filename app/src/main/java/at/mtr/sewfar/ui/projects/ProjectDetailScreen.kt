@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -35,8 +36,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.mtr.sewfar.R
@@ -335,10 +339,22 @@ private fun Links(
                 InputChip(
                     selected = false,
                     onClick = { onOpen(openId) },
-                    label = { Text(label.ifBlank { "…" }) },
-                    // A 48 dp target, so a tap meant for × never opens the item instead (SPEC 10).
+                    // The × target overlaps the label's end; a wide enough label keeps a tap on a short name ("Lena") opening it.
+                    label = { Text(label.ifBlank { "…" }, Modifier.widthIn(min = 48.dp), textAlign = TextAlign.Center) },
+                    // A 48 dp target, so a tap meant for × never opens the item instead (SPEC 10); it overflows the
+                    // icon's 18 dp slot so the chip keeps its normal height.
                     trailingIcon = {
-                        Box(Modifier.size(48.dp).clickable { onRemove(key) }.testTag("remove-$key"), contentAlignment = Alignment.Center) {
+                        Box(
+                            Modifier
+                                .layout { m, _ ->
+                                    val target = m.measure(Constraints.fixed(48.dp.roundToPx(), 48.dp.roundToPx()))
+                                    val slot = 18.dp.roundToPx()
+                                    layout(slot, slot) { target.place((slot - target.width) / 2, (slot - target.height) / 2) }
+                                }
+                                .clickable { onRemove(key) }
+                                .testTag("remove-$key"),
+                            contentAlignment = Alignment.Center,
+                        ) {
                             Icon(Icons.Outlined.Close, stringResource(R.string.action_remove), Modifier.size(18.dp))
                         }
                     },
