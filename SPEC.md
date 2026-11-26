@@ -101,6 +101,12 @@ timer; leaving Done clears the finish date.
 - "+" adds time by hand: duration (`45`, `1:30`, `1.5h`, `1,5 h`, `20 min`) and a day (stored as starting at noon).
 - Total = all entries, the running one counted up to now. "Show entries" lists them (day, duration) for deletion;
   the running entry has no remove button (stop the timer first), for the same Undo reason.
+- **Correcting (2026-11-26):** tapping a finished entry opens the same dialog as "+", pre-filled (`h:mm`, its day);
+  Save replaces duration and day. The entry keeps its start time on the same day, otherwise it starts at noon of the
+  new day.
+- **Forgotten timer:** a timer that stopped after running 4 h or more, however it stopped (Stop, starting another
+  timer, Done), opens that dialog on the current screen, titled "<project>: the timer ran <duration>. Is that right?"
+  and pre-filled with the measured time. Save corrects it, Cancel keeps it.
 
 ### 3.4 Completion
 

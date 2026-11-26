@@ -11,10 +11,14 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -32,7 +36,9 @@ import androidx.navigation.toRoute
 import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
 import at.mtr.sewfar.domain.PhotoOwner
+import at.mtr.sewfar.data.db.TimeEntryEntity
 import at.mtr.sewfar.ui.common.LocalMessages
+import at.mtr.sewfar.ui.common.formatDuration
 import at.mtr.sewfar.ui.common.shareFile
 import at.mtr.sewfar.ui.common.Messages
 import at.mtr.sewfar.ui.library.LibraryScreen
@@ -51,8 +57,11 @@ import at.mtr.sewfar.ui.projects.ProjectDetailScreen
 import at.mtr.sewfar.ui.projects.ProjectDetailViewModel
 import at.mtr.sewfar.ui.projects.ProjectListViewModel
 import at.mtr.sewfar.ui.projects.ProjectsScreen
+import at.mtr.sewfar.ui.projects.TimeDialog
 import at.mtr.sewfar.ui.settings.SettingsScreen
 import java.io.IOException
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -120,7 +129,24 @@ fun SewFarRoot(container: AppContainer) {
     // null until DataStore answers: no time controls flash up for people who switched them off.
     val trackTime = container.settings.trackTime.collectAsStateWithLifecycle(initialValue = null).value == true
 
+    // SPEC 3.3: a timer that ran 4 h or more may have been forgotten; ask on whatever screen it was stopped.
+    var longStop by remember { mutableStateOf<Pair<TimeEntryEntity, String>?>(null) }
+    LaunchedEffect(Unit) {
+        container.projects.longStops.collect { entry -> longStop = entry to container.projects.get(entry.projectId)?.name.orEmpty() }
+    }
+
     CompositionLocalProvider(LocalMessages provides messages) {
+        longStop?.let { (entry, name) -> key(entry.id) {
+            val minutes = ((entry.endedAt!! - entry.startedAt) / 60_000L).toInt()
+            TimeDialog(
+                stringResource(R.string.time_check_title, name.ifBlank { stringResource(R.string.project_untitled) }, formatDuration(minutes * 60_000L)),
+                stringResource(R.string.action_save),
+                initialMinutes = minutes,
+                initialDate = Instant.ofEpochMilli(entry.startedAt).atZone(ZoneId.systemDefault()).toLocalDate(),
+                onSave = { date, m -> container.appScope.launch { container.projects.editTime(entry.id, date, m) }; longStop = null },
+                onDismiss = { longStop = null },
+            )
+        } }
         Scaffold(contentWindowInsets = WindowInsets(0), snackbarHost = { SnackbarHost(snackbarHost) }) { _ ->
             NavHost(
                 nav,

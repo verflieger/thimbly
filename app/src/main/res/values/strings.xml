@@ -151,6 +151,8 @@
     <string name="setup_notes">Notes</string>
     <string name="setup_title">Name of the setting</string>
     <string name="setup_untitled">Untitled setting</string>
+    <string name="time_edit">Correct time</string>
+    <string name="time_check_title">%1$s: the timer ran %2$s. Is that right?</string>
     <string name="time_add">Add time</string>
     <string name="time_duration">Duration</string>
     <string name="time_duration_hint">e.g. 45, 1:30 or 1.5h</string>

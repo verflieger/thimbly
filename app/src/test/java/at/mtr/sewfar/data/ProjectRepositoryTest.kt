@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -60,6 +62,48 @@ class ProjectRepositoryTest {
         assertNull(t.projects.observeTime(b).first().single().endedAt)
         t.projects.startTimer(b) // already running: no second entry
         assertEquals(1, t.projects.observeTime(b).first().size)
+    }
+
+    @Test
+    fun onlyLongTimersAreReportedHoweverTheyStop() = runTest {
+        val a = t.projects.create("A")
+        val b = t.projects.create("B")
+        val reported = mutableListOf<String>()
+        val collecting = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { t.projects.longStops.collect { reported += it.projectId } }
+        t.projects.startTimer(a)
+        t.time.advance(LongTimerMillis - 1)
+        t.projects.stopTimer(a) // just under the limit
+        t.projects.startTimer(a)
+        t.time.advance(LongTimerMillis)
+        t.projects.startTimer(b) // stops A: forgotten
+        t.time.advance(LongTimerMillis)
+        t.projects.setStatus(b, ProjectStatus.DONE) // stops B: forgotten
+        t.projects.startTimer(a)
+        t.time.advance(LongTimerMillis)
+        t.projects.delete(a) // stops A, but the project is going away: no question
+        assertEquals(listOf(a, b), reported)
+        collecting.cancel()
+    }
+
+    @Test
+    fun editTimeKeepsTheStartOnTheSameDayAndMovesToNoonOnAnother() = runTest {
+        val zone = ZoneOffset.UTC
+        val id = t.projects.create("A")
+        t.time.now = LocalDate.of(2026, 11, 23).atTime(9, 0).toInstant(zone).toEpochMilli()
+        t.projects.startTimer(id)
+        t.time.advance(9 * 60 * 60_000L) // forgotten until 18:00
+        t.projects.stopTimer(id)
+        val entry = t.projects.observeTime(id).first().single()
+
+        t.projects.editTime(entry.id, LocalDate.of(2026, 11, 23), 90, zone)
+        val sameDay = t.projects.observeTime(id).first().single()
+        assertEquals(entry.startedAt, sameDay.startedAt)
+        assertEquals(90 * 60_000L, sameDay.endedAt!! - sameDay.startedAt)
+
+        t.projects.editTime(entry.id, LocalDate.of(2026, 11, 20), 45, zone)
+        val moved = t.projects.observeTime(id).first().single()
+        assertEquals(LocalDate.of(2026, 11, 20).atTime(12, 0).toInstant(zone).toEpochMilli(), moved.startedAt)
+        assertEquals(45 * 60_000L, moved.endedAt!! - moved.startedAt)
     }
 
     @Test

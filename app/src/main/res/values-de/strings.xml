@@ -150,6 +150,8 @@
     <string name="setup_notes">Notizen</string>
     <string name="setup_title">Name der Einstellung</string>
     <string name="setup_untitled">Einstellung ohne Namen</string>
+    <string name="time_edit">Zeit korrigieren</string>
+    <string name="time_check_title">%1$s: Der Timer lief %2$s. Stimmt das?</string>
     <string name="time_add">Zeit nachtragen</string>
     <string name="time_duration">Dauer</string>
     <string name="time_duration_hint">z. B. 45, 1:30 oder 1,5h</string>

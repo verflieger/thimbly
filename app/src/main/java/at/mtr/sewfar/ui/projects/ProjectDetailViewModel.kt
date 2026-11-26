@@ -123,6 +123,7 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     fun startTimer() = write { projects.startTimer(id) }
     fun stopTimer() = write { projects.stopTimer(id) }
     fun addTime(date: LocalDate, minutes: Int) = write { projects.addTime(id, date, minutes) }
+    fun editTime(entryId: String, date: LocalDate, minutes: Int) = write { projects.editTime(entryId, date, minutes) }
     suspend fun deleteTime(entryId: String): DeletionToken? = run { projects.deleteTime(entryId) }
 
     /** Adds photos; returns how many failed. */

@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -52,7 +53,7 @@ import java.time.ZoneId
 
 private const val DayMillis = 86_400_000L
 
-/** Time spent (SPEC 3.3): total, start/stop, add time by hand, the entries. */
+/** Time spent (SPEC 3.3): total, start/stop, add time by hand, the entries (tap one to correct it). */
 @Composable
 internal fun TimeSection(state: ProjectDetailState, viewModel: ProjectDetailViewModel, onRemove: (String) -> Unit) {
     val running = state.running
@@ -60,6 +61,7 @@ internal fun TimeSection(state: ProjectDetailState, viewModel: ProjectDetailView
     val total = Durations.total(state.time.map { it.startedAt to it.endedAt }, now)
     var showEntries by rememberSaveable { mutableStateOf(false) }
     var adding by rememberSaveable { mutableStateOf(false) }
+    var editing by rememberSaveable { mutableStateOf<String?>(null) }
     Column {
         SectionLabel(stringResource(R.string.project_time))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -89,7 +91,11 @@ internal fun TimeSection(state: ProjectDetailState, viewModel: ProjectDetailView
         if (showEntries) {
             val zone = ZoneId.systemDefault()
             state.time.forEach { entry ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // A finished entry opens the time dialog to be corrected; the running one has nothing to correct yet.
+                Row(
+                    Modifier.clickable(enabled = entry.endedAt != null) { editing = entry.id }.testTag("timeEntry-${entry.id}"),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(Instant.ofEpochMilli(entry.startedAt).atZone(zone).toLocalDate().format(), Modifier.weight(1f))
                     Text(
                         if (entry.endedAt == null) stringResource(R.string.timer_running)
@@ -103,14 +109,38 @@ internal fun TimeSection(state: ProjectDetailState, viewModel: ProjectDetailView
             }
         }
     }
-    if (adding) AddTimeDialog(onAdd = { date, minutes -> viewModel.addTime(date, minutes); adding = false }, onDismiss = { adding = false })
+    if (adding) {
+        TimeDialog(
+            stringResource(R.string.time_add), stringResource(R.string.action_add),
+            onSave = { date, minutes -> viewModel.addTime(date, minutes); adding = false }, onDismiss = { adding = false },
+        )
+    }
+    state.time.firstOrNull { it.id == editing && it.endedAt != null }?.let { entry ->
+        TimeDialog(
+            stringResource(R.string.time_edit), stringResource(R.string.action_save),
+            initialMinutes = ((entry.endedAt!! - entry.startedAt) / 60_000L).toInt(),
+            initialDate = Instant.ofEpochMilli(entry.startedAt).atZone(ZoneId.systemDefault()).toLocalDate(),
+            onSave = { date, minutes -> viewModel.editTime(entry.id, date, minutes); editing = null }, onDismiss = { editing = null },
+        )
+    }
 }
 
+/**
+ * Duration and day of time worked (SPEC 3.3): adding by hand, correcting an entry, or checking a long timer.
+ * [initialMinutes] pre-fills the duration as `h:mm`.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddTimeDialog(onAdd: (LocalDate, Int) -> Unit, onDismiss: () -> Unit) {
-    var text by rememberSaveable { mutableStateOf("") }
-    var date by rememberSaveable { mutableStateOf(LocalDate.now()) }
+internal fun TimeDialog(
+    title: String,
+    confirmLabel: String,
+    onSave: (LocalDate, Int) -> Unit,
+    onDismiss: () -> Unit,
+    initialMinutes: Int? = null,
+    initialDate: LocalDate = LocalDate.now(),
+) {
+    var text by rememberSaveable { mutableStateOf(initialMinutes?.let { "%d:%02d".format(it / 60, it % 60) }.orEmpty()) }
+    var date by rememberSaveable { mutableStateOf(initialDate) }
     var pickingDate by remember { mutableStateOf(false) }
     val minutes = Durations.parseMinutes(text)
     if (pickingDate) {
@@ -130,7 +160,7 @@ private fun AddTimeDialog(onAdd: (LocalDate, Int) -> Unit, onDismiss: () -> Unit
     AlertDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(dismissOnClickOutside = false),
-        title = { Text(stringResource(R.string.time_add)) },
+        title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 LabeledTextField(
@@ -145,7 +175,7 @@ private fun AddTimeDialog(onAdd: (LocalDate, Int) -> Unit, onDismiss: () -> Unit
             }
         },
         confirmButton = {
-            TextButton(enabled = minutes != null, onClick = { minutes?.let { onAdd(date, it) } }) { Text(stringResource(R.string.action_add)) }
+            TextButton(enabled = minutes != null, onClick = { minutes?.let { onSave(date, it) } }, modifier = Modifier.testTag("timeSave")) { Text(confirmLabel) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )

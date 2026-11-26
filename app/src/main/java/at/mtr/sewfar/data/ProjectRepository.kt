@@ -12,13 +12,20 @@ import at.mtr.sewfar.data.db.SoftDeleter
 import at.mtr.sewfar.data.db.TimeEntryEntity
 import at.mtr.sewfar.domain.Ids
 import at.mtr.sewfar.domain.ProjectStatus
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.map
 
 /** Projects and their child rows (SPEC 3). Every change to a child row bumps the project's `lastActivityAt`. */
 class ProjectRepository(private val db: SewFarDatabase, private val deleter: SoftDeleter, private val time: TimeSource) {
+    /**
+     * Timers stopped after running [LongTimerMillis] or more, however they were stopped (Stop, another timer, Done):
+     * the app asks whether the time is right, as the timer may have been forgotten (SPEC 3.3).
+     */
+    val longStops = MutableSharedFlow<TimeEntryEntity>(extraBufferCapacity = 4)
     private val dao = db.projectDao()
 
     fun observeAll(): Flow<List<ProjectEntity>> = dao.observeAll()
@@ -73,7 +80,8 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
      * bring back a second running timer.
      */
     suspend fun delete(id: String): DeletionToken? = db.withTransaction {
-        stopTimer(id)
+        // Stopped without the "is that right?" question: the project is going away.
+        dao.running().filter { it.projectId == id }.forEach { stop(it, time.nowMillis(), report = false) }
         deleter.delete("project", id)
     }
 
@@ -162,9 +170,11 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
         dao.running().filter { it.projectId == projectId }.forEach { stop(it, now) }
     }
 
-    private suspend fun stop(entry: TimeEntryEntity, now: Long) {
-        dao.updateTime(entry.copy(endedAt = maxOf(now, entry.startedAt), updatedAt = now))
+    private suspend fun stop(entry: TimeEntryEntity, now: Long, report: Boolean = true) {
+        val stopped = entry.copy(endedAt = maxOf(now, entry.startedAt), updatedAt = now)
+        dao.updateTime(stopped)
         dao.touch(entry.projectId, now)
+        if (report && now - entry.startedAt >= LongTimerMillis) longStops.tryEmit(stopped)
     }
 
     /** Adds [minutes] worked on [date] (stored as starting at noon of that day). */
@@ -179,6 +189,20 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
     }
 
     /**
+     * Corrects a finished entry to [minutes] on [date] (SPEC 3.3): it keeps its start time if [date] is its day,
+     * otherwise it starts at noon of [date] like time added by hand. A running entry is left alone.
+     */
+    suspend fun editTime(entryId: String, date: LocalDate, minutes: Int, zone: ZoneId = ZoneId.systemDefault()) = db.withTransaction {
+        require(minutes > 0)
+        val entry = dao.getTime(entryId)?.takeIf { it.endedAt != null } ?: return@withTransaction
+        val now = time.nowMillis()
+        val sameDay = Instant.ofEpochMilli(entry.startedAt).atZone(zone).toLocalDate() == date
+        val start = if (sameDay) entry.startedAt else date.atTime(12, 0).atZone(zone).toInstant().toEpochMilli()
+        dao.updateTime(entry.copy(startedAt = start, endedAt = start + minutes * 60_000L, updatedAt = now))
+        dao.touch(entry.projectId, now)
+    }
+
+    /**
      * Soft-deletes a time entry. A running entry is not deleted (null; stop it first), so Undo can't bring back a
      * second running timer (SPEC 3.3).
      */
@@ -188,3 +212,6 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
         deleter.delete("time_entry", entryId).also { dao.touch(entry.projectId, time.nowMillis()) }
     }
 }
+
+/** A timer running this long may have been forgotten (SPEC 3.3). */
+const val LongTimerMillis = 4 * 60 * 60_000L
