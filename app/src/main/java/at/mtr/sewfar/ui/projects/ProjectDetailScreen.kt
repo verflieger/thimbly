@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ContentCut
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -56,6 +57,7 @@ import at.mtr.sewfar.ui.common.SectionLabel
 import at.mtr.sewfar.ui.common.TextDialog
 import at.mtr.sewfar.ui.common.format
 import at.mtr.sewfar.ui.common.label
+import at.mtr.sewfar.ui.photos.CoverThumbnail
 import at.mtr.sewfar.ui.photos.PhotoStrip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -213,7 +215,9 @@ fun ProjectDetailScreen(
             val linked = state.patterns.map { it.patternId }.toSet()
             EntityPicker(
                 title = stringResource(R.string.picker_choose_pattern),
-                items = choices.patterns.filter { it.id !in linked }.map { PickerItem(it.id, it.name, it.designer) },
+                items = choices.patterns.filter { it.id !in linked }.map { p ->
+                    PickerItem(p.id, p.name, p.designer) { CoverThumbnail(choices.patternCovers[p.id], Icons.Outlined.ContentCut, 40.dp) }
+                },
                 // Typing a linked pattern's name must not offer a duplicate.
                 existingNames = choices.patterns.map { it.name },
                 onPick = { id -> id?.let(viewModel::addPattern); picking = null },

@@ -73,6 +73,20 @@ class PhotoRepositoryTest {
     }
 
     @Test
+    fun patternCoverIsOldestPhoto() = runTest {
+        val raglan = t.patterns.create("Raglan")
+        val dress = t.patterns.create("Dress")
+        val add = { id: String -> suspend { t.photos.add(PhotoOwner.PATTERN, id) { image.inputStream() } } }
+        val envelope = add(raglan)()
+        add(raglan)()
+        val dressPhoto = add(dress)()
+        val noPhoto = t.patterns.create("Skirt")
+        val covers = patternCovers(t.photos.observeAllOfType(PhotoOwner.PATTERN).first())
+        assertEquals(mapOf(raglan to envelope, dress to dressPhoto), covers)
+        assertEquals(null, covers[noPhoto])
+    }
+
+    @Test
     fun filesOfDeletedPhotosGoOnlyAfterUndoWindow() = runTest {
         val projectId = t.projects.create("Dress")
         val photo = addPhoto(projectId)

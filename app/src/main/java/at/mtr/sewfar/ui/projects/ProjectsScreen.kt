@@ -1,11 +1,9 @@
 package at.mtr.sewfar.ui.projects
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Add
@@ -48,7 +45,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -62,7 +58,7 @@ import at.mtr.sewfar.ui.common.TextDialog
 import at.mtr.sewfar.ui.common.formatDuration
 import at.mtr.sewfar.ui.common.label
 import at.mtr.sewfar.ui.common.rememberNow
-import at.mtr.sewfar.ui.photos.PhotoImage
+import at.mtr.sewfar.ui.photos.CoverThumbnail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -212,16 +208,9 @@ private fun NewProjectDialog(onCreate: (String) -> Unit, onDismiss: () -> Unit) 
 
 @Composable
 private fun ProjectCard(project: ProjectSummary, now: Long, trackTime: Boolean, onOpen: () -> Unit, onTimer: () -> Unit) {
-    val px = with(LocalDensity.current) { 112.dp.roundToPx() }
     Card(Modifier.fillMaxWidth().clickable(onClick = onOpen)) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (project.coverPhotoId != null) PhotoImage(project.coverPhotoId, minEdgePx = px, modifier = Modifier.size(56.dp))
-                else Icon(Icons.Outlined.Checkroom, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            CoverThumbnail(project.coverPhotoId, Icons.Outlined.Checkroom, 56.dp)
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                 Text(
                     project.name.ifBlank { stringResource(R.string.project_untitled) },

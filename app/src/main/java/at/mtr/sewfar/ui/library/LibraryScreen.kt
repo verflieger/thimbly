@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentCut
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +39,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
+import at.mtr.sewfar.domain.PhotoOwner
+import at.mtr.sewfar.data.patternCovers
+import at.mtr.sewfar.ui.photos.CoverThumbnail
 import at.mtr.sewfar.ui.common.EmptyState
 import at.mtr.sewfar.ui.common.TextDialog
 import kotlinx.coroutines.Dispatchers
@@ -52,18 +56,20 @@ import kotlinx.coroutines.withContext
 /** In the order of the tabs. */
 enum class LibraryTab { PATTERNS, PEOPLE, MACHINES }
 
-/** A library row: title and an optional second line. */
-data class LibraryItem(val id: String, val title: String, val subtitle: String)
+/** A library row: title, an optional second line and, for patterns, the cover photo (SPEC 3.5). */
+data class LibraryItem(val id: String, val title: String, val subtitle: String, val coverPhotoId: String? = null)
 
 class LibraryViewModel(private val container: AppContainer, initialTab: LibraryTab) : ViewModel() {
     val tab = MutableStateFlow(initialTab)
 
     val items = combine(
         container.patterns.observeAll(), container.machines.observeAll(), container.machines.observeSetups(), container.persons.observeAll(),
-    ) { patterns, machines, setups, persons ->
+        container.photos.observeAllOfType(PhotoOwner.PATTERN),
+    ) { patterns, machines, setups, persons, photos ->
         val setupCount = setups.groupingBy { it.machineId }.eachCount()
+        val covers = patternCovers(photos)
         mapOf(
-            LibraryTab.PATTERNS to patterns.map { LibraryItem(it.id, it.name, it.designer) },
+            LibraryTab.PATTERNS to patterns.map { LibraryItem(it.id, it.name, it.designer, covers[it.id]) },
             LibraryTab.MACHINES to machines.map { LibraryItem(it.id, it.name, (setupCount[it.id] ?: 0).toString()) },
             LibraryTab.PEOPLE to persons.map { LibraryItem(it.id, it.name, "") },
         )
@@ -124,6 +130,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
                         item.subtitle.isNotBlank() -> ({ Text(item.subtitle) })
                         else -> null
                     },
+                    leadingContent = if (tab == LibraryTab.PATTERNS) ({ CoverThumbnail(item.coverPhotoId, Icons.Outlined.ContentCut, 48.dp) }) else null,
                     modifier = Modifier.clickable { onOpen(tab, item.id) },
                 )
             }

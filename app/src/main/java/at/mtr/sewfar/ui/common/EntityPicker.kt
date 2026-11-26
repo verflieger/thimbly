@@ -30,8 +30,8 @@ import androidx.compose.ui.unit.dp
 import at.mtr.sewfar.R
 import at.mtr.sewfar.domain.SearchText
 
-/** One choice in an [EntityPicker]. */
-data class PickerItem(val id: String, val title: String, val subtitle: String? = null)
+/** One choice in an [EntityPicker]; [leading] is e.g. a cover thumbnail. */
+data class PickerItem(val id: String, val title: String, val subtitle: String? = null, val leading: (@Composable () -> Unit)? = null)
 
 /**
  * Searchable single-choice picker with a "Create …" row (SPEC 2): typing a name that doesn't exist
@@ -85,6 +85,7 @@ fun EntityPicker(
                         ListItem(
                             headlineContent = { Text(item.title) },
                             supportingContent = item.subtitle?.takeIf { it.isNotBlank() }?.let { { Text(it) } },
+                            leadingContent = item.leading,
                             modifier = Modifier.clickable { onPick(item.id) },
                         )
                     }

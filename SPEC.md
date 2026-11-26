@@ -114,7 +114,8 @@ from an imported older backup) is appended to the notes.
   photo" tile, which offers "Take photo" or "From gallery". Tap opens the full-screen viewer (swipe, pinch zoom), whose top bar has "Use as cover"
   (project; the star is filled while the shown photo is the pinned cover, tap again to choose automatically) and
   delete (with Undo); long-press in the row offers the same as a shortcut.
-- Cover: the pinned photo, otherwise the newest one.
+- Cover: the pinned photo, otherwise the newest one. A pattern's cover is its oldest photo, usually the envelope taken
+  first (2026-11-26, no pinning); it shows as a thumbnail in the Library pattern list and the pattern picker.
 - Pipeline: decode, apply EXIF orientation, downscale to at most 2048 px on the long edge (4096 px
   with the "Fine photos" setting, §9; photos already stored keep their size), re-encode as JPEG 85 (drops
   all EXIF, including location), store as `filesDir/photos/<photoId>.jpg`. The row is inserted after the file is

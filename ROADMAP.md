@@ -12,6 +12,10 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 
 ## v1.x — small additions
 
+- Pattern gallery: from the pattern page, look through all photos of the projects that used it ("how did it turn
+  out last time, and on whom?"); read-only, tap leads to the project.
+- Pinnable pattern cover like on projects ("Use as cover" star; today the oldest photo, SPEC 3.5). Schema change:
+  `pattern.coverPhotoId`, database version 2 with migration, backup format 2.
 - Fabrics (see v2) are the next big step: they become a fourth Library tab (Patterns, Fabrics, People, Machines);
   home stays the project list.
 - Deadlines on projects (event/birthday), shown on cards.

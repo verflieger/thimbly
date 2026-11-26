@@ -81,3 +81,7 @@ class PhotoRepository(
 /** The cover of a project (SPEC 3.5): the pinned photo if it still exists, else the newest one. */
 fun coverOf(photos: List<PhotoEntity>, pinnedId: String?): String? =
     photos.firstOrNull { it.id == pinnedId }?.id ?: photos.maxByOrNull { it.sortOrder }?.id
+
+/** Pattern ID → cover photo ID (SPEC 3.5): each pattern's oldest photo, usually the envelope taken first. */
+fun patternCovers(photos: List<PhotoEntity>): Map<String, String> =
+    photos.groupBy { it.ownerId }.mapValues { (_, ps) -> ps.minBy { it.sortOrder }.id }

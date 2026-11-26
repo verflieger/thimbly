@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.data.coverOf
+import at.mtr.sewfar.data.patternCovers
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.LinkedPattern
 import at.mtr.sewfar.data.db.LinkedSetup
@@ -52,6 +53,8 @@ data class Choices(
     val patterns: List<PatternEntity> = emptyList(),
     val setups: List<SetupRow> = emptyList(),
     val machines: List<MachineEntity> = emptyList(),
+    /** Pattern ID → cover photo ID (SPEC 3.5). */
+    val patternCovers: Map<String, String> = emptyMap(),
 )
 
 /** One project, edited in place (SPEC 3). Writes run in the app scope so they finish after leaving the screen. */
@@ -78,8 +81,8 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
 
     val choices: StateFlow<Choices> = combine(
         container.persons.observeAll(), container.patterns.observeAll(),
-        container.machines.observeSetups(), container.machines.observeAll(),
-    ) { persons, patterns, setups, machines -> Choices(persons, patterns, setups, machines) }
+        container.machines.observeSetups(), container.machines.observeAll(), container.photos.observeAllOfType(PhotoOwner.PATTERN),
+    ) { persons, patterns, setups, machines, photos -> Choices(persons, patterns, setups, machines, patternCovers(photos)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Choices())
 
     private fun write(block: suspend () -> Unit) {
