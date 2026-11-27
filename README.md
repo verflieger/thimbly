@@ -1,25 +1,33 @@
 # Thimbly
 
-Thimbly is a private, offline Android tracker for sewing projects: what you
-are sewing, how long it takes, which pattern and machine settings you used, and how it turned out.
+**Thimbly remembers how you sewed something.** Other sewing apps list what you own; Thimbly records how each
+project was made: the machine settings that worked (stitch, tensions, differential feed …), the pattern and size,
+the fabric, how long it took, and the measurements of the person it was for at the time. Next time you sew that
+pattern, it is all on one page.
 
-The app is in English and German, following the phone's language or Android's per-app language setting.
-The full specification is in [SPEC.md](SPEC.md), later plans in [ROADMAP.md](ROADMAP.md).
+It is a private, fully offline Android app in English and German, following the phone's language or Android's
+per-app language setting. The full specification is in [SPEC.md](SPEC.md), later plans in [ROADMAP.md](ROADMAP.md).
 
 ## Features
 
-- **Projects** on one page: status (planned, in progress, done), a timer and manually added time, photos, patterns,
-  who it is for, machine settings, notes, and a rating with "what I learned" when done.
+- **One page per project:** status (planned, in progress, done), a timer and added or corrected time, photos,
+  patterns with size and fabric, who it is for with their measurements at the time, machine settings, labels and notes.
+- **Reusable machine settings:** a named setting per machine with the fields of its type (sewing machine,
+  overlocker, coverstitch, embroidery), linked to every project that used it.
 - **Quick start:** "New project" opens the project directly; patterns, people, machines and settings are created
   right from the project by typing a name.
-- **Library** (from the menu): patterns with photos, people, and machines with their reusable settings (stitch,
-  tensions, differential feed …), each with the projects that used them.
-- **Backup:** zip export/import, optional weekly automatic backup to a folder of your choice.
+- **Library** (button at the bottom of the project list): patterns grouped by type, with their photos and the
+  photos of every project sewn from them; people with dated measurements; machines with their settings. Each shows
+  the projects that used it.
+- **Search** over names, people, patterns, labels, size, fabric and notes.
+- **Backup:** zip export/import, optional weekly automatic backup to a folder of your choice. Every update keeps
+  your data and reads all older backups.
 
 ## Privacy
 
-The app has no network access: the `INTERNET` permission is removed from the manifest, and there is no analytics,
-crash reporting or Android cloud backup. All data stays on the device until you export a backup yourself.
+The app has no network access: the `INTERNET` permission is removed from the manifest (a build check enforces it),
+and there is no analytics, crash reporting, account or Android cloud backup. The camera and gallery work without
+any permission. All data stays on the device until you export a backup yourself.
 
 ## Building
 

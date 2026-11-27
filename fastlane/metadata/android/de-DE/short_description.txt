@@ -1,1 +1,1 @@
-Einfacher Offline-Tracker für Nähprojekte, Schnitte und Maschineneinstellungen
+Merkt sich, wie du genäht hast: Projekte, Schnitte, Einstellungen. Offline.

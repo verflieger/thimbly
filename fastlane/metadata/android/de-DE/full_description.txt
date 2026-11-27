@@ -1,22 +1,26 @@
-Thimbly ist ein einfacher, privater Tracker für deine Nähprojekte: was du nähst, wie lange es dauert, welchen Schnitt und welche Maschineneinstellungen du verwendet hast und wie es geworden ist.
+<b>Thimbly merkt sich, wie du etwas genäht hast.</b> Andere Näh-Apps verwalten, was du besitzt. Thimbly hält fest, wie jedes Projekt entstanden ist: die Maschineneinstellungen, die funktioniert haben, Schnitt und Größe, den Stoff, wie lange es gedauert hat und die Maße der Person, für die es war, zu diesem Zeitpunkt. Wenn du den Schnitt wieder nähst, steht alles auf einer Seite.
 
 <b>Eine Seite pro Projekt</b>
 • Status: geplant, in Arbeit, fertig
-• Zeitmessung mit einem Tipp oder Zeit nachtragen
+• Zeitmessung mit einem Tipp oder Zeit nachtragen und korrigieren
 • Fotos von Kamera oder Galerie
-• Schnittmuster, für wen, Maschineneinstellungen und Notizen
-• Wenn es fertig ist: Sterne und was du gelernt hast
+• Schnittmuster mit Größe und Stoff
+• Für wen, mit den Maßen von damals
+• Maschineneinstellungen, Labels und Notizen
+
+<b>Maschineneinstellungen zum Wiederverwenden</b>
+Speichere eine Einstellung einmal (Stich, Spannungen, Differentialtransport …, mit den Feldern deiner Nähmaschine, Overlock, Coverlock oder Stickmaschine) und verknüpfe sie mit jedem Projekt, das sie verwendet hat.
 
 <b>Keine Umwege</b>
 „Neues Projekt“ öffnet das Projekt sofort. Schnittmuster, Personen, Maschinen und ihre Einstellungen legst du direkt im Projekt an, indem du einen Namen tippst.
 
 <b>Bibliothek</b>
-Schnittmuster mit Fotos, Personen und deine Maschinen mit wiederverwendbaren Einstellungen (Stich, Spannungen, Differentialtransport …), jeweils mit den Projekten, in denen sie vorkamen.
+Schnittmuster nach Art sortiert, mit ihren Fotos und den Fotos aller Projekte, die daraus genäht wurden. Personen mit datierten Maßen. Deine Maschinen mit ihren Einstellungen. Jeweils mit den Projekten, in denen sie vorkamen.
 
 <b>Sicherung</b>
-Speichere oder teile jederzeit eine Sicherungsdatei, oder lass Thimbly wöchentlich in einen Ordner deiner Wahl sichern.
+Speichere oder teile jederzeit eine Sicherungsdatei, oder lass Thimbly wöchentlich in einen Ordner deiner Wahl sichern. Jedes Update behält deine Daten und liest alle älteren Sicherungen.
 
 <b>Privat von Grund auf</b>
-Keine Internetberechtigung, keine Werbung, kein Tracking, kein Konto. Deine Daten bleiben auf deinem Handy, bis du sie selbst exportierst.
+Keine Internetberechtigung, keine Werbung, kein Tracking, kein Konto, kein Premium. Deine Daten bleiben auf deinem Handy, bis du sie selbst exportierst.
 
 Freie Software unter der GNU GPL v3. Auf Deutsch und Englisch.

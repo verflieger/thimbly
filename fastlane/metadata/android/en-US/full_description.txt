@@ -1,22 +1,26 @@
-Thimbly is a simple, private tracker for your sewing projects: what you are sewing, how long it takes, which pattern and machine settings you used, and how it turned out.
+<b>Thimbly remembers how you sewed something.</b> Other sewing apps list what you own. Thimbly records how each project was made: the machine settings that worked, the pattern and size, the fabric, how long it took, and the measurements of the person it was for at the time. Next time you sew that pattern, it is all on one page.
 
 <b>One page per project</b>
 • Status: planned, in progress, done
-• Timer with one tap, or add time by hand
+• Timer with one tap, or add and correct time by hand
 • Photos from the camera or gallery
-• Patterns, who it is for, machine settings and notes
-• When it is done: a star rating and what you learned
+• Patterns with size and fabric
+• Who it is for, with their measurements at the time
+• Machine settings, labels and notes
+
+<b>Machine settings you can reuse</b>
+Save a setting once (stitch, tensions, differential feed …, with the fields of your sewing machine, overlocker, coverstitch or embroidery machine) and link it to every project that used it.
 
 <b>No detours</b>
 "New project" opens the project right away. Patterns, people, machines and their settings are created from the project by typing a name.
 
 <b>Library</b>
-Patterns with photos, people, and your machines with reusable settings (stitch, tensions, differential feed …), each showing the projects that used them.
+Patterns grouped by type, with their photos and the photos of every project sewn from them. People with dated measurements. Your machines with their settings. Each shows the projects that used it.
 
 <b>Backup</b>
-Save or share a backup file at any time, or let Thimbly back up weekly into a folder of your choice.
+Save or share a backup file at any time, or let Thimbly back up weekly into a folder of your choice. Every update keeps your data and reads all older backups.
 
 <b>Private by design</b>
-No internet permission, no ads, no tracking, no account. Your data stays on your phone until you export it yourself.
+No internet permission, no ads, no tracking, no account, no premium. Your data stays on your phone until you export it yourself.
 
 Free software under the GNU GPL v3. Available in English and German.

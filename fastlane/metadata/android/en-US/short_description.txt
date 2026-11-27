@@ -1,1 +1,1 @@
-Simple offline tracker for sewing projects, patterns and machine settings
+Remembers how you sewed it: projects, patterns, machine settings. Offline.

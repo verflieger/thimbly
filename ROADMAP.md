@@ -12,6 +12,13 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 
 ## v1.x — small additions
 
+- **Sew again** (next; builds on what only Thimbly records: settings, size and measurements per project). A Done
+  project's page offers "Sew again": asks for the name (pre-filled), creates a Planned project with the same
+  patterns, size, fabric text, person, machine settings and labels (not photos, time or notes) and opens it.
+  Size hint: wherever a project links a pattern and a person, the Size section shows the last Done project of that
+  pattern for that person ("Last time: 122, height 118 cm (March 2026); now 127 cm") with a link to it. It is
+  computed from existing links and measurements, so it also works for projects created by hand and needs no schema
+  or backup change. It only shows the numbers and does not suggest a size (that is "Size suggestion" below).
 - Fabrics (see v2) are the next big step: they become a fourth Library tab (Patterns, Fabrics, People, Machines);
   home stays the project list.
 - Costs per project.
