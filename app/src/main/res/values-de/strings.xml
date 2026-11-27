@@ -30,13 +30,13 @@
     <string name="photo_unpin_cover">Titelbild automatisch wählen</string>
     <string name="photo_cover">Titelbild</string>
     <string name="photo_share">Foto teilen</string>
-    <string name="photo_share_failed">Das Foto konnte nicht geteilt werden</string>
+    <string name="photo_share_failed">Foto konnte nicht geteilt werden</string>
     <string name="photo_delete">Foto löschen</string>
     <string name="photo_deleted">Foto gelöscht</string>
     <string name="picker_create_new">„%1$s“ anlegen</string>
     <string name="picker_choose_person">Person wählen</string>
     <string name="picker_choose_pattern">Schnittmuster wählen</string>
-    <string name="picker_empty">Nichts gefunden. Tippe einen Namen, um etwas anzulegen.</string>
+    <string name="picker_empty">Noch keine – oben einen Namen eingeben.</string>
     <string name="pattern_new">Neues Schnittmuster</string>
     <string name="pattern_name">Name</string>
     <string name="pattern_designer">Designer</string>
@@ -60,7 +60,7 @@
     <string name="backup_restore_safety_summary">Stellt die Daten von vor der letzten Wiederherstellung her</string>
     <string name="backup_saved">Sicherung gespeichert</string>
     <string name="backup_restored">Sicherung wiederhergestellt</string>
-    <string name="backup_failed">Sicherung fehlgeschlagen</string>
+    <string name="backup_failed">Das hat nicht geklappt</string>
     <string name="backup_confirm_title">Alle Daten ersetzen?</string>
     <string name="backup_confirm_text">%1$d Projekte, %2$d Schnittmuster, %3$d Personen und %4$d Fotos ersetzen deine aktuellen Daten. Die aktuellen Daten bleiben als Sicherheitskopie erhalten.</string>
     <string name="backup_replace">Ersetzen</string>
@@ -128,9 +128,9 @@
     <string name="m_arm_length">Armlänge</string>
     <string name="m_inside_leg">Innenbeinlänge</string>
     <string name="picker_choose_machine">Welche Maschine?</string>
-    <string name="machine_type_question">Was für eine Maschine ist „%1$s“?</string>
+    <string name="machine_type_question">Welche Maschine?</string>
     <string name="machine_type">Art</string>
-    <string name="picker_choose_setup">Maschineneinstellung</string>
+    <string name="picker_choose_setup">Einstellung wählen</string>
     <string name="picker_create_setup">Neue Einstellung „%1$s“</string>
     <string name="project_add_pattern">Schnittmuster</string>
     <string name="project_add_person">Person</string>
@@ -150,13 +150,13 @@
     <string name="setup_deleted">Einstellung gelöscht</string>
     <string name="setup_new">Neue Einstellung</string>
     <string name="setup_notes">Notizen</string>
-    <string name="setup_title">Name der Einstellung</string>
+    <string name="setup_title">Name</string>
     <string name="setup_untitled">Einstellung ohne Namen</string>
     <string name="time_edit">Zeit korrigieren</string>
-    <string name="time_check_title">%1$s: Der Timer lief %2$s. Stimmt das?</string>
+    <string name="time_check_title">%1$s – wirklich %2$s?</string>
     <string name="time_add">Zeit nachtragen</string>
     <string name="time_duration">Dauer</string>
-    <string name="time_duration_hint">z. B. 45, 1:30 oder 1,5h</string>
+    <string name="time_duration_hint">z. B. 45 min oder 1,5 h</string>
     <string name="time_hide_entries">Einträge ausblenden (%1$d)</string>
     <string name="time_show_entries">Einträge anzeigen (%1$d)</string>
     <string name="timer_running">läuft</string>
@@ -168,7 +168,7 @@
         <item quantity="one">%1$d Einstellung</item>
         <item quantity="other">%1$d Einstellungen</item>
     </plurals>
-    <string name="backup_error_prototype">Diese Sicherung stammt von einem frühen Prototyp (1.0); deren Daten können in dieser Version nicht wiederhergestellt werden.</string>
+    <string name="backup_error_prototype">Diese Sicherung stammt aus einer frühen Testversion und lässt sich nicht wiederherstellen.</string>
     <string name="action_save">Speichern</string>
     <string name="action_edit">Bearbeiten</string>
     <string name="tap_to_add">Zum Hinzufügen tippen</string>

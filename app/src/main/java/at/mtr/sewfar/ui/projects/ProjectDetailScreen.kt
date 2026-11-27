@@ -273,7 +273,6 @@ fun ProjectDetailScreen(
             onDismiss = { picking = null },
         )
         is Picking.MachineKind -> MachineTypeDialog(
-            p.machineName,
             onPick = { type ->
                 picking = null
                 scope.launch {

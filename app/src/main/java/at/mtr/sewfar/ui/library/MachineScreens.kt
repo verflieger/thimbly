@@ -198,12 +198,12 @@ fun SetupScreen(
     }
 }
 
-/** Asks for the type of the new machine [name]; the type decides the setting fields and is fixed (SPEC 5.1). */
+/** Asks for the type of a new machine; the type decides the setting fields and is fixed (SPEC 5.1). */
 @Composable
-fun MachineTypeDialog(name: String, onPick: (MachineType) -> Unit, onDismiss: () -> Unit) {
+fun MachineTypeDialog(onPick: (MachineType) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.machine_type_question, name)) },
+        title = { Text(stringResource(R.string.machine_type_question)) },
         text = {
             Column {
                 MachineType.entries.forEach { type ->

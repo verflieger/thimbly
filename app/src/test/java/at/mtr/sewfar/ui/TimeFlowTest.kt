@@ -58,7 +58,7 @@ class TimeFlowTest {
 
         // A timer stopped after a long run (here: reported directly) asks on whatever screen is open.
         runBlocking { projects.longStops.emit(projects.observeTime(projectId).first().single()) }
-        waitFor("Shirt: the timer ran 45 min. Is that right?")
+        waitFor("Shirt – really 45 min?")
         setDuration("0:30")
         waitFor("30 min")
     }

@@ -184,6 +184,7 @@ fun TextDialog(
                 singleLine = singleLine,
                 minLines = if (singleLine) 1 else 4,
                 fieldModifier = Modifier.focusRequester(focus).testTag("dialogText"),
+                showLabel = label != title, // e.g. "Size" as title and label: show it once
             )
         },
         confirmButton = {
@@ -232,9 +233,10 @@ fun LabeledTextField(
     suffix: String? = null,
     isError: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+    showLabel: Boolean = true,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        SectionLabel(label, Modifier.clearAndSetSemantics {})
+        if (showLabel) SectionLabel(label, Modifier.clearAndSetSemantics {})
         OutlinedTextField(
             value, onChange,
             placeholder = placeholder?.let { { Text(it) } },

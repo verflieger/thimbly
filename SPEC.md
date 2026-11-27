@@ -105,7 +105,7 @@ timer; leaving Done clears the finish date.
   Save replaces duration and day. The entry keeps its start time on the same day, otherwise it starts at noon of the
   new day.
 - **Forgotten timer:** a timer that stopped after running 4 h or more, however it stopped (Stop, starting another
-  timer, Done), opens that dialog on the current screen, titled "<project>: the timer ran <duration>. Is that right?"
+  timer, Done), opens that dialog on the current screen, titled "<project> – really <duration>?"
   and pre-filled with the measured time. Save corrects it, Cancel keeps it.
 
 ### 3.4 Completion
@@ -160,7 +160,7 @@ sewn with. Unchanged values store nothing.
 ### 5.1 Machines
 
 Name, type (sewing machine, overlocker, coverstitch, embroidery, other; asked right after the name when the machine
-is created, "What kind of machine is “…”?", and shown read-only after: a machine never changes kind), notes, and the
+is created, "What kind of machine?", and shown read-only after: a machine never changes kind), notes, and the
 list of its settings with "+ New setting" (asks for the name, then opens the setting's values form). Deleting a machine deletes its settings and their project links (with Undo).
 
 ### 5.2 Machine settings ("setups")
@@ -180,7 +180,7 @@ list of its settings with "+ New setting" (asks for the name, then opens the set
 - Plus notes and "Used in".
 - From a project: "+ Machine setting" → pick a setting, or type a name and "New setting “…”". With exactly one
   machine it is used directly; otherwise a machine picker follows (with "Create “…”" for a new machine, which then
-  asks for the machine's type: "What kind of machine is “…”?"). The new setting is linked and its page opens with
+  asks for the machine's type: "What kind of machine?"). The new setting is linked and its page opens with
   the values form.
 
 ## 6. Delete and undo

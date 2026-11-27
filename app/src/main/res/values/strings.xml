@@ -31,13 +31,13 @@
     <string name="photo_unpin_cover">Choose cover automatically</string>
     <string name="photo_cover">Cover</string>
     <string name="photo_share">Share photo</string>
-    <string name="photo_share_failed">The photo could not be shared</string>
+    <string name="photo_share_failed">Photo could not be shared</string>
     <string name="photo_delete">Delete photo</string>
     <string name="photo_deleted">Photo deleted</string>
     <string name="picker_create_new">Create “%1$s”</string>
     <string name="picker_choose_person">Choose person</string>
     <string name="picker_choose_pattern">Choose pattern</string>
-    <string name="picker_empty">Nothing found. Type a name to create one.</string>
+    <string name="picker_empty">None yet – type a name above.</string>
     <string name="pattern_new">New pattern</string>
     <string name="pattern_name">Name</string>
     <string name="pattern_designer">Designer</string>
@@ -61,7 +61,7 @@
     <string name="backup_restore_safety_summary">Restores the data from before the last restore</string>
     <string name="backup_saved">Backup saved</string>
     <string name="backup_restored">Backup restored</string>
-    <string name="backup_failed">Backup failed</string>
+    <string name="backup_failed">That didn\'t work</string>
     <string name="backup_confirm_title">Replace all data?</string>
     <string name="backup_confirm_text">%1$d projects, %2$d patterns, %3$d people and %4$d photos will replace your current data. Your current data is kept as a safety copy.</string>
     <string name="backup_replace">Replace</string>
@@ -129,9 +129,9 @@
     <string name="m_arm_length">Arm length</string>
     <string name="m_inside_leg">Inside leg</string>
     <string name="picker_choose_machine">Which machine?</string>
-    <string name="machine_type_question">What kind of machine is “%1$s”?</string>
+    <string name="machine_type_question">What kind of machine?</string>
     <string name="machine_type">Type</string>
-    <string name="picker_choose_setup">Machine setting</string>
+    <string name="picker_choose_setup">Choose setting</string>
     <string name="picker_create_setup">New setting “%1$s”</string>
     <string name="project_add_pattern">Pattern</string>
     <string name="project_add_person">Person</string>
@@ -151,13 +151,13 @@
     <string name="setup_deleted">Setting deleted</string>
     <string name="setup_new">New setting</string>
     <string name="setup_notes">Notes</string>
-    <string name="setup_title">Name of the setting</string>
+    <string name="setup_title">Name</string>
     <string name="setup_untitled">Untitled setting</string>
-    <string name="time_edit">Correct time</string>
-    <string name="time_check_title">%1$s: the timer ran %2$s. Is that right?</string>
+    <string name="time_edit">Edit time</string>
+    <string name="time_check_title">%1$s – really %2$s?</string>
     <string name="time_add">Add time</string>
     <string name="time_duration">Duration</string>
-    <string name="time_duration_hint">e.g. 45, 1:30 or 1.5h</string>
+    <string name="time_duration_hint">e.g. 45 min or 1.5 h</string>
     <string name="time_hide_entries">Hide entries (%1$d)</string>
     <string name="time_show_entries">Show entries (%1$d)</string>
     <string name="timer_running">running</string>
@@ -169,7 +169,7 @@
         <item quantity="one">%1$d setting</item>
         <item quantity="other">%1$d settings</item>
     </plurals>
-    <string name="backup_error_prototype">This backup is from an early prototype (1.0), whose data can\'t be restored in this version.</string>
+    <string name="backup_error_prototype">This backup is from an early test version and can\'t be restored.</string>
     <string name="action_save">Save</string>
     <string name="action_edit">Edit</string>
     <string name="tap_to_add">Tap to add</string>

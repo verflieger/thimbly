@@ -152,7 +152,6 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
     }
     newMachine?.let { name ->
         MachineTypeDialog(
-            name,
             onPick = { type ->
                 newMachine = null
                 scope.launch { val id = viewModel.create(LibraryTab.MACHINES, name, type); withContext(Dispatchers.Main) { onOpen(LibraryTab.MACHINES, id) } }
