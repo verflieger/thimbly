@@ -116,7 +116,7 @@ from an imported older backup) is appended to the notes.
 
 ### 3.5 Photos
 
-- Projects and patterns have any number of photos. The photo row shows the newest photo first and ends with one "Add
+- Projects and patterns have any number of photos. The photo row and the viewer show the newest photo first (the order they were added) and the row ends with one "Add
   photo" tile, which offers "Take photo" or "From gallery". Tap opens the full-screen viewer (swipe, pinch zoom), whose top bar has "Use as cover"
   (projects and patterns; the star is filled while the shown photo is the pinned cover, tap again to choose automatically) and
   delete (with Undo); long-press in the row offers the same as a shortcut.

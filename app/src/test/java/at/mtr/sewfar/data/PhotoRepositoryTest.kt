@@ -53,7 +53,7 @@ class PhotoRepositoryTest {
         val a = addPhoto(projectId)
         val b = addPhoto(projectId)
 
-        assertEquals(listOf(a, b), photosOf(PhotoOwner.PROJECT, projectId).map { it.id })
+        assertEquals(listOf(b, a), photosOf(PhotoOwner.PROJECT, projectId).map { it.id })
         assertTrue(t.photoFiles.file(a).exists())
         assertTrue(t.projects.get(projectId)!!.lastActivityAt > before)
     }

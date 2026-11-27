@@ -71,7 +71,7 @@ fun PhotoStrip(
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         SectionLabel(stringResource(R.string.project_photos))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            items(photos.reversed(), key = { it.id }) { photo ->
+            items(photos, key = { it.id }) { photo ->
                 var menuOpen by remember { mutableStateOf(false) }
                 Box {
                     Box(Modifier.size(96.dp).clip(RoundedCornerShape(8.dp)).combinedClickable(onClick = { onOpen(photo.id) }, onLongClick = { menuOpen = true })) {

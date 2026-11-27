@@ -205,7 +205,8 @@ interface PhotoDao {
     @Query("SELECT * FROM photo WHERE id = :id AND deletedAt IS NULL")
     suspend fun get(id: String): PhotoEntity?
 
-    @Query("SELECT * FROM photo WHERE ownerType = :ownerType AND ownerId = :ownerId AND deletedAt IS NULL ORDER BY sortOrder")
+    /** Newest first, for the photo row and the viewer alike (SPEC 3.5). */
+    @Query("SELECT * FROM photo WHERE ownerType = :ownerType AND ownerId = :ownerId AND deletedAt IS NULL ORDER BY sortOrder DESC")
     fun observeForOwner(ownerType: PhotoOwner, ownerId: String): Flow<List<PhotoEntity>>
 
     @Query("SELECT COALESCE(MAX(sortOrder) + 1, 0) FROM photo WHERE ownerType = :ownerType AND ownerId = :ownerId")
