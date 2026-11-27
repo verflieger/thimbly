@@ -1,6 +1,7 @@
 package at.mtr.sewfar.ui.library
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,19 +9,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -65,33 +64,25 @@ class MachineViewModel(container: AppContainer, private val id: String) : Record
     override val projectsFlow = emptyFlow<List<ProjectRef>>()
     val setups: StateFlow<List<SetupRow>> = repo.observeSetups().map { all -> all.filter { it.machineId == id } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    val typeLocked: StateFlow<Boolean> = repo.observeTypeLocked(id)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     override suspend fun delete() = container.runInApp { repo.delete(id) }
 
     fun rename(name: String) = write { repo.edit(id) { it.copy(name = name) } }
     fun setNotes(text: String) = write { repo.edit(id) { it.copy(notes = text) } }
-    fun setType(type: MachineType) = write { repo.edit(id) { it.copy(type = type) } }
     suspend fun createSetup(title: String): String = container.runInApp { repo.createSetup(id, title) }
 }
 
 @Composable
 fun MachineScreen(viewModel: MachineViewModel, onBack: () -> Unit, onOpenSetup: (String, Boolean) -> Unit) {
     val setups by viewModel.setups.collectAsStateWithLifecycle()
-    val typeLocked by viewModel.typeLocked.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var naming by rememberSaveable { mutableStateOf(false) }
     RecordScreen(
         viewModel, startEditing = false, stringResource(R.string.machine_deleted), onBack, onOpenProject = {},
         titleOf = { it.name }, nameOf = { it.name }, nameLabel = stringResource(R.string.machine_name), onRename = viewModel::rename,
     ) { machine, _ ->
-        // A machine never changes kind; the type can only be fixed while no setting has values (SPEC 5.1).
-        if (typeLocked) {
-            ReadOnlyField(stringResource(R.string.machine_type), stringResource(machine.type.label))
-        } else {
-            MachineTypeChip(machine.type, viewModel::setType)
-        }
+        // A machine never changes kind: the type is picked when it is created (SPEC 5.1).
+        ReadOnlyField(stringResource(R.string.machine_type), stringResource(machine.type.label))
         EditableText(stringResource(R.string.machine_notes), machine.notes, "notes", onSave = viewModel::setNotes)
         Column {
             SectionLabel(stringResource(R.string.machine_setups))
@@ -207,21 +198,22 @@ fun SetupScreen(
     }
 }
 
-/** The machine type with a menu to change it; the type decides which setting fields are shown. */
+/** Asks for the type of the new machine [name]; the type decides the setting fields and is fixed (SPEC 5.1). */
 @Composable
-private fun MachineTypeChip(type: MachineType, onChange: (MachineType) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Column {
-        AssistChip(
-            onClick = { open = true },
-            label = { Text(stringResource(type.label)) },
-            trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, null, Modifier.size(18.dp)) },
-            modifier = Modifier.testTag("machineType"),
-        )
-        DropdownMenu(open, onDismissRequest = { open = false }) {
-            MachineType.entries.forEach { t ->
-                DropdownMenuItem(text = { Text(stringResource(t.label)) }, onClick = { open = false; onChange(t) })
+fun MachineTypeDialog(name: String, onPick: (MachineType) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.machine_type_question, name)) },
+        text = {
+            Column {
+                MachineType.entries.forEach { type ->
+                    TextButton(onClick = { onPick(type) }, modifier = Modifier.fillMaxWidth().testTag("type-${type.name}")) {
+                        Text(stringResource(type.label), Modifier.fillMaxWidth())
+                    }
+                }
             }
-        }
-    }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
 }

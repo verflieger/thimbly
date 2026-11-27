@@ -261,12 +261,6 @@ interface MachineDao {
     fun observeValues(setupId: String): Flow<List<SetupValueEntity>>
 
     @Query(
-        "SELECT EXISTS(SELECT 1 FROM setup_value v JOIN setup s ON s.id = v.setupId " +
-            "WHERE s.machineId = :machineId AND v.deletedAt IS NULL AND s.deletedAt IS NULL)",
-    )
-    fun observeHasValues(machineId: String): Flow<Boolean>
-
-    @Query(
         "SELECT p.id, p.name, p.status FROM project_setup ps JOIN project p ON p.id = ps.projectId " +
             "WHERE ps.setupId = :id AND ps.deletedAt IS NULL AND p.deletedAt IS NULL ORDER BY p.lastActivityAt DESC",
     )

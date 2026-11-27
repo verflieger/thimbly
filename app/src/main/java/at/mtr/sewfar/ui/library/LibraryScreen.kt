@@ -39,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
+import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.data.patternCovers
 import at.mtr.sewfar.ui.photos.CoverThumbnail
@@ -75,10 +76,10 @@ class LibraryViewModel(private val container: AppContainer, initialTab: LibraryT
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    suspend fun create(tab: LibraryTab, name: String): String = container.runInApp {
+    suspend fun create(tab: LibraryTab, name: String, type: MachineType = MachineType.SEWING_MACHINE): String = container.runInApp {
         when (tab) {
             LibraryTab.PATTERNS -> container.patterns.create(name)
-            LibraryTab.MACHINES -> container.machines.create(name)
+            LibraryTab.MACHINES -> container.machines.create(name, type)
             LibraryTab.PEOPLE -> container.persons.create(name)
         }
     }
@@ -92,6 +93,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
     val items by viewModel.items.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var naming by rememberSaveable { mutableStateOf(false) }
+    var newMachine by rememberSaveable { mutableStateOf<String?>(null) } // named, type still to pick
     Scaffold(
         topBar = {
             Column {
@@ -142,9 +144,20 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
             onSave = { name ->
                 naming = false
                 val t = tab
-                scope.launch { val id = viewModel.create(t, name); withContext(Dispatchers.Main) { onOpen(t, id) } }
+                if (t == LibraryTab.MACHINES) newMachine = name
+                else scope.launch { val id = viewModel.create(t, name); withContext(Dispatchers.Main) { onOpen(t, id) } }
             },
             onDismiss = { naming = false },
+        )
+    }
+    newMachine?.let { name ->
+        MachineTypeDialog(
+            name,
+            onPick = { type ->
+                newMachine = null
+                scope.launch { val id = viewModel.create(LibraryTab.MACHINES, name, type); withContext(Dispatchers.Main) { onOpen(LibraryTab.MACHINES, id) } }
+            },
+            onDismiss = { newMachine = null },
         )
     }
 }

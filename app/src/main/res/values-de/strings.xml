@@ -133,7 +133,7 @@
     <string name="picker_choose_setup">Maschineneinstellung</string>
     <string name="picker_create_setup">Neue Einstellung „%1$s“</string>
     <string name="project_add_pattern">Schnittmuster</string>
-    <string name="project_add_person">Für jemanden</string>
+    <string name="project_add_person">Person</string>
     <string name="project_add_setup">Maschineneinstellung</string>
     <string name="project_finished_on">Fertig am %1$s</string>
     <string name="project_size">Größe</string>

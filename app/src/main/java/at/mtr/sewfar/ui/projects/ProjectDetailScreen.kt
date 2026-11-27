@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCut
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -29,7 +28,6 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,9 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.mtr.sewfar.R
 import at.mtr.sewfar.data.db.DeletionToken
-import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.ProjectStatus
 import at.mtr.sewfar.ui.common.DetailScaffold
+import at.mtr.sewfar.ui.library.MachineTypeDialog
 import at.mtr.sewfar.ui.common.EditHeader
 import at.mtr.sewfar.ui.common.EntityPicker
 import at.mtr.sewfar.ui.common.LocalMessages
@@ -274,27 +272,16 @@ fun ProjectDetailScreen(
             onCreate = { machineName -> picking = Picking.MachineKind(p.title, machineName) },
             onDismiss = { picking = null },
         )
-        is Picking.MachineKind -> AlertDialog(
-            onDismissRequest = { picking = null },
-            title = { Text(stringResource(R.string.machine_type_question, p.machineName)) },
-            text = {
-                Column {
-                    MachineType.entries.forEach { type ->
-                        TextButton(
-                            onClick = {
-                                picking = null
-                                scope.launch {
-                                    val id = viewModel.createSetup(p.title, null, p.machineName, type)
-                                    withContext(Dispatchers.Main) { onOpenNewSetup(id) }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().testTag("type-${type.name}"),
-                        ) { Text(stringResource(type.label), Modifier.fillMaxWidth()) }
-                    }
+        is Picking.MachineKind -> MachineTypeDialog(
+            p.machineName,
+            onPick = { type ->
+                picking = null
+                scope.launch {
+                    val id = viewModel.createSetup(p.title, null, p.machineName, type)
+                    withContext(Dispatchers.Main) { onOpenNewSetup(id) }
                 }
             },
-            confirmButton = {},
-            dismissButton = { TextButton(onClick = { picking = null }) { Text(stringResource(R.string.action_cancel)) } },
+            onDismiss = { picking = null },
         )
         Picking.Rename -> TextDialog(
             stringResource(R.string.project_rename), stringResource(R.string.project_name), initial = project.name,

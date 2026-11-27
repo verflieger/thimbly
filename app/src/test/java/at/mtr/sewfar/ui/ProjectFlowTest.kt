@@ -95,6 +95,18 @@ class ProjectFlowTest {
         waitFor("Skirt")
     }
 
+    /** SPEC 5.1: a new machine is asked for its type, which is then shown read-only. */
+    @Test
+    fun newMachineAsksForItsTypeOnce() {
+        compose.onNodeWithTag("library").performClick()
+        compose.onNodeWithTag("tab-MACHINES").performClick()
+        compose.onNodeWithTag("add").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Juki")
+        compose.onNodeWithTag("dialogSave").performClick()
+        compose.onNodeWithTag("type-COVERSTITCH").performClick()
+        waitFor("Coverstitch")
+    }
+
     @Test
     fun libraryTextsAreEditedInADialog() {
         compose.onNodeWithTag("library").performClick()

@@ -12,7 +12,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -211,16 +210,5 @@ class ProjectRepositoryTest {
         assertTrue(t.machines.observeValues(setup).first().isEmpty())
         t.machines.setValue(setup, "differential_feed", "1.5")
         assertEquals(1, t.count("setup_value", live = false))
-    }
-
-    @Test
-    fun machineTypeLocksOnceASettingHasValues() = runTest {
-        val machine = t.machines.create("Overlock")
-        val setup = t.machines.createSetup(machine, "Jersey")
-        assertFalse(t.machines.observeTypeLocked(machine).first())
-        t.machines.setValue(setup, "differential_feed", "1.3")
-        assertTrue(t.machines.observeTypeLocked(machine).first())
-        t.machines.setValue(setup, "differential_feed", "")
-        assertFalse(t.machines.observeTypeLocked(machine).first())
     }
 }

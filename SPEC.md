@@ -159,9 +159,9 @@ sewn with. Unchanged values store nothing.
 
 ### 5.1 Machines
 
-Name, type (sewing machine, overlocker, coverstitch, embroidery, other; a machine never changes kind, so the type can
-only be changed while none of its settings has values, to fix a wrong pick, and is shown read-only after), notes, and the list of its settings with
-"+ New setting" (asks for the name, then opens the setting's values form). Deleting a machine deletes its settings and their project links (with Undo).
+Name, type (sewing machine, overlocker, coverstitch, embroidery, other; asked right after the name when the machine
+is created, "What kind of machine is “…”?", and shown read-only after: a machine never changes kind), notes, and the
+list of its settings with "+ New setting" (asks for the name, then opens the setting's values form). Deleting a machine deletes its settings and their project links (with Undo).
 
 ### 5.2 Machine settings ("setups")
 
