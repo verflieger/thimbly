@@ -45,11 +45,11 @@ screens, fields and tabs).
   - Nothing asks "Discard changes?": a tap outside a dialog does nothing, Cancel or back in a dialog discards; in a
     form ✕ discards and back saves (while the form can't be saved, e.g. a measurement is not a number, back does
     nothing).
-  - Status, timer, photos, linking or unlinking patterns, person and settings, and a machine's type apply
-    immediately.
+  - Status, timer, photos, linking or unlinking patterns, person, settings and tags, and a machine's or pattern's
+    type apply immediately. A type is picked from its fixed list in a dialog; a tap picks.
   - Every text field has its label fixed above it (as on the read-only page), never floating inside, so fields
     keep their size when focused. Search fields have only a placeholder.
-- Pickers (pattern, person, machine setting, machine) have a search field and a "Create “…”" row that creates the
+- Pickers (pattern, person, machine setting, machine, tag) have a search field and a "Create “…”" row that creates the
   item from the typed name.
 - Back: the system back gesture or the arrow in the top bar.
 
@@ -60,7 +60,9 @@ screens, fields and tabs).
 - Sections **In progress, Planned, Done** (collapsible; Done starts collapsed). Inside a section the project with a
   running timer comes first, then by last activity (any change to the project or its links, time or photos).
 - A card shows the cover photo, name, first pattern and person, total time, and a start/stop timer button.
-- Search matches name, person and pattern names.
+- Search matches name, person, pattern names, tags, size, fabric and notes. While the search field is empty it shows
+  the tags and people of the projects as chips ("Tags", "People"); a tap searches for one, so filtering is the search
+  (no separate filter row, 2026-11-27).
 - "New project" asks for the name, creates a Planned project and opens it.
 
 ### 3.2 Project page
@@ -70,7 +72,7 @@ One scrolling page. The top bar shows the name with ✎ (rename dialog) and dele
 1. Status: Planned · In progress · Done (segmented buttons).
 2. Time (§3.3).
 3. Photos (§3.5).
-4. Patterns (chips; tap opens the pattern, × removes, "+ Pattern" picks or creates). Below them **Size** (one line,
+4. Patterns (chips "Pattern · Type", §4.1; tap opens the pattern, × removes, "+ Pattern" picks or creates). Below them **Size** (one line,
    e.g. "122", "M", "38/40") and **Fabric** (free text, e.g. "1,5 m jersey, 150 cm wide; ribbing 30 cm"), each shown
    like notes: "Add size" / "Add fabric" or ✎ opens a text dialog.
 5. Sewn for (one person, same chip pattern). Below it, read-only, the person's measurements (§4.2) headed
@@ -78,14 +80,17 @@ One scrolling page. The top bar shows the name with ✎ (rename dialog) and dele
    (none if there are none). Tap opens the person.
 6. Machine settings (chips "Setting · Machine"; tap opens it, × unlinks, "+ Machine setting" picks or creates one,
    §5.2).
-7. Notes (shown as text; "Add notes" or ✎ opens a text dialog).
-8. Started / finished dates (read-only).
+7. Tags (chips; × removes, "+ Tag" picks a tag in use or one of the starter suggestions Repair, Upcycling,
+   Alteration, Gift, Costume, or creates one from the typed name; a tap on a tag does nothing). Tags have no list of
+   their own: the names in use on any project are the tags, so an unused one disappears.
+8. Notes (shown as text; "Add notes" or ✎ opens a text dialog).
+9. Started / finished dates (read-only).
 
-Sections 4–7 show only once filled (2026-11-25): empty ones fold into one "Add" row of chips below them (pattern,
-size, fabric, person, machine setting, notes), so a new project shows little more than status and photos. A filled
-section keeps its own add chip where more can be linked (patterns, settings).
+Sections 4–8 show only once filled (2026-11-25): empty ones fold into one "Add" row of chips below them (pattern,
+size, fabric, person, machine setting, tag, notes), so a new project shows little more than status and photos. A filled
+section keeps its own add chip where more can be linked (patterns, settings, tags).
 
-Removing a link, the person or a time entry offers Undo.
+Removing a link, the person, a tag or a time entry offers Undo.
 
 **Status effects:** In progress or Done sets the start date if missing; Done sets the finish date and stops a running
 timer; leaving Done clears the finish date.
@@ -137,8 +142,14 @@ from an imported older backup) is appended to the notes.
 
 ### 4.1 Patterns
 
-Name, designer, notes, photos, and "Used in" (projects linking it). Deleting a pattern removes it from its projects
-(with Undo).
+Name, type, designer, notes, photos, and "Used in" (projects linking it). Deleting a pattern removes it from its
+projects (with Undo).
+
+**Type (2026-11-27):** what the pattern sews, one of dress, skirt, top (also shirts), trousers, jacket (also coats),
+bag (also accessories), other; who it is for comes from the person. Optional ("Tap to add"); shown read-only, a tap
+or ✎ opens the choice dialog "What is it?", and it can be changed any time. The Library pattern list is grouped by
+type like the home list by status ("Top (3)", not collapsible) once any pattern has a type; patterns without one come
+last under "No type". A project shows it in its pattern chip.
 
 **From projects (2026-11-26):** below its own photos, the pattern page shows a read-only row of all photos of the
 projects linking it, newest first ("how did it turn out last time, and on whom?"). A tap opens them in the viewer
@@ -193,7 +204,7 @@ list of its settings with "+ New setting" (asks for the name, then opens the set
   children first, together with any row that still refers to them through the cascade. Each removed row is recorded
   in `deletion_log` (table, row ID, deletion time; never pruned). A deleted person's projects stay and lose the
   person. Re-adding a removed link or value within the window revives its row.
-- Cascade: person → measurements → their values; project → pattern links, setting links, time entries, photos;
+- Cascade: person → measurements → their values; project → pattern links, tags, setting links, time entries, photos;
   pattern → its project links and photos;
   machine → settings; setting → values and project links.
 
@@ -204,10 +215,11 @@ Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 
 - `person` (name, notes)
 - `measurement` (personId, measuredOn) and `measurement_value` (measurementId, key, valueCm; unique pair)
-- `pattern` (name, designer, notes, coverPhotoId? — schema 2, 2026-11-26)
+- `pattern` (name, designer, notes, coverPhotoId? — schema 2, 2026-11-26; garmentType? — schema 3)
 - `project` (name, status, personId?, size, fabric, notes, startedOn?, finishedOn?, rating? and learned (both unused since
   2026-11-25, §3.4), coverPhotoId?, lastActivityAt)
 - `project_pattern` (projectId, patternId, sortOrder; unique pair)
+- `project_tag` (projectId, name, sortOrder; unique pair — schema 3)
 - `time_entry` (projectId, startedAt, endedAt? — null = running)
 - `photo` (ownerType PROJECT|PATTERN, ownerId, sortOrder)
 - `machine` (name, type, notes)
@@ -218,18 +230,19 @@ Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 The database file is `sewfar2.db`; the incompatible `sewfar.db` of the 1.0 prototype is deleted on start.
 Enums are stored by name; never rename or remove an entry. Schema version 1 is frozen since v0.1
 (`SchemaFreezeTest`); every change needs a new version, a migration and a migration test (`MigrationTest`).
-Version 2 adds `pattern.coverPhotoId`.
+Version 2 adds `pattern.coverPhotoId`, version 3 `pattern.garmentType` and `project_tag`.
 
 ## 8. Backup
 
 ### 8.1 Format
 
-A zip with `backup.json` (`{ "format": 2, "appVersion", "exportedAt", "tables": { "<table>": [rows] } }`, read in
+A zip with `backup.json` (`{ "format": 3, "appVersion", "exportedAt", "tables": { "<table>": [rows] } }`, read in
 one transaction) and `photos/<photoId>.jpg` for every live photo. Tables hold live rows only (rows inside the Undo
 window are left out, references to them cleared) plus `deletion_log`; importing an older backup drops its deleted
 rows the same way. Preferences are not
 included. Format 1 is frozen since v0.1, format 2 adds `pattern.coverPhotoId`
-(a format 1 backup restores without pinned pattern covers); every app version reads every older format; each format has a fixture in
+(a format 1 backup restores without pinned pattern covers), format 3 `pattern.garmentType` and `project_tag` (older
+backups restore without types and tags); every app version reads every older format; each format has a fixture in
 `src/test/resources/backup/format<n>.zip`. Backups of the discarded 1.0 prototype (also "format 1", but other tables)
 are rejected with their own message.
 
@@ -251,10 +264,11 @@ Appearance (dynamic colour), Time ("Time tracking", §3.3), Photos ("Fine photos
 
 ## 10. Quality
 
-- Unit tests (JVM + Robolectric): status dates, timer (one running, Done stops it), manual time, link revival,
+- Unit tests (JVM + Robolectric): status dates, timer (one running, Done stops it), manual time, link and tag revival,
   discarding empty new records, cascade and undo, photo pipeline and cleanup, backup round trip / fixture /
   rejections / interrupted swaps, auto-backup pruning, duration parsing, search.
-- Compose UI tests: navigation, creating a project with a pattern and a machine setting (new machine) inline, timer,
+- Compose UI tests: navigation, creating a project with a pattern and a machine setting (new machine) inline, a tag
+  from the suggestions filtering the search, a pattern type grouping the Library, timer,
   delete and undo, discarding an empty new project, German strings.
 - Every string exists in both languages (`StringsCompletenessTest`).
 - Accessibility (2026-11-25, `AccessibilityTest`): text follows the system font size; at 200 % the home buttons

@@ -34,6 +34,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
+import at.mtr.sewfar.ui.common.EditableChoice
+import at.mtr.sewfar.domain.GarmentType
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.PatternEntity
 import at.mtr.sewfar.data.db.PersonEntity
@@ -201,6 +203,7 @@ class PatternViewModel(container: AppContainer, private val id: String) : Record
     fun rename(name: String) = write { repo.edit(id) { it.copy(name = name) } }
     fun setDesigner(text: String) = write { repo.edit(id) { it.copy(designer = text) } }
     fun setNotes(text: String) = write { repo.edit(id) { it.copy(notes = text) } }
+    fun setGarmentType(type: GarmentType) = write { repo.edit(id) { it.copy(garmentType = type) } }
 
     suspend fun addPhotos(sources: List<() -> InputStream>): Int = container.runInApp {
         sources.count { runCatching { container.photos.add(PhotoOwner.PATTERN, id, it) }.isFailure }
@@ -223,6 +226,10 @@ fun PatternScreen(
         viewModel, startEditing = false, stringResource(R.string.pattern_deleted), onBack, onOpenProject,
         titleOf = { it.name }, nameOf = { it.name }, nameLabel = stringResource(R.string.pattern_name), onRename = viewModel::rename,
     ) { pattern, _ ->
+        EditableChoice(
+            stringResource(R.string.type), pattern.garmentType, "garmentType", stringResource(R.string.pattern_type_question),
+            GarmentType.entries, { it.label }, viewModel::setGarmentType,
+        )
         EditableText(stringResource(R.string.pattern_designer), pattern.designer, "designer", singleLine = true, onSave = viewModel::setDesigner)
         EditableText(stringResource(R.string.pattern_notes), pattern.notes, "notes", onSave = viewModel::setNotes)
         PhotoStrip(

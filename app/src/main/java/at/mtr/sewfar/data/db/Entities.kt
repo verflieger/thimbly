@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import at.mtr.sewfar.domain.GarmentType
 import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.domain.ProjectStatus
@@ -63,6 +64,8 @@ data class PatternEntity(
     val notes: String = "",
     // Pinned cover (SPEC 3.5, schema 2); no FK, like project.coverPhotoId.
     val coverPhotoId: String? = null,
+    /** Null = not set (SPEC 4.1, schema 3). */
+    val garmentType: GarmentType? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
@@ -110,6 +113,22 @@ data class ProjectPatternEntity(
     @PrimaryKey val id: String,
     val projectId: String,
     val patternId: String,
+    val sortOrder: Int,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+)
+
+/** A tag on a project (SPEC 3.2, schema 3). Tags have no table of their own: the names in use are the tags. */
+@Entity(
+    tableName = "project_tag",
+    foreignKeys = [ForeignKey(entity = ProjectEntity::class, parentColumns = ["id"], childColumns = ["projectId"])],
+    indices = [Index("projectId", "name", unique = true)],
+)
+data class ProjectTagEntity(
+    @PrimaryKey val id: String,
+    val projectId: String,
+    val name: String,
     val sortOrder: Int,
     val createdAt: Long,
     val updatedAt: Long,

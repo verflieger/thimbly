@@ -130,7 +130,7 @@
     <string name="m_inside_leg">Inside leg</string>
     <string name="picker_choose_machine">Which machine?</string>
     <string name="machine_type_question">What kind of machine?</string>
-    <string name="machine_type">Type</string>
+    <string name="type">Type</string>
     <string name="picker_choose_setup">Choose setting</string>
     <string name="picker_create_setup">New setting “%1$s”</string>
     <string name="project_add_pattern">Pattern</string>
@@ -178,4 +178,23 @@
     <string name="setup_no_values">No values yet. Tap ✎ to fill them in.</string>
     <string name="photo_add">Add photo</string>
     <string name="project_rename">Rename project</string>
+    <string name="pattern_type_question">What is it?</string>
+    <string name="no_type">No type</string>
+    <string name="project_tags">Tags</string>
+    <string name="project_add_tag">Tag</string>
+    <string name="picker_choose_tag">Choose tag</string>
+    <string name="garment_dress">Dress</string>
+    <string name="garment_skirt">Skirt</string>
+    <string name="garment_top">Top</string>
+    <string name="garment_trousers">Trousers</string>
+    <string name="garment_jacket">Jacket</string>
+    <string name="garment_bag">Bag</string>
+    <string name="garment_other">Other</string>
+    <string-array name="tag_suggestions">
+        <item>Repair</item>
+        <item>Upcycling</item>
+        <item>Alteration</item>
+        <item>Gift</item>
+        <item>Costume</item>
+    </string-array>
 </resources>

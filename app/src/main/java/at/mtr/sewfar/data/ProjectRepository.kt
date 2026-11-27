@@ -4,14 +4,17 @@ import androidx.room.withTransaction
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.LinkedPattern
 import at.mtr.sewfar.data.db.LinkedSetup
+import at.mtr.sewfar.data.db.LinkedTag
 import at.mtr.sewfar.data.db.ProjectEntity
 import at.mtr.sewfar.data.db.ProjectPatternEntity
 import at.mtr.sewfar.data.db.ProjectSetupEntity
+import at.mtr.sewfar.data.db.ProjectTagEntity
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
 import at.mtr.sewfar.data.db.TimeEntryEntity
 import at.mtr.sewfar.domain.Ids
 import at.mtr.sewfar.domain.ProjectStatus
+import at.mtr.sewfar.domain.SearchText
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -106,6 +109,33 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
     suspend fun removePattern(linkId: String): DeletionToken? = db.withTransaction {
         val link = dao.getPattern(linkId) ?: return@withTransaction null
         deleter.delete("project_pattern", linkId).also { dao.touch(link.projectId, time.nowMillis()) }
+    }
+
+    // ---- Tags (SPEC 3.2) ----
+
+    fun observeTags(projectId: String): Flow<List<LinkedTag>> = dao.observeTags(projectId)
+
+    /** Tag names per project ID (live projects), for the list, its search and the tag picker. */
+    fun observeAllTags(): Flow<Map<String, List<String>>> =
+        dao.observeAllTags().map { rows -> rows.groupBy({ it.projectId }, { it.name }) }
+
+    /**
+     * Tags a project with [name] (at most once, ignoring case and accents like the picker), like [addPattern]; a
+     * removed tag revives its link, so Undo can't bring back "Summer" beside a new "summer".
+     */
+    suspend fun addTag(projectId: String, name: String) = db.withTransaction {
+        val tag = name.trim().takeIf { it.isNotEmpty() } ?: return@withTransaction
+        val existing = dao.tagsAny(projectId).filter { SearchText.fold(it.name) == SearchText.fold(tag) }
+        addLink(
+            projectId, existing.firstOrNull { it.deletedAt == null } ?: existing.firstOrNull(), { it.deletedAt != null },
+            insert = { now -> dao.insertTag(ProjectTagEntity(Ids.random(), projectId, tag, dao.nextTagOrder(projectId), createdAt = now, updatedAt = now)) },
+            revive = { old, now -> dao.updateTag(old.copy(sortOrder = dao.nextTagOrder(projectId), deletedAt = null, updatedAt = now)) },
+        )
+    }
+
+    suspend fun removeTag(linkId: String): DeletionToken? = db.withTransaction {
+        val link = dao.getTag(linkId) ?: return@withTransaction null
+        deleter.delete("project_tag", linkId).also { dao.touch(link.projectId, time.nowMillis()) }
     }
 
     // ---- Machine settings (SPEC 3.1, 5.2) ----

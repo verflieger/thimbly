@@ -15,14 +15,6 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 - Fabrics (see v2) are the next big step: they become a fourth Library tab (Patterns, Fabrics, People, Machines);
   home stays the project list.
 - Costs per project.
-- Garment type on patterns: one per pattern from a fixed list (dress, skirt, top/shirt, trousers, jacket/coat,
-  bag/accessory, other; who it is for comes from the person, so no "children's" type). The Library pattern list is
-  grouped by type like the home list by status; a project shows its pattern's type, nothing to enter twice. Projects
-  without a pattern have none. Schema 3 (`pattern.garmentType`, enum by name), backup format 3.
-- Tags on projects: any number per project, picked or created like patterns; ships with suggestions (Repair,
-  Upcycling, Alteration, Gift, Costume) instead of a separate project-type field. An empty tag row folds into the
-  "Add" row. Home list: one row of filter chips (tags and people); tap filters, tap again clears. No saved filters,
-  tag colours or AND/OR.
 - Statistics: time and projects per month/year, most-sewn patterns.
 - Size per pattern for outfits with several patterns (today: one size per project).
 - "Sew again" mark on patterns (replaces the project rating dropped on 2026-11-25); the pattern list can filter by it.

@@ -18,9 +18,14 @@ data class ProjectRef(val id: String, val name: String, val status: ProjectStatu
 data class ProjectPhoto(val photoId: String, val projectId: String, val projectName: String)
 
 /** A pattern linked to a project. */
-data class LinkedPattern(val linkId: String, val patternId: String, val name: String, val designer: String)
+data class LinkedPattern(val linkId: String, val patternId: String, val name: String, val designer: String, val garmentType: at.mtr.sewfar.domain.GarmentType?)
 
 data class ProjectPatternName(val projectId: String, val name: String)
+
+/** A tag on a project. */
+data class LinkedTag(val linkId: String, val name: String)
+
+data class ProjectTagName(val projectId: String, val name: String)
 
 /** A setup linked to a project. */
 data class LinkedSetup(val linkId: String, val setupId: String, val title: String, val machineName: String)
@@ -143,7 +148,7 @@ interface ProjectDao {
     suspend fun nextPatternOrder(projectId: String): Int
 
     @Query(
-        "SELECT pp.id AS linkId, p.id AS patternId, p.name, p.designer FROM project_pattern pp " +
+        "SELECT pp.id AS linkId, p.id AS patternId, p.name, p.designer, p.garmentType FROM project_pattern pp " +
             "JOIN pattern p ON p.id = pp.patternId " +
             "WHERE pp.projectId = :projectId AND pp.deletedAt IS NULL AND p.deletedAt IS NULL ORDER BY pp.sortOrder",
     )
@@ -154,6 +159,31 @@ interface ProjectDao {
             "WHERE pp.deletedAt IS NULL AND p.deletedAt IS NULL ORDER BY pp.sortOrder",
     )
     fun observeAllPatternNames(): Flow<List<ProjectPatternName>>
+
+    // ---- Tags (SPEC 3.2) ----
+
+    @Insert suspend fun insertTag(link: ProjectTagEntity)
+    @Update suspend fun updateTag(link: ProjectTagEntity)
+
+    @Query("SELECT * FROM project_tag WHERE id = :id AND deletedAt IS NULL")
+    suspend fun getTag(id: String): ProjectTagEntity?
+
+    /** All tags of a project, including tombstones, for revival (SPEC 1). */
+    @Query("SELECT * FROM project_tag WHERE projectId = :projectId")
+    suspend fun tagsAny(projectId: String): List<ProjectTagEntity>
+
+    @Query("SELECT COALESCE(MAX(sortOrder) + 1, 0) FROM project_tag WHERE projectId = :projectId")
+    suspend fun nextTagOrder(projectId: String): Int
+
+    @Query("SELECT id AS linkId, name FROM project_tag WHERE projectId = :projectId AND deletedAt IS NULL ORDER BY sortOrder")
+    fun observeTags(projectId: String): Flow<List<LinkedTag>>
+
+    /** Tags of live projects, for the list, its search and the pickers. */
+    @Query(
+        "SELECT t.projectId, t.name FROM project_tag t JOIN project p ON p.id = t.projectId " +
+            "WHERE t.deletedAt IS NULL AND p.deletedAt IS NULL ORDER BY t.sortOrder",
+    )
+    fun observeAllTags(): Flow<List<ProjectTagName>>
 
     // ---- Setups ----
 

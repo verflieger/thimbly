@@ -40,7 +40,7 @@ class PatternGalleryTest {
         compose.onNodeWithTag("library").performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Raglan")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Raglan").performClick()
-        compose.onNodeWithText("From projects").performScrollTo()
+        compose.onNodeWithTag("readOnlyPhotos").performScrollTo()
         // The project photo is the only photo on the page.
         compose.onAllNodesWithContentDescription("Photo").onLast().performClick()
         compose.onNodeWithTag("photoDelete").assertDoesNotExist()

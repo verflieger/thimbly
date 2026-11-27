@@ -19,8 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Checkroom
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Search
@@ -53,7 +51,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.mtr.sewfar.R
+import androidx.compose.material3.SuggestionChip
+import at.mtr.sewfar.ui.common.SectionLabel
 import at.mtr.sewfar.ui.common.EmptyState
+import at.mtr.sewfar.ui.common.GroupHeader
 import at.mtr.sewfar.ui.common.TextDialog
 import at.mtr.sewfar.ui.common.formatDuration
 import at.mtr.sewfar.ui.common.label
@@ -161,22 +162,20 @@ fun ProjectsScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = if (stacked) 168.dp else 96.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            if (searching && query.isBlank()) {
+                item(key = "suggestions") {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        SearchSuggestions(stringResource(R.string.project_tags), state.suggestedTags) { viewModel.query.value = it }
+                        SearchSuggestions(stringResource(R.string.library_people), state.suggestedPeople) { viewModel.query.value = it }
+                    }
+                }
+            }
             SectionOrder.forEach { status ->
                 val projects = state.sections[status].orEmpty()
                 if (projects.isEmpty()) return@forEach
                 val collapsed = status in state.collapsed
                 item(key = "header-$status") {
-                    Row(
-                        Modifier.fillMaxWidth().clickable { viewModel.setCollapsed(status, !collapsed) }.padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "${stringResource(status.label)} (${projects.size})",
-                            style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Icon(if (collapsed) Icons.Outlined.ExpandMore else Icons.Outlined.ExpandLess, null)
-                    }
+                    GroupHeader(stringResource(status.label), projects.size, collapsed) { viewModel.setCollapsed(status, !collapsed) }
                 }
                 if (!collapsed) {
                     items(projects, key = { it.id }) { project ->
@@ -198,6 +197,17 @@ fun ProjectsScreen(
             },
             onDismiss = { naming = false },
         )
+    }
+}
+
+/** A row of names under the empty search field (SPEC 3.1); a tap searches for one. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SearchSuggestions(title: String, names: List<String>, onPick: (String) -> Unit) {
+    if (names.isEmpty()) return
+    SectionLabel(title)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        names.forEach { name -> SuggestionChip(onClick = { onPick(name) }, label = { Text(name) }, modifier = Modifier.testTag("suggest-$name")) }
     }
 }
 

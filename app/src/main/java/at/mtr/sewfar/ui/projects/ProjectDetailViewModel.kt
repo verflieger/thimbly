@@ -9,6 +9,7 @@ import at.mtr.sewfar.data.patternCovers
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.LinkedPattern
 import at.mtr.sewfar.data.db.LinkedSetup
+import at.mtr.sewfar.data.db.LinkedTag
 import at.mtr.sewfar.data.db.MachineEntity
 import at.mtr.sewfar.data.db.PatternEntity
 import at.mtr.sewfar.data.db.PersonEntity
@@ -39,6 +40,7 @@ data class ProjectDetailState(
     val person: PersonEntity? = null,
     val patterns: List<LinkedPattern> = emptyList(),
     val setups: List<LinkedSetup> = emptyList(),
+    val tags: List<LinkedTag> = emptyList(),
     val time: List<TimeEntryEntity> = emptyList(),
     val photos: List<PhotoEntity> = emptyList(),
     /** The person's measurements: the newest, or once Done, those valid on the finish date (SPEC 3.2). */
@@ -56,6 +58,8 @@ data class Choices(
     val machines: List<MachineEntity> = emptyList(),
     /** Pattern ID → cover photo ID (SPEC 3.5). */
     val patternCovers: Map<String, String> = emptyMap(),
+    /** Tag names in use on any project (SPEC 3.2). */
+    val tags: List<String> = emptyList(),
 )
 
 /** One project, edited in place (SPEC 3). Writes run in the app scope so they finish after leaving the screen. */
@@ -70,20 +74,23 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     val state: StateFlow<ProjectDetailState> = combine(
         projects.observe(id),
         container.persons.observeAll(),
-        combine(projects.observePatterns(id), projects.observeSetups(id)) { p, s -> p to s },
+        combine(projects.observePatterns(id), projects.observeSetups(id), projects.observeTags(id)) { p, s, t -> Triple(p, s, t) },
         combine(projects.observeTime(id), measurements) { t, m -> t to m },
         container.photos.observe(PhotoOwner.PROJECT, id),
-    ) { project, persons, (patterns, setups), (time, measurements), photos ->
+    ) { project, persons, (patterns, setups, tags), (time, measurements), photos ->
         ProjectDetailState(
             loaded = true, project = project, person = persons.firstOrNull { it.id == project?.personId },
-            patterns = patterns, setups = setups, time = time, photos = photos, measurements = measurements,
+            patterns = patterns, setups = setups, tags = tags, time = time, photos = photos, measurements = measurements,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProjectDetailState())
 
     val choices: StateFlow<Choices> = combine(
-        container.persons.observeAll(), container.patterns.observeAll(),
+        combine(container.persons.observeAll(), container.patterns.observeAll()) { p, pt -> p to pt },
         container.machines.observeSetups(), container.machines.observeAll(), container.photos.observeAllOfType(PhotoOwner.PATTERN),
-    ) { persons, patterns, setups, machines, photos -> Choices(persons, patterns, setups, machines, patternCovers(patterns, photos)) }
+        projects.observeAllTags(),
+    ) { (persons, patterns), setups, machines, photos, tags ->
+        Choices(persons, patterns, setups, machines, patternCovers(patterns, photos), tags.values.flatten().distinct())
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Choices())
 
     private fun write(block: suspend () -> Unit) {
@@ -107,6 +114,9 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     fun addPattern(patternId: String) = write { projects.addPattern(id, patternId) }
     fun createPattern(patternName: String) = write { projects.addPattern(id, container.patterns.create(patternName)) }
     suspend fun removePattern(linkId: String): DeletionToken? = run { projects.removePattern(linkId) }
+
+    fun addTag(name: String) = write { projects.addTag(id, name) }
+    suspend fun removeTag(linkId: String): DeletionToken? = run { projects.removeTag(linkId) }
 
     fun addSetup(setupId: String) = write { projects.addSetup(id, setupId) }
 

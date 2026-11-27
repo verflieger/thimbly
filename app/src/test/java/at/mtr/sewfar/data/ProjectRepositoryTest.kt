@@ -160,6 +160,26 @@ class ProjectRepositoryTest {
         assertEquals(1, t.count("project_pattern", live = false))
     }
 
+    /** SPEC 3.2: a tag is linked once per project, removed with Undo, and re-adding it revives its row. */
+    @Test
+    fun tagsLinkOnceUndoAndRevive() = runTest {
+        val project = t.projects.create("A")
+        t.projects.addTag(project, " Gift ")
+        t.projects.addTag(project, "Gift")
+        t.projects.addTag(project, " ")
+        val link = t.projects.observeTags(project).first().single()
+        assertEquals("Gift", link.name)
+        val token = t.projects.removeTag(link.linkId)!!
+        assertTrue(t.projects.observeTags(project).first().isEmpty())
+        t.deleter.undo(token)
+        assertEquals(listOf("Gift"), t.projects.observeTags(project).first().map { it.name })
+        t.projects.removeTag(link.linkId)
+        t.projects.addTag(project, "gift") // another spelling revives the removed "Gift", not a second tag
+        assertEquals(link.linkId, t.projects.observeTags(project).first().single().linkId)
+        assertEquals(1, t.count("project_tag", live = false))
+        assertEquals(mapOf(project to listOf("Gift")), t.projects.observeAllTags().first())
+    }
+
     @Test
     fun relinkingARemovedSettingRevivesItsRow() = runTest {
         val project = t.projects.create("A")

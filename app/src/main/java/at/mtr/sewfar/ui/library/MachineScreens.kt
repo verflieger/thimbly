@@ -1,7 +1,6 @@
 package at.mtr.sewfar.ui.library
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,14 +8,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +36,7 @@ import at.mtr.sewfar.data.db.SetupRow
 import at.mtr.sewfar.domain.MachineTemplates
 import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.ui.common.EditHeader
+import at.mtr.sewfar.ui.common.ChoiceDialog
 import at.mtr.sewfar.ui.common.EditableText
 import at.mtr.sewfar.ui.common.FormField
 import at.mtr.sewfar.ui.common.ReadOnlyField
@@ -82,7 +80,7 @@ fun MachineScreen(viewModel: MachineViewModel, onBack: () -> Unit, onOpenSetup: 
         titleOf = { it.name }, nameOf = { it.name }, nameLabel = stringResource(R.string.machine_name), onRename = viewModel::rename,
     ) { machine, _ ->
         // A machine never changes kind: the type is picked when it is created (SPEC 5.1).
-        ReadOnlyField(stringResource(R.string.machine_type), stringResource(machine.type.label))
+        ReadOnlyField(stringResource(R.string.type), stringResource(machine.type.label))
         EditableText(stringResource(R.string.machine_notes), machine.notes, "notes", onSave = viewModel::setNotes)
         Column {
             SectionLabel(stringResource(R.string.machine_setups))
@@ -200,20 +198,5 @@ fun SetupScreen(
 
 /** Asks for the type of a new machine; the type decides the setting fields and is fixed (SPEC 5.1). */
 @Composable
-fun MachineTypeDialog(onPick: (MachineType) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.machine_type_question)) },
-        text = {
-            Column {
-                MachineType.entries.forEach { type ->
-                    TextButton(onClick = { onPick(type) }, modifier = Modifier.fillMaxWidth().testTag("type-${type.name}")) {
-                        Text(stringResource(type.label), Modifier.fillMaxWidth())
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
-    )
-}
+fun MachineTypeDialog(onPick: (MachineType) -> Unit, onDismiss: () -> Unit) =
+    ChoiceDialog(stringResource(R.string.machine_type_question), MachineType.entries, { it.label }, onPick, onDismiss)

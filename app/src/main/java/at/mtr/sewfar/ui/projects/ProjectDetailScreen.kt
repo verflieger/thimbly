@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.mtr.sewfar.R
+import androidx.compose.ui.res.stringArrayResource
+import at.mtr.sewfar.domain.SearchText
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.domain.ProjectStatus
 import at.mtr.sewfar.ui.common.DetailScaffold
@@ -69,6 +71,7 @@ private sealed interface Picking {
     data object Pattern : Picking
     data object Person : Picking
     data object Setup : Picking
+    data object Tag : Picking
     /** A new setup named [title] needs a machine. */
     data class SetupMachine(val title: String) : Picking
     /** The new machine [machineName] for setup [title] needs its type, which decides the setting's fields (SPEC 5.2). */
@@ -150,7 +153,7 @@ fun ProjectDetailScreen(
 
             if (state.patterns.isNotEmpty()) {
                 Links(stringResource(R.string.project_patterns), stringResource(R.string.project_add_pattern), "addPattern",
-                    state.patterns.map { Triple(it.linkId, it.name, it.patternId) },
+                    state.patterns.map { Triple(it.linkId, typedLabel(it.name.ifBlank { stringResource(R.string.untitled) }, it.garmentType?.let { t -> stringResource(t.label) }), it.patternId) },
                     onOpen = onOpenPattern, onRemove = { link -> removeWithUndo { viewModel.removePattern(link) } },
                     onAdd = { picking = Picking.Pattern })
             } else addChips += { AddChip(stringResource(R.string.project_add_pattern), "addPattern") { picking = Picking.Pattern } }
@@ -189,6 +192,13 @@ fun ProjectDetailScreen(
                     onAdd = { picking = Picking.Setup })
             } else addChips += { AddChip(stringResource(R.string.project_add_setup), "addSetup") { picking = Picking.Setup } }
 
+            if (state.tags.isNotEmpty()) {
+                Links(stringResource(R.string.project_tags), stringResource(R.string.project_add_tag), "addTag",
+                    state.tags.map { Triple(it.linkId, it.name, it.linkId) },
+                    onOpen = {}, onRemove = { link -> removeWithUndo { viewModel.removeTag(link) } },
+                    onAdd = { picking = Picking.Tag })
+            } else addChips += { AddChip(stringResource(R.string.project_add_tag), "addTag") { picking = Picking.Tag } }
+
             if (project.notes.isNotBlank()) {
                 TextBlock(stringResource(R.string.project_notes), project.notes, "notes") { picking = Picking.Notes }
             } else addChips += { AddChip(stringResource(R.string.project_notes), "edit-notes") { picking = Picking.Notes } }
@@ -225,6 +235,19 @@ fun ProjectDetailScreen(
                 existingNames = choices.patterns.map { it.name },
                 onPick = { id -> id?.let(viewModel::addPattern); picking = null },
                 onCreate = { name -> viewModel.createPattern(name); picking = null },
+                onDismiss = { picking = null },
+            )
+        }
+        Picking.Tag -> {
+            // Tags in use plus the starter suggestions (SPEC 3.2); one entry per name, ignoring case.
+            val own = state.tags.map { SearchText.fold(it.name) }.toSet()
+            val names = (choices.tags + stringArrayResource(R.array.tag_suggestions)).distinctBy { SearchText.fold(it) }
+            EntityPicker(
+                title = stringResource(R.string.picker_choose_tag),
+                items = names.filter { SearchText.fold(it) !in own }.map { PickerItem(it, it) },
+                existingNames = names,
+                onPick = { name -> name?.let(viewModel::addTag); picking = null },
+                onCreate = { name -> viewModel.addTag(name); picking = null },
                 onDismiss = { picking = null },
             )
         }
@@ -322,10 +345,10 @@ private fun AddChip(label: String, tag: String, onClick: () -> Unit) {
 }
 
 @Composable
-internal fun setupLabel(title: String, machineName: String): String {
-    val shown = title.ifBlank { stringResource(R.string.setup_untitled) }
-    return if (machineName.isBlank()) shown else "$shown · $machineName"
-}
+internal fun setupLabel(title: String, machineName: String): String = typedLabel(title.ifBlank { stringResource(R.string.setup_untitled) }, machineName)
+
+/** A chip label with what it belongs to or is: "Setting · Machine", "Pattern · Type". */
+internal fun typedLabel(name: String, detail: String?): String = if (detail.isNullOrBlank()) name else "$name · $detail"
 
 /**
  * A labelled row of linked items: tap opens one, × removes it, the add chip links another.

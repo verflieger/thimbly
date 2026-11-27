@@ -114,7 +114,7 @@ fun ReadOnlyPhotoRow(title: String, photoIds: List<String>, onOpen: (String) -> 
     val px = with(LocalDensity.current) { 192.dp.roundToPx() }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         SectionLabel(title)
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("readOnlyPhotos")) {
             items(photoIds, key = { it }) { id ->
                 PhotoImage(id, minEdgePx = px, modifier = Modifier.size(96.dp).clip(RoundedCornerShape(8.dp)).clickable { onOpen(id) })
             }

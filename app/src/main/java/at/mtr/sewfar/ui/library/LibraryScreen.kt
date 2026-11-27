@@ -39,6 +39,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
+import androidx.compose.foundation.layout.Box
+import at.mtr.sewfar.ui.common.label
+import at.mtr.sewfar.ui.common.GroupHeader
+import at.mtr.sewfar.domain.GarmentType
 import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.data.patternCovers
@@ -57,8 +61,10 @@ import kotlinx.coroutines.withContext
 /** In the order of the tabs. */
 enum class LibraryTab { PATTERNS, PEOPLE, MACHINES }
 
-/** A library row: title, an optional second line and, for patterns, the cover photo (SPEC 3.5). */
-data class LibraryItem(val id: String, val title: String, val subtitle: String, val coverPhotoId: String? = null)
+/** A library row: title, an optional second line and, for patterns, the cover photo (SPEC 3.5) and type (SPEC 4.1). */
+data class LibraryItem(
+    val id: String, val title: String, val subtitle: String, val coverPhotoId: String? = null, val garmentType: GarmentType? = null,
+)
 
 class LibraryViewModel(private val container: AppContainer, initialTab: LibraryTab) : ViewModel() {
     val tab = MutableStateFlow(initialTab)
@@ -70,7 +76,7 @@ class LibraryViewModel(private val container: AppContainer, initialTab: LibraryT
         val setupCount = setups.groupingBy { it.machineId }.eachCount()
         val covers = patternCovers(patterns, photos)
         mapOf(
-            LibraryTab.PATTERNS to patterns.map { LibraryItem(it.id, it.name, it.designer, covers[it.id]) },
+            LibraryTab.PATTERNS to patterns.map { LibraryItem(it.id, it.name, it.designer, covers[it.id], it.garmentType) },
             LibraryTab.MACHINES to machines.map { LibraryItem(it.id, it.name, (setupCount[it.id] ?: 0).toString()) },
             LibraryTab.PEOPLE to persons.map { LibraryItem(it.id, it.name, "") },
         )
@@ -123,18 +129,26 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
             EmptyState(stringResource(tab.empty), padding)
             return@Scaffold
         }
+        // Patterns are grouped by type like the home list by status, once any has a type (SPEC 4.1); untyped ones last.
+        val groups = if (tab == LibraryTab.PATTERNS && list.any { it.garmentType != null }) {
+            list.groupBy { it.garmentType }.entries.sortedBy { it.key?.ordinal ?: Int.MAX_VALUE }
+                .map { (type, rows) -> (type?.label ?: R.string.no_type) to rows }
+        } else listOf(null to list)
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = 88.dp)) {
-            items(list, key = { it.id }) { item ->
-                ListItem(
-                    headlineContent = { Text(item.title.ifBlank { stringResource(R.string.untitled) }) },
-                    supportingContent = when {
-                        tab == LibraryTab.MACHINES -> ({ val n = item.subtitle.toInt(); Text(pluralStringResource(R.plurals.machine_setup_count, n, n)) })
-                        item.subtitle.isNotBlank() -> ({ Text(item.subtitle) })
-                        else -> null
-                    },
-                    leadingContent = if (tab == LibraryTab.PATTERNS) ({ CoverThumbnail(item.coverPhotoId, Icons.Outlined.ContentCut, 48.dp) }) else null,
-                    modifier = Modifier.clickable { onOpen(tab, item.id) },
-                )
+            groups.forEach { (label, rows) ->
+                if (label != null) item(key = "header-$label") { Box(Modifier.padding(horizontal = 16.dp)) { GroupHeader(stringResource(label), rows.size) } }
+                items(rows, key = { it.id }) { item ->
+                    ListItem(
+                        headlineContent = { Text(item.title.ifBlank { stringResource(R.string.untitled) }) },
+                        supportingContent = when {
+                            tab == LibraryTab.MACHINES -> ({ val n = item.subtitle.toInt(); Text(pluralStringResource(R.plurals.machine_setup_count, n, n)) })
+                            item.subtitle.isNotBlank() -> ({ Text(item.subtitle) })
+                            else -> null
+                        },
+                        leadingContent = if (tab == LibraryTab.PATTERNS) ({ CoverThumbnail(item.coverPhotoId, Icons.Outlined.ContentCut, 48.dp) }) else null,
+                        modifier = Modifier.clickable { onOpen(tab, item.id) },
+                    )
+                }
             }
         }
     }

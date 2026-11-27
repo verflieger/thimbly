@@ -329,9 +329,10 @@ class BackupRepository(
     companion object {
         /**
          * Backup format version (SPEC 8.1); newer apps must read every older format. 1: v0.1. 2: `pattern.coverPhotoId`
-         * (older backups restore without a pinned pattern cover, as missing columns keep their default).
+         * (older backups restore without a pinned pattern cover, as missing columns keep their default). 3:
+         * `pattern.garmentType` and the `project_tag` table (older backups restore without types and tags).
          */
-        const val FORMAT = 2
+        const val FORMAT = 3
         private const val LogTable = "deletion_log"
 
         /** Tables in a backup, in restore order. */

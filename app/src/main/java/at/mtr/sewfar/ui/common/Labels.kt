@@ -2,6 +2,7 @@ package at.mtr.sewfar.ui.common
 
 import androidx.annotation.StringRes
 import at.mtr.sewfar.R
+import at.mtr.sewfar.domain.GarmentType
 import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.ProjectStatus
 
@@ -21,6 +22,18 @@ val MachineType.label: Int
         MachineType.COVERSTITCH -> R.string.mtype_coverstitch
         MachineType.EMBROIDERY -> R.string.mtype_embroidery
         MachineType.OTHER -> R.string.mtype_other
+    }
+
+@get:StringRes
+val GarmentType.label: Int
+    get() = when (this) {
+        GarmentType.DRESS -> R.string.garment_dress
+        GarmentType.SKIRT -> R.string.garment_skirt
+        GarmentType.TOP -> R.string.garment_top
+        GarmentType.TROUSERS -> R.string.garment_trousers
+        GarmentType.JACKET -> R.string.garment_jacket
+        GarmentType.BAG -> R.string.garment_bag
+        GarmentType.OTHER -> R.string.garment_other
     }
 
 /** Names of setting fields (SPEC 5.2); keys match `MachineTemplates`. */

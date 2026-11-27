@@ -150,7 +150,7 @@ class SoftDeleter(
          * `TableRegistryTest` checks both against the schema.
          */
         val AllTables = listOf(
-            "person", "measurement", "measurement_value", "pattern", "project", "project_pattern", "time_entry", "photo",
+            "person", "measurement", "measurement_value", "pattern", "project", "project_pattern", "project_tag", "time_entry", "photo",
             "machine", "setup", "setup_value", "project_setup",
         )
 
@@ -160,6 +160,7 @@ class SoftDeleter(
             "measurement" to listOf(Ref("measurement_value", "measurementId")),
             "project" to listOf(
                 Ref("project_pattern", "projectId"),
+                Ref("project_tag", "projectId"),
                 Ref("project_setup", "projectId"),
                 Ref("time_entry", "projectId"),
                 Ref("photo", "ownerId", ownerType = "PROJECT"),

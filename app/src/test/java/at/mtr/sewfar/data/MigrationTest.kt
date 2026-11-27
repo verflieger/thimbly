@@ -27,6 +27,22 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun twoToThreeAddsUntypedPatternsAndTheTagTable() {
+        helper.createDatabase(DB, 2).use { db ->
+            db.execSQL("INSERT INTO pattern (id, name, designer, notes, createdAt, updatedAt) VALUES ('p1', 'Raglan', 'Studio', 'M', 1, 2)")
+            db.execSQL("INSERT INTO project (id, name, status, size, fabric, notes, learned, lastActivityAt, createdAt, updatedAt) VALUES ('j1', 'Shirt', 'PLANNED', '', '', '', '', 1, 1, 1)")
+        }
+        helper.runMigrationsAndValidate(DB, 3, true, *SewFarDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT name, garmentType FROM pattern WHERE id = 'p1'").use { c ->
+                c.moveToFirst()
+                assertEquals(listOf("Raglan", null), (0..1).map { c.getString(it) })
+            }
+            db.execSQL("INSERT INTO project_tag (id, projectId, name, sortOrder, createdAt, updatedAt) VALUES ('t1', 'j1', 'Gift', 0, 1, 1)")
+            db.query("SELECT COUNT(*) FROM project_tag").use { c -> c.moveToFirst(); assertEquals(1, c.getInt(0)) }
+        }
+    }
+
     private companion object {
         const val DB = "migration-test"
     }

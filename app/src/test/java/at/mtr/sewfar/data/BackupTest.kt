@@ -67,6 +67,8 @@ class BackupTest {
         val project = t.projects.create("Shirt")
         t.projects.edit(project) { it.copy(personId = person) }
         t.projects.addPattern(project, pattern)
+        t.patterns.edit(pattern) { it.copy(garmentType = at.mtr.sewfar.domain.GarmentType.TOP) }
+        t.projects.addTag(project, "Gift")
         t.projects.addTime(project, t.time.day, 30)
         val gone = t.projects.observeTime(project).first().single().id
         t.projects.deleteTime(gone) // deleted: not part of the backup
@@ -205,7 +207,8 @@ class BackupTest {
         val setup = t.projects.observeSetups(project.id).first().single()
         assertEquals("1.3", t.machines.observeValues(setup.setupId).first().single().value)
         assertEquals(mapOf("waist" to 74.5), t.persons.observeMeasurements(project.personId!!).first()!!.valuesCm)
-        for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables) assertTrue(table, t.count(table) > 0)
+        // Tables added later (format 3: project_tag) are empty after restoring format 1.
+        for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables - "project_tag") assertTrue(table, t.count(table) > 0)
         assertEquals("format 1 has no pinned pattern cover", null, t.patterns.observeAll().first().single().coverPhotoId)
     }
 
@@ -220,6 +223,17 @@ class BackupTest {
         assertTrue(photos.all { t.photoFiles.file(it.id).exists() })
         assertEquals("60bddf07-e804-4122-b6c9-4e7cd824ea89", pattern.coverPhotoId)
         assertEquals(pattern.coverPhotoId, patternCovers(listOf(pattern), photos)[pattern.id])
+    }
+
+    /** Format 3 adds the garment type and tags (SPEC 8.1). */
+    @Test
+    fun formatThreeFixtureKeepsTypeAndTags() = runTest {
+        val fixture = javaClass.classLoader!!.getResourceAsStream("backup/format3.zip")!!
+        backup.import(backup.prepareImport(fixture))
+        assertEquals(at.mtr.sewfar.domain.GarmentType.DRESS, t.patterns.observeAll().first().single().garmentType)
+        val project = t.projects.observeAll().first().single()
+        assertEquals(listOf("Fixture tag"), t.projects.observeTags(project.id).first().map { it.name })
+        for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables) assertTrue(table, t.count(table) > 0)
     }
 
     @Test

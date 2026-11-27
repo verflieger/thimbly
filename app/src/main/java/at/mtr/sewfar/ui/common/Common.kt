@@ -17,6 +17,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -73,19 +75,25 @@ fun EditHeader(title: String, tag: String, onEdit: () -> Unit) {
     }
 }
 
+/** A value shown read-only under its label with ✎; null shows "Tap to add". A tap or ✎ calls [onEdit] (SPEC 2). */
+@Composable
+private fun EditableValue(label: String, tag: String, shown: String?, onEdit: () -> Unit) {
+    Column {
+        EditHeader(label, tag, onEdit)
+        Text(
+            shown ?: stringResource(R.string.tap_to_add),
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (shown == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit),
+        )
+    }
+}
+
 /** A text of a library record, shown read-only; a tap or ✎ edits it in a [TextDialog] (SPEC 2). */
 @Composable
 fun EditableText(label: String, value: String, tag: String, singleLine: Boolean = false, onSave: (String) -> Unit) {
     var editing by rememberSaveable { mutableStateOf(false) }
-    Column {
-        EditHeader(label, tag) { editing = true }
-        Text(
-            value.ifBlank { stringResource(R.string.tap_to_add) },
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (value.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.fillMaxWidth().clickable { editing = true },
-        )
-    }
+    EditableValue(label, tag, value.ifBlank { null }) { editing = true }
     if (editing) {
         TextDialog(
             label, label, initial = value, singleLine = singleLine, required = false,
@@ -102,6 +110,57 @@ fun ReadOnlyField(label: String, value: String) {
         SectionLabel(label)
         Text(value, style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+/**
+ * Heading of a group in a list (SPEC 3.1, 4.1): "<label> (<count>)"; with [collapsed] it toggles on tap and shows
+ * the expand icon, without it is a plain heading.
+ */
+@Composable
+fun GroupHeader(label: String, count: Int, collapsed: Boolean? = null, onToggle: () -> Unit = {}) {
+    Row(
+        Modifier.fillMaxWidth().clickable(enabled = collapsed != null, onClick = onToggle).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "$label ($count)", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
+        )
+        if (collapsed != null) Icon(if (collapsed) Icons.Outlined.ExpandMore else Icons.Outlined.ExpandLess, null)
+    }
+}
+
+/**
+ * Picks one of [options] (SPEC 2: a fixed list, e.g. a machine's or a pattern's type); a tap picks at once.
+ * Each option is tagged `type-<NAME>` for tests.
+ */
+@Composable
+fun <T : Enum<T>> ChoiceDialog(title: String, options: List<T>, labelOf: (T) -> Int, onPick: (T) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                options.forEach { option ->
+                    TextButton(onClick = { onPick(option) }, modifier = Modifier.fillMaxWidth().testTag("type-${option.name}")) {
+                        Text(stringResource(labelOf(option)), Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+/** A choice of a library record, shown read-only like [EditableText]; a tap or ✎ opens a [ChoiceDialog]. */
+@Composable
+fun <T : Enum<T>> EditableChoice(
+    label: String, value: T?, tag: String, dialogTitle: String, options: List<T>, labelOf: (T) -> Int, onPick: (T) -> Unit,
+) {
+    var editing by rememberSaveable { mutableStateOf(false) }
+    EditableValue(label, tag, value?.let { stringResource(labelOf(it)) }) { editing = true }
+    if (editing) ChoiceDialog(dialogTitle, options, labelOf, onPick = { onPick(it); editing = false }, onDismiss = { editing = false })
 }
 
 /**

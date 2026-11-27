@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -93,6 +94,42 @@ class ProjectFlowTest {
         waitFor("Project deleted")
         compose.onNodeWithText("Undo").performClick()
         waitFor("Skirt")
+    }
+
+    /** SPEC 3.1, 3.2: a tag picked from the suggestions; the empty search offers it and a tap filters the list. */
+    @Test
+    fun tagFromSuggestionsFiltersTheSearch() {
+        for (name in listOf("Skirt", "Jeans")) {
+            compose.onNodeWithTag("newProject").performClick()
+            compose.onNodeWithTag("dialogText").performTextInput(name)
+            compose.onNodeWithTag("dialogSave").performClick()
+            pageOpen()
+            if (name == "Jeans") {
+                compose.onNodeWithTag("addTag").performScrollTo().performClick()
+                compose.onNodeWithText("Repair").performClick()
+                waitFor("Tags")
+            }
+            back()
+            waitFor("Planned")
+        }
+        compose.onNodeWithContentDescription("Search").performClick()
+        compose.onNodeWithTag("suggest-Repair").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Skirt")).fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithText("Jeans").assertExists()
+    }
+
+    /** SPEC 4.1: a pattern's type groups the Library pattern list. */
+    @Test
+    fun patternTypeGroupsTheLibrary() {
+        compose.onNodeWithTag("library").performClick()
+        compose.onNodeWithTag("add").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Raglan")
+        compose.onNodeWithTag("dialogSave").performClick()
+        compose.onNodeWithTag("edit-garmentType").performClick()
+        compose.onNodeWithTag("type-TOP").performClick()
+        waitFor("Top")
+        back()
+        waitFor("Top (1)")
     }
 
     /** SPEC 5.1: a new machine is asked for its type, which is then shown read-only. */
