@@ -16,6 +16,7 @@ import at.mtr.sewfar.data.db.PhotoEntity
 import at.mtr.sewfar.data.db.ProjectEntity
 import at.mtr.sewfar.data.db.SetupRow
 import at.mtr.sewfar.data.db.TimeEntryEntity
+import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.Measurements
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.domain.ProjectStatus
@@ -109,11 +110,13 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
 
     fun addSetup(setupId: String) = write { projects.addSetup(id, setupId) }
 
-    /** Creates a setup on [machineId] (or on a new machine named [newMachineName]), links it and returns its ID. */
-    suspend fun createSetup(title: String, machineId: String?, newMachineName: String?): String = run {
+    /** Creates a setup on [machineId] (or on a new machine named [newMachineName] of [newMachineType]), links it and returns its ID. */
+    suspend fun createSetup(
+        title: String, machineId: String?, newMachineName: String? = null, newMachineType: MachineType = MachineType.SEWING_MACHINE,
+    ): String = run {
         // One transaction: a crash never leaves an empty machine or an unlinked setting.
         container.database.withTransaction {
-            val machine = machineId ?: container.machines.create(newMachineName.orEmpty())
+            val machine = machineId ?: container.machines.create(newMachineName.orEmpty(), newMachineType)
             container.machines.createSetup(machine, title).also { projects.addSetup(id, it) }
         }
     }

@@ -129,6 +129,8 @@
     <string name="m_arm_length">Arm length</string>
     <string name="m_inside_leg">Inside leg</string>
     <string name="picker_choose_machine">Which machine?</string>
+    <string name="machine_type_question">What kind of machine is “%1$s”?</string>
+    <string name="machine_type">Type</string>
     <string name="picker_choose_setup">Machine setting</string>
     <string name="picker_create_setup">New setting “%1$s”</string>
     <string name="project_add_pattern">Pattern</string>

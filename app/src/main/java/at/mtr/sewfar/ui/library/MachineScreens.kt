@@ -65,6 +65,8 @@ class MachineViewModel(container: AppContainer, private val id: String) : Record
     override val projectsFlow = emptyFlow<List<ProjectRef>>()
     val setups: StateFlow<List<SetupRow>> = repo.observeSetups().map { all -> all.filter { it.machineId == id } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val typeLocked: StateFlow<Boolean> = repo.observeTypeLocked(id)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     override suspend fun delete() = container.runInApp { repo.delete(id) }
 
@@ -77,13 +79,19 @@ class MachineViewModel(container: AppContainer, private val id: String) : Record
 @Composable
 fun MachineScreen(viewModel: MachineViewModel, onBack: () -> Unit, onOpenSetup: (String, Boolean) -> Unit) {
     val setups by viewModel.setups.collectAsStateWithLifecycle()
+    val typeLocked by viewModel.typeLocked.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var naming by rememberSaveable { mutableStateOf(false) }
     RecordScreen(
         viewModel, startEditing = false, stringResource(R.string.machine_deleted), onBack, onOpenProject = {},
         titleOf = { it.name }, nameOf = { it.name }, nameLabel = stringResource(R.string.machine_name), onRename = viewModel::rename,
     ) { machine, _ ->
-        MachineTypeChip(machine.type, viewModel::setType)
+        // A machine never changes kind; the type can only be fixed while no setting has values (SPEC 5.1).
+        if (typeLocked) {
+            ReadOnlyField(stringResource(R.string.machine_type), stringResource(machine.type.label))
+        } else {
+            MachineTypeChip(machine.type, viewModel::setType)
+        }
         EditableText(stringResource(R.string.machine_notes), machine.notes, "notes", onSave = viewModel::setNotes)
         Column {
             SectionLabel(stringResource(R.string.machine_setups))
@@ -134,9 +142,6 @@ class SetupViewModel(container: AppContainer, private val id: String) : RecordVi
     fun saveValues(f: Map<String, String>) = write {
         f.filterKeys { it.startsWith(ValuePrefix) }.forEach { (k, v) -> repo.setValue(id, k.removePrefix(ValuePrefix), v) }
     }
-
-    /** Changes the machine's type, e.g. right after creating it from a project (SPEC 5.2). */
-    fun setMachineType(machineId: String, type: MachineType) = write { repo.edit(machineId) { it.copy(type = type) } }
 }
 
 private const val ValuePrefix = "v:"
@@ -158,8 +163,6 @@ fun SetupScreen(
         },
         onSave = viewModel::saveValues,
         edit = { detail, d, set ->
-            // The type decides the fields, so it can be fixed here too (e.g. a machine just created from a project).
-            detail.machine?.let { m -> MachineTypeChip(m.type) { viewModel.setMachineType(m.id, it) } }
             // The fields of the machine's type, two per row: most values are short numbers.
             detail.machine?.let { MachineTemplates.of(it.type) }.orEmpty().filter { "$ValuePrefix$it" in d }
                 .chunked(2).forEach { row ->
@@ -177,10 +180,12 @@ fun SetupScreen(
     ) { detail, openForm ->
         val machine = detail.machine
         if (machine != null) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AssistChip(onClick = { onOpenMachine(machine.id) }, label = { Text(machine.name.ifBlank { stringResource(R.string.untitled) }) })
-                MachineTypeChip(machine.type) { viewModel.setMachineType(machine.id, it) }
-            }
+            // The type belongs to the machine (it decides the fields here) and is changed on the machine page.
+            AssistChip(
+                onClick = { onOpenMachine(machine.id) },
+                label = { Text("${machine.name.ifBlank { stringResource(R.string.untitled) }} · ${stringResource(machine.type.label)}") },
+                modifier = Modifier.testTag("setupMachine"),
+            )
             val keys = MachineTemplates.of(machine.type)
             if (keys.isNotEmpty()) {
                 Column(Modifier.clickable(onClick = openForm), verticalArrangement = Arrangement.spacedBy(8.dp)) {

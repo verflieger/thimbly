@@ -159,7 +159,8 @@ sewn with. Unchanged values store nothing.
 
 ### 5.1 Machines
 
-Name, type (sewing machine, overlocker, coverstitch, embroidery, other), notes, and the list of its settings with
+Name, type (sewing machine, overlocker, coverstitch, embroidery, other; a machine never changes kind, so the type can
+only be changed while none of its settings has values, to fix a wrong pick, and is shown read-only after), notes, and the list of its settings with
 "+ New setting" (asks for the name, then opens the setting's values form). Deleting a machine deletes its settings and their project links (with Undo).
 
 ### 5.2 Machine settings ("setups")
@@ -174,12 +175,13 @@ Name, type (sewing machine, overlocker, coverstitch, embroidery, other), notes, 
   - embroidery: hoop, needle, stabilizer
   - other: none (notes only)
   Values are free text; a blank value is removed. Values of fields the current type doesn't list are kept, not shown.
-- The setting page shows the machine (tap opens it) and its type, which can be changed right there, e.g. after
-  creating the machine from a project.
+- The setting page shows its machine as "Name · Type" (tap opens the machine). The type belongs to the machine and is
+  changed only on the machine page.
 - Plus notes and "Used in".
 - From a project: "+ Machine setting" → pick a setting, or type a name and "New setting “…”". With exactly one
-  machine it is used directly; otherwise a machine picker follows (with "Create “…”" for a new machine). The new
-  setting is linked and its page opens with the values form.
+  machine it is used directly; otherwise a machine picker follows (with "Create “…”" for a new machine, which then
+  asks for the machine's type: "What kind of machine is “…”?"). The new setting is linked and its page opens with
+  the values form.
 
 ## 6. Delete and undo
 

@@ -212,4 +212,15 @@ class ProjectRepositoryTest {
         t.machines.setValue(setup, "differential_feed", "1.5")
         assertEquals(1, t.count("setup_value", live = false))
     }
+
+    @Test
+    fun machineTypeLocksOnceASettingHasValues() = runTest {
+        val machine = t.machines.create("Overlock")
+        val setup = t.machines.createSetup(machine, "Jersey")
+        assertFalse(t.machines.observeTypeLocked(machine).first())
+        t.machines.setValue(setup, "differential_feed", "1.3")
+        assertTrue(t.machines.observeTypeLocked(machine).first())
+        t.machines.setValue(setup, "differential_feed", "")
+        assertFalse(t.machines.observeTypeLocked(machine).first())
+    }
 }

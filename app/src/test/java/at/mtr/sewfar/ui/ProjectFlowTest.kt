@@ -57,11 +57,12 @@ class ProjectFlowTest {
         compose.onNodeWithText("New setting “Jersey seam”").performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Overlock")
         compose.onNodeWithText("Create “Overlock”").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("field-stitch_length").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("field-stitch_length").performTextInput("3")
+        compose.onNodeWithTag("type-OVERLOCKER").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("field-differential_feed").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("field-differential_feed").performTextInput("1.3")
         compose.onNodeWithTag("save").performClick()
-        waitFor("Overlock") // view mode: machine chip
-        compose.onNodeWithText("3").assertExists()
+        waitFor("Overlock · Overlocker") // view mode: machine chip with its type
+        compose.onNodeWithText("1.3").assertExists()
         back()
         waitFor("Jersey seam · Overlock")
 

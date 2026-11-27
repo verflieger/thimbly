@@ -128,6 +128,8 @@
     <string name="m_arm_length">Armlänge</string>
     <string name="m_inside_leg">Innenbeinlänge</string>
     <string name="picker_choose_machine">Welche Maschine?</string>
+    <string name="machine_type_question">Was für eine Maschine ist „%1$s“?</string>
+    <string name="machine_type">Art</string>
     <string name="picker_choose_setup">Maschineneinstellung</string>
     <string name="picker_create_setup">Neue Einstellung „%1$s“</string>
     <string name="project_add_pattern">Schnittmuster</string>

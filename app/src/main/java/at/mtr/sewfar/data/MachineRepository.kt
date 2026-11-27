@@ -20,6 +20,9 @@ class MachineRepository(private val db: SewFarDatabase, private val deleter: Sof
     fun observeAll(): Flow<List<MachineEntity>> = dao.observeAll()
     fun observe(id: String): Flow<MachineEntity?> = dao.observeOne(id)
 
+    /** True once any of the machine's settings has a value; its type is then fixed (SPEC 5.1). */
+    fun observeTypeLocked(id: String): Flow<Boolean> = dao.observeHasValues(id)
+
     suspend fun create(name: String = "", type: MachineType = MachineType.SEWING_MACHINE): String {
         val id = Ids.random()
         val now = time.nowMillis()

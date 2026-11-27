@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCut
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,6 +29,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import at.mtr.sewfar.R
 import at.mtr.sewfar.data.db.DeletionToken
+import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.ProjectStatus
 import at.mtr.sewfar.ui.common.DetailScaffold
 import at.mtr.sewfar.ui.common.EditHeader
@@ -70,6 +73,8 @@ private sealed interface Picking {
     data object Setup : Picking
     /** A new setup named [title] needs a machine. */
     data class SetupMachine(val title: String) : Picking
+    /** The new machine [machineName] for setup [title] needs its type, which decides the setting's fields (SPEC 5.2). */
+    data class MachineKind(val title: String, val machineName: String) : Picking
     data object Rename : Picking
     data object Size : Picking
     data object Fabric : Picking
@@ -243,7 +248,7 @@ fun ProjectDetailScreen(
                     if (only != null) {
                         picking = null
                         scope.launch {
-                            val id = viewModel.createSetup(title, only.id, null)
+                            val id = viewModel.createSetup(title, only.id)
                             withContext(Dispatchers.Main) { onOpenNewSetup(id) }
                         }
                     } else {
@@ -262,18 +267,34 @@ fun ProjectDetailScreen(
             onPick = { machineId ->
                 picking = null
                 if (machineId != null) scope.launch {
-                    val id = viewModel.createSetup(p.title, machineId, null)
+                    val id = viewModel.createSetup(p.title, machineId)
                     withContext(Dispatchers.Main) { onOpenNewSetup(id) }
                 }
             },
-            onCreate = { machineName ->
-                picking = null
-                scope.launch {
-                    val id = viewModel.createSetup(p.title, null, machineName)
-                    withContext(Dispatchers.Main) { onOpenNewSetup(id) }
-                }
-            },
+            onCreate = { machineName -> picking = Picking.MachineKind(p.title, machineName) },
             onDismiss = { picking = null },
+        )
+        is Picking.MachineKind -> AlertDialog(
+            onDismissRequest = { picking = null },
+            title = { Text(stringResource(R.string.machine_type_question, p.machineName)) },
+            text = {
+                Column {
+                    MachineType.entries.forEach { type ->
+                        TextButton(
+                            onClick = {
+                                picking = null
+                                scope.launch {
+                                    val id = viewModel.createSetup(p.title, null, p.machineName, type)
+                                    withContext(Dispatchers.Main) { onOpenNewSetup(id) }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().testTag("type-${type.name}"),
+                        ) { Text(stringResource(type.label), Modifier.fillMaxWidth()) }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { picking = null }) { Text(stringResource(R.string.action_cancel)) } },
         )
         Picking.Rename -> TextDialog(
             stringResource(R.string.project_rename), stringResource(R.string.project_name), initial = project.name,
