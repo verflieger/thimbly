@@ -7,6 +7,8 @@ Room, DataStore). The package `at.mtr.sewfar` and class names (`SewFarApp` …) 
 working title SewFar; user-visible texts say Thimbly.
 **`SPEC.md` is the source of truth** for behaviour, data model, backup format and wording; code comments cite it as
 "SPEC 3.2" etc. Update SPEC.md alongside behaviour changes.
+New features: ideas live in ROADMAP.md; when one is picked, settle open questions (AskUserQuestion), write the
+dated SPEC text first for the user to review, then code and tests, and remove the item from ROADMAP.md in the same commit.
 
 **Keep it simple:** no feature or field that wasn't asked for, everything a project needs is reachable from the
 project page. Prefer one screen over two and keep the data model generic enough for later additions (ROADMAP.md).
