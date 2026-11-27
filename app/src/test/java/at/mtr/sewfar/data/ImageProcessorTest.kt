@@ -1,6 +1,8 @@
 package at.mtr.sewfar.data
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.media.ExifInterface
 import androidx.test.core.app.ApplicationProvider
 import at.mtr.sewfar.data.photos.ImageProcessor
@@ -14,7 +16,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 
-/** SPEC 3.5: orientation applied, long edge at most 2048 px, no upscaling, EXIF (incl. location) removed. */
+/** SPEC 3.5: orientation applied, long edge at most 2048 px, no upscaling, EXIF (incl. location) removed, transparency white. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ImageProcessorTest {
@@ -40,6 +42,17 @@ class ImageProcessorTest {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(output.path, bounds)
         return bounds.outWidth to bounds.outHeight
+    }
+
+    @Test
+    fun transparencyBecomesWhite() {
+        val png = File(dir, "in.png")
+        val bitmap = Bitmap.createBitmap(40, 40, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.TRANSPARENT); setPixel(20, 20, Color.BLACK) }
+        png.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        process(png)
+        val pixel = BitmapFactory.decodeFile(output.path).getPixel(0, 0)
+        assertEquals(255.0, Color.red(pixel).toDouble(), 3.0)
+        assertEquals(255.0, Color.blue(pixel).toDouble(), 3.0)
     }
 
     @Test

@@ -2,6 +2,8 @@ package at.mtr.sewfar.data.photos
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
 import android.media.ExifInterface
 import java.io.File
@@ -15,7 +17,7 @@ class PhotoImportException(message: String, cause: Throwable? = null) : IOExcept
 /**
  * Photo pipeline (SPEC 3.5): decode, apply EXIF orientation, downscale so the long edge is at most [MaxEdge] px
  * ([FineEdge] with the "Fine photos" setting),
- * re-encode as JPEG ([Quality]). Re-encoding writes no EXIF, so location and all other metadata are dropped.
+ * flatten transparency onto white, re-encode as JPEG ([Quality]). Re-encoding writes no EXIF, so location and all other metadata are dropped.
  */
 object ImageProcessor {
     const val MaxEdge = 2048
@@ -44,11 +46,16 @@ object ImageProcessor {
             applyOrientation(orientation)
         }
         val result = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+        // JPEG has no alpha: transparent areas would turn black (e.g. a line drawing on a transparent PNG).
+        val opaque = if (!result.hasAlpha()) result else Bitmap.createBitmap(result.width, result.height, Bitmap.Config.ARGB_8888).also {
+            Canvas(it).apply { drawColor(Color.WHITE); drawBitmap(result, 0f, 0f, null) }
+        }
         try {
             target.outputStream().use { out ->
-                if (!result.compress(Bitmap.CompressFormat.JPEG, Quality, out)) throw PhotoImportException("Encoding failed")
+                if (!opaque.compress(Bitmap.CompressFormat.JPEG, Quality, out)) throw PhotoImportException("Encoding failed")
             }
         } finally {
+            if (opaque !== result) opaque.recycle()
             if (result !== decoded) result.recycle()
             decoded.recycle()
         }

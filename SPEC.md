@@ -127,7 +127,7 @@ from an imported older backup) is appended to the notes.
   usually the envelope taken first (2026-11-26); it shows as a thumbnail in the Library pattern list and the pattern
   picker.
 - Pipeline: decode, apply EXIF orientation, downscale to at most 2048 px on the long edge (4096 px
-  with the "Fine photos" setting, §9; photos already stored keep their size), re-encode as JPEG 85 (drops
+  with the "Fine photos" setting, §9; photos already stored keep their size), flatten transparency onto white, re-encode as JPEG 85 (drops
   all EXIF, including location), store as `filesDir/photos/<photoId>.jpg`. The row is inserted after the file is
   written and forced to storage (fsync of the file and its folder, 2026-11-26: without it a crash or power loss
   seconds later left the row with an empty or missing file). A deleted photo's file is removed with its row after the 60 s Undo window (§6); files without a row
