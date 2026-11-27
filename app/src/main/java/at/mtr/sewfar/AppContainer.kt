@@ -5,6 +5,7 @@ import at.mtr.sewfar.data.MachineRepository
 import at.mtr.sewfar.data.PatternRepository
 import at.mtr.sewfar.data.PersonRepository
 import at.mtr.sewfar.data.PhotoRepository
+import at.mtr.sewfar.data.ProjectPage
 import at.mtr.sewfar.data.ProjectRepository
 import at.mtr.sewfar.data.SettingsRepository
 import at.mtr.sewfar.data.TimeSource
@@ -41,10 +42,11 @@ class AppContainer(private val context: Context) {
 
     val photoFiles: PhotoFiles by lazy { PhotoFiles(context.filesDir) }
     val photos: PhotoRepository by lazy {
-        PhotoRepository(database, deleter, photoFiles, time) {
+        PhotoRepository(database, deleter, photoFiles, time, projects) {
             if (settings.finePhotos.first()) ImageProcessor.FineEdge else ImageProcessor.MaxEdge
         }
     }
+    val projectPage: ProjectPage by lazy { ProjectPage(database, projects, persons, patterns, machines, photos) }
     val photoLoader: PhotoLoader by lazy { PhotoLoader(photoFiles) }
 
     val backup: BackupRepository by lazy {

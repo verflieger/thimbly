@@ -32,7 +32,9 @@ class TestDb {
     val machines = MachineRepository(db, deleter, time)
 
     val photoFiles = PhotoFiles(File(ApplicationProvider.getApplicationContext<android.content.Context>().cacheDir, "test-${Ids.random()}"))
-    val photos = PhotoRepository(db, deleter, photoFiles, time)
+    val photos = PhotoRepository(db, deleter, photoFiles, time, projects)
+
+    val projectPage = ProjectPage(db, projects, persons, patterns, machines, photos)
 
     /** What the app runs after the Undo window: purge deleted rows, then files left without a row. */
     suspend fun purge() {

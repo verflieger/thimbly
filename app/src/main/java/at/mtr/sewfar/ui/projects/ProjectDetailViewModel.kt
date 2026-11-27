@@ -1,54 +1,25 @@
 package at.mtr.sewfar.ui.projects
 
-import androidx.room.withTransaction
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import at.mtr.sewfar.AppContainer
-import at.mtr.sewfar.data.coverOf
+import at.mtr.sewfar.data.ProjectDetailState
 import at.mtr.sewfar.data.patternCovers
 import at.mtr.sewfar.data.db.DeletionToken
-import at.mtr.sewfar.data.db.LinkedPattern
-import at.mtr.sewfar.data.db.LinkedSetup
-import at.mtr.sewfar.data.db.LinkedTag
 import at.mtr.sewfar.data.db.MachineEntity
 import at.mtr.sewfar.data.db.PatternEntity
 import at.mtr.sewfar.data.db.PersonEntity
-import at.mtr.sewfar.data.db.PhotoEntity
-import at.mtr.sewfar.data.db.ProjectEntity
 import at.mtr.sewfar.data.db.SetupRow
-import at.mtr.sewfar.data.db.TimeEntryEntity
 import at.mtr.sewfar.domain.MachineType
-import at.mtr.sewfar.domain.Measurements
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.domain.ProjectStatus
 import java.io.InputStream
 import java.time.LocalDate
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-
-data class ProjectDetailState(
-    val loaded: Boolean = false,
-    val project: ProjectEntity? = null,
-    val person: PersonEntity? = null,
-    val patterns: List<LinkedPattern> = emptyList(),
-    val setups: List<LinkedSetup> = emptyList(),
-    val tags: List<LinkedTag> = emptyList(),
-    val time: List<TimeEntryEntity> = emptyList(),
-    val photos: List<PhotoEntity> = emptyList(),
-    /** The person's measurements: the newest, or once Done, those valid on the finish date (SPEC 3.2). */
-    val measurements: Measurements? = null,
-) {
-    val coverPhotoId: String? get() = coverOf(photos, project?.coverPhotoId)
-    val running: TimeEntryEntity? get() = time.firstOrNull { it.endedAt == null }
-}
 
 /** Choices for the pickers on the project screen. */
 data class Choices(
@@ -67,22 +38,8 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     private val projects = container.projects
     private val app = container.appScope
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val measurements = projects.observe(id).map { it?.personId to it?.finishedOn }.distinctUntilChanged()
-        .flatMapLatest { (personId, finishedOn) -> personId?.let { container.persons.observeMeasurements(it, finishedOn) } ?: flowOf(null) }
-
-    val state: StateFlow<ProjectDetailState> = combine(
-        projects.observe(id),
-        container.persons.observeAll(),
-        combine(projects.observePatterns(id), projects.observeSetups(id), projects.observeTags(id)) { p, s, t -> Triple(p, s, t) },
-        combine(projects.observeTime(id), measurements) { t, m -> t to m },
-        container.photos.observe(PhotoOwner.PROJECT, id),
-    ) { project, persons, (patterns, setups, tags), (time, measurements), photos ->
-        ProjectDetailState(
-            loaded = true, project = project, person = persons.firstOrNull { it.id == project?.personId },
-            patterns = patterns, setups = setups, tags = tags, time = time, photos = photos, measurements = measurements,
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProjectDetailState())
+    val state: StateFlow<ProjectDetailState> = container.projectPage.state(id)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProjectDetailState())
 
     val choices: StateFlow<Choices> = combine(
         combine(container.persons.observeAll(), container.patterns.observeAll()) { p, pt -> p to pt },
@@ -106,13 +63,10 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     fun setSize(text: String) = write { projects.edit(id) { it.copy(size = text) } }
     fun setFabric(text: String) = write { projects.edit(id) { it.copy(fabric = text) } }
     fun setPerson(personId: String?) = write { projects.edit(id) { it.copy(personId = personId) } }
-    fun createPerson(personName: String) = write {
-        val personId = container.persons.create(personName)
-        projects.edit(id) { it.copy(personId = personId) }
-    }
+    fun createPerson(personName: String) = write { container.projectPage.createPerson(id, personName) }
 
     fun addPattern(patternId: String) = write { projects.addPattern(id, patternId) }
-    fun createPattern(patternName: String) = write { projects.addPattern(id, container.patterns.create(patternName)) }
+    fun createPattern(patternName: String) = write { container.projectPage.createPattern(id, patternName) }
     suspend fun removePattern(linkId: String): DeletionToken? = run { projects.removePattern(linkId) }
 
     fun addTag(name: String) = write { projects.addTag(id, name) }
@@ -124,13 +78,7 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     /** Creates a setup on [machineId] (or on a new machine named [newMachineName] of [newMachineType]), links it and returns its ID. */
     suspend fun createSetup(
         title: String, machineId: String?, newMachineName: String? = null, newMachineType: MachineType = MachineType.SEWING_MACHINE,
-    ): String = run {
-        // One transaction: a crash never leaves an empty machine or an unlinked setting.
-        container.database.withTransaction {
-            val machine = machineId ?: container.machines.create(newMachineName.orEmpty(), newMachineType)
-            container.machines.createSetup(machine, title).also { projects.addSetup(id, it) }
-        }
-    }
+    ): String = run { container.projectPage.createSetup(id, title, machineId, newMachineName, newMachineType) }
 
     suspend fun removeSetup(linkId: String): DeletionToken? = run { projects.removeSetup(linkId) }
 

@@ -25,6 +25,7 @@ class PhotoRepository(
     private val deleter: SoftDeleter,
     private val files: PhotoFiles,
     private val time: TimeSource,
+    private val projects: ProjectRepository,
     /** Long edge for new photos (SPEC 3.5): normal or fine, from the settings. */
     private val maxEdge: suspend () -> Int = { ImageProcessor.MaxEdge },
 ) {
@@ -58,12 +59,10 @@ class PhotoRepository(
 
     /** Pins the cover of a project or pattern (SPEC 3.5); null returns to the automatic cover. */
     suspend fun setCover(ownerType: PhotoOwner, ownerId: String, photoId: String?) = db.withTransaction {
-        val now = time.nowMillis()
         when (ownerType) {
-            PhotoOwner.PROJECT -> db.projectDao().get(ownerId)
-                ?.let { db.projectDao().update(it.copy(coverPhotoId = photoId, updatedAt = now, lastActivityAt = now)) }
+            PhotoOwner.PROJECT -> projects.edit(ownerId) { it.copy(coverPhotoId = photoId) }
             PhotoOwner.PATTERN -> db.patternDao().get(ownerId)
-                ?.let { db.patternDao().update(it.copy(coverPhotoId = photoId, updatedAt = now)) }
+                ?.let { db.patternDao().update(it.copy(coverPhotoId = photoId, updatedAt = time.nowMillis())) }
         }
     }
 

@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import at.mtr.sewfar.data.ProjectDetailState
 import at.mtr.sewfar.R
 import at.mtr.sewfar.domain.Durations
 import at.mtr.sewfar.domain.ProjectStatus
