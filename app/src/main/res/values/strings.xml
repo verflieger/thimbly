@@ -134,7 +134,7 @@
     <string name="picker_choose_setup">Machine setting</string>
     <string name="picker_create_setup">New setting “%1$s”</string>
     <string name="project_add_pattern">Pattern</string>
-    <string name="project_add_person">For someone</string>
+    <string name="project_add_person">Person</string>
     <string name="project_add_setup">Machine setting</string>
     <string name="project_finished_on">Finished %1$s</string>
     <string name="project_size">Size</string>
