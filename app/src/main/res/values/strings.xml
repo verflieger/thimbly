@@ -180,9 +180,9 @@
     <string name="project_rename">Rename project</string>
     <string name="pattern_type_question">What is it?</string>
     <string name="no_type">No type</string>
-    <string name="project_tags">Tags</string>
-    <string name="project_add_tag">Tag</string>
-    <string name="picker_choose_tag">Choose tag</string>
+    <string name="project_tags">Labels</string>
+    <string name="project_add_tag">Label</string>
+    <string name="picker_choose_tag">Choose label</string>
     <string name="garment_dress">Dress</string>
     <string name="garment_skirt">Skirt</string>
     <string name="garment_top">Top</string>
@@ -196,5 +196,10 @@
         <item>Alteration</item>
         <item>Gift</item>
         <item>Costume</item>
+        <item>Toile</item>
+        <item>Quick sew</item>
     </string-array>
+    <string name="action_done">Done</string>
+    <string name="tag_search_hint">Search or new label</string>
+    <string name="tag_rename">Rename label</string>
 </resources>

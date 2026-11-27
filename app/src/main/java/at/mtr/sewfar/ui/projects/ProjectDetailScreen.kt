@@ -71,7 +71,10 @@ private sealed interface Picking {
     data object Pattern : Picking
     data object Person : Picking
     data object Setup : Picking
-    data object Tag : Picking
+    /** The label picker; [atOpen] = the project's labels when it opened (plus ones created there), kept listed. */
+    data class Tag(val atOpen: List<String>) : Picking
+    /** Renaming label [name] on every project, then back to the picker [back]. */
+    data class RenameTag(val name: String, val back: Tag) : Picking
     /** A new setup named [title] needs a machine. */
     data class SetupMachine(val title: String) : Picking
     /** The new machine [machineName] for setup [title] needs its type, which decides the setting's fields (SPEC 5.2). */
@@ -196,8 +199,8 @@ fun ProjectDetailScreen(
                 Links(stringResource(R.string.project_tags), stringResource(R.string.project_add_tag), "addTag",
                     state.tags.map { Triple(it.linkId, it.name, it.linkId) },
                     onOpen = {}, onRemove = { link -> removeWithUndo { viewModel.removeTag(link) } },
-                    onAdd = { picking = Picking.Tag })
-            } else addChips += { AddChip(stringResource(R.string.project_add_tag), "addTag") { picking = Picking.Tag } }
+                    onAdd = { picking = Picking.Tag(state.tags.map { it.name }) })
+            } else addChips += { AddChip(stringResource(R.string.project_add_tag), "addTag") { picking = Picking.Tag(emptyList()) } }
 
             if (project.notes.isNotBlank()) {
                 TextBlock(stringResource(R.string.project_notes), project.notes, "notes") { picking = Picking.Notes }
@@ -238,19 +241,39 @@ fun ProjectDetailScreen(
                 onDismiss = { picking = null },
             )
         }
-        Picking.Tag -> {
+        is Picking.Tag -> {
             // Tags in use plus the starter suggestions (SPEC 3.2); one entry per name, ignoring case.
             val own = state.tags.map { SearchText.fold(it.name) }.toSet()
-            val names = (choices.tags + stringArrayResource(R.array.tag_suggestions)).distinctBy { SearchText.fold(it) }
+            // Ticked labels come first, above a line (EntityPicker). The project's labels at opening stay listed, so one
+            // unticked by mistake (and now unused) can be ticked again.
+            val names = (choices.tags + p.atOpen + stringArrayResource(R.array.tag_suggestions)).distinctBy { SearchText.fold(it) }
+                .sortedBy { SearchText.fold(it) }
+            val inUse = choices.tags.map { SearchText.fold(it) }.toSet()
+            // Several at once: a tap ticks (adds) or unticks (removes, no Undo: tick again) right away.
             EntityPicker(
                 title = stringResource(R.string.picker_choose_tag),
-                items = names.filter { SearchText.fold(it) !in own }.map { PickerItem(it, it) },
-                existingNames = names,
-                onPick = { name -> name?.let(viewModel::addTag); picking = null },
-                onCreate = { name -> viewModel.addTag(name); picking = null },
+                items = names.map { PickerItem(it, it) },
+                selected = names.filter { SearchText.fold(it) in own }.toSet(),
+                onPick = { name ->
+                    val link = state.tags.firstOrNull { SearchText.fold(it.name) == SearchText.fold(name.orEmpty()) }
+                    if (link != null) scope.launch { viewModel.removeTag(link.linkId) } else name?.let(viewModel::addTag)
+                },
+                onCreate = { name -> picking = p.copy(atOpen = p.atOpen + name); viewModel.addTag(name) },
                 onDismiss = { picking = null },
+                searchHint = stringResource(R.string.tag_search_hint),
+                // Labels in use can be renamed (a typo); unused suggestions have nothing to fix.
+                editable = names.filter { SearchText.fold(it) in inUse }.toSet(),
+                onEdit = { name -> picking = Picking.RenameTag(name, p) },
             )
         }
+        is Picking.RenameTag -> TextDialog(
+            stringResource(R.string.tag_rename), stringResource(R.string.tag_rename), initial = p.name,
+            onSave = { name ->
+                viewModel.renameTag(p.name, name)
+                picking = p.back.copy(atOpen = p.back.atOpen.map { if (SearchText.fold(it) == SearchText.fold(p.name)) name.trim() else it })
+            },
+            onDismiss = { picking = p.back },
+        )
         Picking.Person -> EntityPicker(
             title = stringResource(R.string.picker_choose_person),
             items = choices.persons.map { PickerItem(it.id, it.name) },

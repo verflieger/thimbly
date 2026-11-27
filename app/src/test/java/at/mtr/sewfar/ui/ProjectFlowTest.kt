@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -16,6 +17,7 @@ import at.mtr.sewfar.MainActivity
 import at.mtr.sewfar.SewFarApp
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -106,14 +108,19 @@ class ProjectFlowTest {
             pageOpen()
             if (name == "Jeans") {
                 compose.onNodeWithTag("addTag").performScrollTo().performClick()
-                compose.onNodeWithText("Repair").performClick()
-                waitFor("Tags")
+                compose.onNodeWithTag("pick-Alteration").performClick()
+                compose.onNodeWithTag("pick-Gift").performClick() // several in one go
+                // Ticked labels move above the others (SPEC 3.2).
+                assertTrue(compose.onNodeWithTag("pick-Gift").getBoundsInRoot().top < compose.onNodeWithTag("pick-Costume").getBoundsInRoot().top)
+                compose.onNodeWithTag("pickerDone").performClick()
+                waitFor("Labels")
+                compose.onNodeWithText("Gift").assertExists()
             }
             back()
             waitFor("Planned")
         }
         compose.onNodeWithContentDescription("Search").performClick()
-        compose.onNodeWithTag("suggest-Repair").performClick()
+        compose.onNodeWithTag("suggest-Alteration").performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Skirt")).fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithText("Jeans").assertExists()
     }
@@ -125,6 +132,7 @@ class ProjectFlowTest {
         compose.onNodeWithTag("add").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Raglan")
         compose.onNodeWithTag("dialogSave").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("edit-garmentType").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("edit-garmentType").performClick()
         compose.onNodeWithTag("type-TOP").performClick()
         waitFor("Top")

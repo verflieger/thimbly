@@ -133,6 +133,24 @@ class ProjectRepository(private val db: SewFarDatabase, private val deleter: Sof
         )
     }
 
+    /**
+     * Renames label [old] on every project (SPEC 3.2), e.g. to fix a typo. A new spelling of the same name replaces it
+     * in place; another name is added like [addTag] and the old link removed, so an existing label merges.
+     */
+    suspend fun renameTag(old: String, new: String) = db.withTransaction {
+        val target = new.trim().takeIf { it.isNotEmpty() } ?: return@withTransaction
+        val now = time.nowMillis()
+        for (row in dao.allTags().filter { SearchText.fold(it.name) == SearchText.fold(old) && it.name != target }) {
+            if (SearchText.fold(row.name) == SearchText.fold(target)) {
+                dao.updateTag(row.copy(name = target, updatedAt = now))
+                dao.touch(row.projectId, now)
+            } else {
+                deleter.delete("project_tag", row.id)
+                addTag(row.projectId, target)
+            }
+        }
+    }
+
     suspend fun removeTag(linkId: String): DeletionToken? = db.withTransaction {
         val link = dao.getTag(linkId) ?: return@withTransaction null
         deleter.delete("project_tag", linkId).also { dao.touch(link.projectId, time.nowMillis()) }

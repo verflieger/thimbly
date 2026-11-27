@@ -180,6 +180,23 @@ class ProjectRepositoryTest {
         assertEquals(mapOf(project to listOf("Gift")), t.projects.observeAllTags().first())
     }
 
+    /** SPEC 3.2: renaming a label changes it on every project; a case fix stays in place, another name merges. */
+    @Test
+    fun renamingALabelFixesItEverywhereAndMerges() = runTest {
+        val a = t.projects.create("A")
+        val b = t.projects.create("B")
+        t.projects.addTag(a, "Geshenk")
+        t.projects.addTag(b, "Geshenk")
+        t.projects.addTag(b, "Geschenk")
+        t.projects.renameTag("Geshenk", "Geschenk")
+        assertEquals(listOf("Geschenk"), t.projects.observeTags(a).first().map { it.name })
+        assertEquals(listOf("Geschenk"), t.projects.observeTags(b).first().map { it.name }) // merged, not twice
+        t.projects.renameTag("geschenk", "GESCHENK")
+        assertEquals(mapOf(a to listOf("GESCHENK"), b to listOf("GESCHENK")), t.projects.observeAllTags().first())
+        t.projects.renameTag("GESCHENK", " ")
+        assertEquals(listOf("GESCHENK"), t.projects.observeTags(a).first().map { it.name }) // blank does nothing
+    }
+
     @Test
     fun relinkingARemovedSettingRevivesItsRow() = runTest {
         val project = t.projects.create("A")

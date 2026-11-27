@@ -179,9 +179,9 @@
     <string name="project_rename">Projekt umbenennen</string>
     <string name="pattern_type_question">Was ist es?</string>
     <string name="no_type">Ohne Art</string>
-    <string name="project_tags">Tags</string>
-    <string name="project_add_tag">Tag</string>
-    <string name="picker_choose_tag">Tag wählen</string>
+    <string name="project_tags">Labels</string>
+    <string name="project_add_tag">Label</string>
+    <string name="picker_choose_tag">Label wählen</string>
     <string name="garment_dress">Kleid</string>
     <string name="garment_skirt">Rock</string>
     <string name="garment_top">Oberteil</string>
@@ -195,5 +195,10 @@
         <item>Änderung</item>
         <item>Geschenk</item>
         <item>Kostüm</item>
+        <item>Probeteil</item>
+        <item>Schnell genäht</item>
     </string-array>
+    <string name="action_done">Fertig</string>
+    <string name="tag_search_hint">Suchen oder neues Label</string>
+    <string name="tag_rename">Label umbenennen</string>
 </resources>

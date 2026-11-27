@@ -50,7 +50,7 @@ screens, fields and tabs).
   - Every text field has its label fixed above it (as on the read-only page), never floating inside, so fields
     keep their size when focused. Search fields have only a placeholder.
 - Pickers (pattern, person, machine setting, machine, tag) have a search field and a "Create “…”" row that creates the
-  item from the typed name.
+  item from the typed name. A tap picks and closes; the tag picker picks several (checkboxes, Done).
 - Back: the system back gesture or the arrow in the top bar.
 
 ## 3. Projects
@@ -61,7 +61,7 @@ screens, fields and tabs).
   running timer comes first, then by last activity (any change to the project or its links, time or photos).
 - A card shows the cover photo, name, first pattern and person, total time, and a start/stop timer button.
 - Search matches name, person, pattern names, tags, size, fabric and notes. While the search field is empty it shows
-  the tags and people of the projects as chips ("Tags", "People"); a tap searches for one, so filtering is the search
+  the tags and people of the projects as chips ("Labels", "People"); a tap searches for one, so filtering is the search
   (no separate filter row, 2026-11-27).
 - "New project" asks for the name, creates a Planned project and opens it.
 
@@ -80,8 +80,13 @@ One scrolling page. The top bar shows the name with ✎ (rename dialog) and dele
    (none if there are none). Tap opens the person.
 6. Machine settings (chips "Setting · Machine"; tap opens it, × unlinks, "+ Machine setting" picks or creates one,
    §5.2).
-7. Tags (chips; × removes, "+ Tag" picks a tag in use or one of the starter suggestions Repair, Upcycling,
-   Alteration, Gift, Costume, or creates one from the typed name; a tap on a tag does nothing). Tags have no list of
+7. Tags, shown as "Labels" (chips; × removes with Undo; "+ Label" opens the picker in its several-at-once mode: the
+   labels in use and the starter suggestions Repair, Upcycling, Alteration, Gift, Costume, Toile, Quick sew,
+   each with a checkbox. The ticked labels come first, then a line, then the others, both alphabetical (ticking moves
+   a label above the line); every row has the same height. The search field
+   says "Search or new label"; a label in use has ✎, which opens "Rename label" (in place of the picker, back to it
+   after Save) and renames it on every project, merging with an existing label of that name; a tap ticks or unticks at once (no Undo: tick again), typing offers "Create “…”", Done closes; a tap
+   on a chip does nothing). Tags have no list of
    their own: the names in use on any project are the tags, so an unused one disappears.
 8. Notes (shown as text; "Add notes" or ✎ opens a text dialog).
 9. Started / finished dates (read-only).

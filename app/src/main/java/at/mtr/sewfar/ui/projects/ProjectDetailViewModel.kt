@@ -116,6 +116,7 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     suspend fun removePattern(linkId: String): DeletionToken? = run { projects.removePattern(linkId) }
 
     fun addTag(name: String) = write { projects.addTag(id, name) }
+    fun renameTag(old: String, new: String) = write { projects.renameTag(old, new) }
     suspend fun removeTag(linkId: String): DeletionToken? = run { projects.removeTag(linkId) }
 
     fun addSetup(setupId: String) = write { projects.addSetup(id, setupId) }

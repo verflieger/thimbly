@@ -168,6 +168,10 @@ interface ProjectDao {
     @Query("SELECT * FROM project_tag WHERE id = :id AND deletedAt IS NULL")
     suspend fun getTag(id: String): ProjectTagEntity?
 
+    /** Live tag rows of all projects, for renaming a label. */
+    @Query("SELECT * FROM project_tag WHERE deletedAt IS NULL")
+    suspend fun allTags(): List<ProjectTagEntity>
+
     /** All tags of a project, including tombstones, for revival (SPEC 1). */
     @Query("SELECT * FROM project_tag WHERE projectId = :projectId")
     suspend fun tagsAny(projectId: String): List<ProjectTagEntity>
