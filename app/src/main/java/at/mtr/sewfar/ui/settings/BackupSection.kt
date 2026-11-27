@@ -58,7 +58,7 @@ fun BackupSection(container: AppContainer) {
     val backup = container.backup
     val settings = container.settings
     // Loading sentinel, so the switch doesn't flicker off-then-on while the setting is read.
-    val folderSetting by settings.autoBackupFolder.map { it ?: NoFolder }.collectAsStateWithLifecycle(initialValue = Loading)
+    val folderSetting by remember(settings) { settings.autoBackupFolder.map { it ?: NoFolder } }.collectAsStateWithLifecycle(initialValue = Loading)
     val folder = folderSetting.takeIf { it != Loading && it != NoFolder }
     val lastAt by settings.lastAutoBackupAt.collectAsStateWithLifecycle(initialValue = null)
     val lastError by settings.lastAutoBackupError.collectAsStateWithLifecycle(initialValue = null)

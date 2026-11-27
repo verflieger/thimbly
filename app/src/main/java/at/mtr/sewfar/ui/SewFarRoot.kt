@@ -147,6 +147,8 @@ fun SewFarRoot(container: AppContainer) {
                 onDismiss = { longStop = null },
             )
         } }
+        // Insets are 0 on purpose: each screen has its own Scaffold that handles them.
+        @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
         Scaffold(contentWindowInsets = WindowInsets(0), snackbarHost = { SnackbarHost(snackbarHost) }) { _ ->
             NavHost(
                 nav,
@@ -250,10 +252,10 @@ fun SewFarRoot(container: AppContainer) {
                     val route = entry.toRoute<PhotoViewerRoute>()
                     val owner = PhotoOwner.valueOf(route.ownerType)
                     val photos by container.photos.observe(owner, route.ownerId).collectAsState(initial = null)
-                    val pinnedId by (
+                    val pinnedId by remember(route.ownerId) {
                         if (owner == PhotoOwner.PROJECT) container.projects.observe(route.ownerId).map { it?.coverPhotoId }
                         else container.patterns.observe(route.ownerId).map { it?.coverPhotoId }
-                        ).collectAsState(initial = null)
+                    }.collectAsState(initial = null)
                     val messages = LocalMessages.current
                     val deletedText = stringResource(R.string.photo_deleted)
                     val scope = rememberCoroutineScope()

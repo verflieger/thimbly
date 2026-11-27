@@ -15,7 +15,7 @@ class ManifestTest {
     fun forbiddenPermissionsAreRemoved() {
         for (permission in listOf("INTERNET", "ACCESS_NETWORK_STATE", "CAMERA")) {
             val removeDirective = Regex(
-                """<uses-permission\s+android:name="android\.permission\.$permission"\s+tools:node="remove"\s*/>""",
+                """<uses-permission\s+android:name="android\.permission\.$permission"\s+tools:node="remove"[^>]*/>""",
             )
             assertTrue("$permission must be declared with tools:node=\"remove\"", removeDirective.containsMatchIn(manifest))
         }

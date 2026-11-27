@@ -22,6 +22,7 @@ Gradle needs a JDK 17+ (e.g. Android Studio's bundled JBR via `JAVA_HOME`):
 ./gradlew assembleDebug                      # debug APK
 ./gradlew installDebug                       # install on attached phone / emulator
 ./gradlew testDebugUnitTest                  # all unit tests (JVM + Robolectric)
+./gradlew lintDebug                          # Android Lint, must report 0 errors
 ./gradlew testDebugUnitTest --tests 'at.mtr.sewfar.ui.NavigationTest'   # one class
 ```
 
