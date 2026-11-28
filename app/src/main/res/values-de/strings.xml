@@ -184,7 +184,9 @@
     <string name="picker_choose_tag">Label wählen</string>
     <string name="garment_dress">Kleid</string>
     <string name="garment_skirt">Rock</string>
-    <string name="garment_top">Oberteil</string>
+    <string name="garment_t_shirt">T-Shirt</string>
+    <string name="garment_hoodie">Hoodie &amp; Pullover</string>
+    <string name="garment_top">Bluse &amp; Hemd</string>
     <string name="garment_trousers">Hose</string>
     <string name="garment_jacket">Jacke</string>
     <string name="garment_bag">Tasche</string>

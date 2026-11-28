@@ -30,6 +30,8 @@ val GarmentType.label: Int
     get() = when (this) {
         GarmentType.DRESS -> R.string.garment_dress
         GarmentType.SKIRT -> R.string.garment_skirt
+        GarmentType.T_SHIRT -> R.string.garment_t_shirt
+        GarmentType.HOODIE -> R.string.garment_hoodie
         GarmentType.TOP -> R.string.garment_top
         GarmentType.TROUSERS -> R.string.garment_trousers
         GarmentType.JACKET -> R.string.garment_jacket

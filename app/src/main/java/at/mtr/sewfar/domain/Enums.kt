@@ -8,8 +8,11 @@ enum class ProjectStatus { PLANNED, IN_PROGRESS, DONE }
 /** SPEC 3.5 */
 enum class PhotoOwner { PROJECT, PATTERN }
 
-/** SPEC 4.1: what a pattern sews. TOP includes shirts, JACKET coats, BAG accessories. Declaration order = list order. */
-enum class GarmentType { DRESS, SKIRT, TOP, TROUSERS, JACKET, BAG, OTHER }
+/**
+ * SPEC 4.1: what a pattern sews. TOP is shown as "Blouse & shirt" since 2026-11-28 (T_SHIRT and HOODIE split off),
+ * JACKET includes coats, BAG accessories. Declaration order = list order; stored by name, so inserting is safe.
+ */
+enum class GarmentType { DRESS, SKIRT, T_SHIRT, HOODIE, TOP, TROUSERS, JACKET, BAG, OTHER }
 
 /** SPEC 4.3. Declaration order = chip order. */
 enum class PurchaseCategory { FABRIC, NOTIONS, PATTERNS, TOOLS, MACHINES, OTHER }

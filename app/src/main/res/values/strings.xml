@@ -185,7 +185,9 @@
     <string name="picker_choose_tag">Choose label</string>
     <string name="garment_dress">Dress</string>
     <string name="garment_skirt">Skirt</string>
-    <string name="garment_top">Top</string>
+    <string name="garment_t_shirt">T-shirt</string>
+    <string name="garment_hoodie">Hoodie &amp; sweater</string>
+    <string name="garment_top">Blouse &amp; shirt</string>
     <string name="garment_trousers">Trousers</string>
     <string name="garment_jacket">Jacket</string>
     <string name="garment_bag">Bag</string>

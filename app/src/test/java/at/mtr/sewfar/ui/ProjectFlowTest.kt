@@ -55,9 +55,9 @@ class ProjectFlowTest {
         compose.onNodeWithTag("pickerSearch").performTextInput("Raglan")
         compose.onNodeWithText("Create “Raglan”").performClick()
         compose.onNodeWithTag("dialogText").assertTextEquals("Raglan") // New pattern dialog, type optional (SPEC 4.1)
-        compose.onNodeWithTag("type-TOP").performClick()
+        compose.onNodeWithTag("type-T_SHIRT").performClick()
         compose.onNodeWithTag("dialogSave").performClick()
-        waitFor("Raglan · Top")
+        waitFor("Raglan · T-shirt")
 
         // A machine setting with a new machine, straight from the project; its form opens for the values.
         compose.onNodeWithTag("addSetup").performScrollTo().performClick()
@@ -139,12 +139,12 @@ class ProjectFlowTest {
         compose.onNodeWithTag("add").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Raglan")
         compose.onNodeWithTag("type-DRESS").performClick()
-        compose.onNodeWithTag("type-TOP").performClick()
+        compose.onNodeWithTag("type-HOODIE").performScrollTo().performClick()
         compose.onNodeWithTag("dialogSave").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("edit-garmentType").fetchSemanticsNodes().isNotEmpty() }
-        waitFor("Top")
+        waitFor("Hoodie & sweater")
         back()
-        waitFor("Top (1)")
+        waitFor("Hoodie & sweater (1)")
         compose.onNodeWithText("Raglan").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("edit-garmentType").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("edit-garmentType").performClick()

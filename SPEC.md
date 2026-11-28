@@ -159,12 +159,13 @@ from an imported older backup) is appended to the notes.
 Name, type, designer, notes, photos, and "Used in" (projects linking it). Deleting a pattern removes it from its
 projects (with Undo).
 
-**Type (2026-11-27):** what the pattern sews, one of dress, skirt, top (also shirts), trousers, jacket (also coats),
-bag (also accessories), other; who it is for comes from the person. Optional: the "New pattern" dialog (from "+" and
+**Type (2026-11-27):** what the pattern sews, one of dress, skirt, T-shirt, hoodie & sweater, blouse & shirt ("Top" until
+2026-11-28, so older patterns typed that way may be other tops), trousers, jacket (also coats), bag (also
+accessories), other; who it is for comes from the person. Optional: the "New pattern" dialog (from "+" and
 from a project's "Create “…”") shows the type chips under the name, none preselected, a second tap deselects
 (2026-11-28); without one the page shows "Tap to add". Shown read-only, a tap or ✎ opens the choice dialog
 "What is it?"; it can be changed any time but not cleared. The Library pattern list is grouped by
-type like the home list by status ("Top (3)", not collapsible) once any pattern has a type; patterns without one come
+type like the home list by status ("Dress (3)", not collapsible) once any pattern has a type; patterns without one come
 last under "No type". A project shows it in its pattern chip.
 
 **From projects (2026-11-26):** below its own photos, the pattern page shows a read-only row of all photos of the
