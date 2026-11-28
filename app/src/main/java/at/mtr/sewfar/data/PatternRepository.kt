@@ -7,6 +7,7 @@ import at.mtr.sewfar.data.db.ProjectPhoto
 import at.mtr.sewfar.data.db.ProjectRef
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.SoftDeleter
+import at.mtr.sewfar.domain.GarmentType
 import at.mtr.sewfar.domain.Ids
 import kotlinx.coroutines.flow.Flow
 
@@ -19,10 +20,10 @@ class PatternRepository(private val db: SewFarDatabase, private val deleter: Sof
     fun observeProjects(id: String): Flow<List<ProjectRef>> = dao.observeProjects(id)
     fun observeProjectPhotos(id: String): Flow<List<ProjectPhoto>> = dao.observeProjectPhotos(id)
 
-    suspend fun create(name: String = ""): String {
+    suspend fun create(name: String = "", type: GarmentType? = null): String {
         val id = Ids.random()
         val now = time.nowMillis()
-        dao.insert(PatternEntity(id, name.trim(), createdAt = now, updatedAt = now))
+        dao.insert(PatternEntity(id, name.trim(), garmentType = type, createdAt = now, updatedAt = now))
         return id
     }
 

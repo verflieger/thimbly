@@ -9,6 +9,7 @@ import at.mtr.sewfar.data.db.PhotoEntity
 import at.mtr.sewfar.data.db.ProjectEntity
 import at.mtr.sewfar.data.db.SewFarDatabase
 import at.mtr.sewfar.data.db.TimeEntryEntity
+import at.mtr.sewfar.domain.GarmentType
 import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.Measurements
 import at.mtr.sewfar.domain.PhotoOwner
@@ -68,8 +69,8 @@ class ProjectPage(
         projects.edit(id) { it.copy(personId = personId) }
     }
 
-    suspend fun createPattern(id: String, name: String) = db.withTransaction {
-        projects.addPattern(id, patterns.create(name))
+    suspend fun createPattern(id: String, name: String, type: GarmentType?) = db.withTransaction {
+        projects.addPattern(id, patterns.create(name, type))
     }
 
     /** Creates a setup on [machineId] (or on a new machine named [newMachineName] of [newMachineType]), links it and returns its ID. */

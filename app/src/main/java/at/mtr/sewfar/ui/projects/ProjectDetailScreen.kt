@@ -51,6 +51,7 @@ import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.domain.ProjectStatus
 import at.mtr.sewfar.ui.common.DetailScaffold
 import at.mtr.sewfar.ui.library.NewMachineDialog
+import at.mtr.sewfar.ui.library.NewPatternDialog
 import at.mtr.sewfar.ui.common.EditHeader
 import at.mtr.sewfar.ui.common.EntityPicker
 import at.mtr.sewfar.ui.common.LocalMessages
@@ -79,6 +80,8 @@ private sealed interface Picking {
     data class SetupMachine(val title: String) : Picking
     /** "New machine" dialog for setup [title], with the typed [machineName] filled in (SPEC 5.2). */
     data class MachineKind(val title: String, val machineName: String) : Picking
+    /** "New pattern" dialog with the typed [name] filled in (SPEC 4.1). */
+    data class NewPattern(val name: String) : Picking
     data object Rename : Picking
     data object Size : Picking
     data object Fabric : Picking
@@ -237,7 +240,7 @@ fun ProjectDetailScreen(
                 // Typing a linked pattern's name must not offer a duplicate.
                 existingNames = choices.patterns.map { it.name },
                 onPick = { id -> id?.let(viewModel::addPattern); picking = null },
-                onCreate = { name -> viewModel.createPattern(name); picking = null },
+                onCreate = { name -> picking = Picking.NewPattern(name) },
                 onDismiss = { picking = null },
             )
         }
@@ -327,6 +330,11 @@ fun ProjectDetailScreen(
                     withContext(Dispatchers.Main) { onOpenNewSetup(id) }
                 }
             },
+            onDismiss = { picking = null },
+        )
+        is Picking.NewPattern -> NewPatternDialog(
+            initialName = p.name,
+            onSave = { name, type -> viewModel.createPattern(name, type); picking = null },
             onDismiss = { picking = null },
         )
         Picking.Rename -> TextDialog(

@@ -99,17 +99,12 @@ class LibraryViewModel(private val container: AppContainer, initialTab: LibraryT
             container.purchases.create(name, category, priceCents, boughtOn)
         }
 
+    suspend fun createPattern(name: String, type: GarmentType?): String = container.runInApp { container.patterns.create(name, type) }
+
     /** A machine always gets its type picked (SPEC 5.1), so it has no default here. */
     suspend fun createMachine(name: String, type: MachineType): String = container.runInApp { container.machines.create(name, type) }
 
-    suspend fun create(tab: LibraryTab, name: String): String = container.runInApp {
-        when (tab) {
-            LibraryTab.PATTERNS -> container.patterns.create(name)
-            LibraryTab.MACHINES -> error("Machines are created with their type (createMachine)")
-            LibraryTab.PEOPLE -> container.persons.create(name)
-            LibraryTab.PURCHASES -> error("Purchases are created in their dialog")
-        }
-    }
+    suspend fun createPerson(name: String): String = container.runInApp { container.persons.create(name) }
 }
 
 /** Patterns, machines (with their settings) and people (SPEC 2, 4, 5). */
@@ -119,8 +114,9 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
     val tab by viewModel.tab.collectAsState()
     val items by viewModel.items.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    var naming by rememberSaveable { mutableStateOf(false) }
+    var creatingPerson by rememberSaveable { mutableStateOf(false) }
     var creatingMachine by rememberSaveable { mutableStateOf(false) }
+    var creatingPattern by rememberSaveable { mutableStateOf(false) }
     val purchases by viewModel.purchases.collectAsStateWithLifecycle()
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
     val currency = currencyOf(currencyCode)
@@ -149,7 +145,8 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
                     when (tab) {
                         LibraryTab.PURCHASES -> creatingPurchase = true
                         LibraryTab.MACHINES -> creatingMachine = true
-                        else -> naming = true
+                        LibraryTab.PATTERNS -> creatingPattern = true
+                        LibraryTab.PEOPLE -> creatingPerson = true
                     }
                 },
                 modifier = Modifier.testTag("add"),
@@ -188,15 +185,14 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
             }
         }
     }
-    if (naming) {
+    if (creatingPerson) {
         TextDialog(
-            stringResource(tab.addLabel), stringResource(tab.nameLabel),
+            stringResource(R.string.person_new), stringResource(R.string.person_name),
             onSave = { name ->
-                naming = false
-                val t = tab
-                scope.launch { val id = viewModel.create(t, name); withContext(Dispatchers.Main) { onOpen(t, id) } }
+                creatingPerson = false
+                scope.launch { val id = viewModel.createPerson(name); withContext(Dispatchers.Main) { onOpen(LibraryTab.PEOPLE, id) } }
             },
-            onDismiss = { naming = false },
+            onDismiss = { creatingPerson = false },
         )
     }
     if (creatingPurchase) {
@@ -212,6 +208,15 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
             onDismiss = { creatingPurchase = false },
         )
     }
+    if (creatingPattern) {
+        NewPatternDialog(
+            onSave = { name, type ->
+                creatingPattern = false
+                scope.launch { val id = viewModel.createPattern(name, type); withContext(Dispatchers.Main) { onOpen(LibraryTab.PATTERNS, id) } }
+            },
+            onDismiss = { creatingPattern = false },
+        )
+    }
     if (creatingMachine) {
         NewMachineDialog(
             onSave = { name, type ->
@@ -222,14 +227,6 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
         )
     }
 }
-
-private val LibraryTab.nameLabel: Int
-    get() = when (this) {
-        LibraryTab.PATTERNS -> R.string.pattern_name
-        LibraryTab.MACHINES -> R.string.machine_name
-        LibraryTab.PEOPLE -> R.string.person_name
-        LibraryTab.PURCHASES -> R.string.purchase_name
-    }
 
 private val LibraryTab.title: Int
     get() = when (this) {

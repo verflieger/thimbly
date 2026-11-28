@@ -20,10 +20,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -35,6 +38,8 @@ import androidx.lifecycle.viewModelScope
 import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
 import at.mtr.sewfar.ui.common.EditableChoice
+import at.mtr.sewfar.ui.common.ChipChoice
+import at.mtr.sewfar.ui.common.FormDialog
 import at.mtr.sewfar.domain.GarmentType
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.data.db.PatternEntity
@@ -185,6 +190,19 @@ fun <T : Any> RecordScreen(
 }
 
 // ---- Pattern (SPEC 4.1) ----
+
+/** "New pattern" (SPEC 2, 4.1): the name, and the type as optional chips (none preselected, a second tap deselects). */
+@Composable
+fun NewPatternDialog(initialName: String = "", onSave: (String, GarmentType?) -> Unit, onDismiss: () -> Unit) {
+    var name by rememberSaveable { mutableStateOf(initialName) }
+    var type by rememberSaveable { mutableStateOf<GarmentType?>(null) }
+    val focus = remember { FocusRequester() }
+    FormDialog(stringResource(R.string.pattern_new), canSave = name.isNotBlank(), onSave = { onSave(name.trim(), type) }, onDismiss = onDismiss) {
+        LabeledTextField(name, { name = it }, stringResource(R.string.pattern_name), fieldModifier = Modifier.focusRequester(focus).testTag("dialogText"))
+        ChipChoice(stringResource(R.string.pattern_type_question), GarmentType.entries, type, { it.label }, "type") { type = if (type == it) null else it }
+    }
+    LaunchedEffect(Unit) { if (initialName.isBlank()) runCatching { focus.requestFocus() } }
+}
 
 class PatternViewModel(container: AppContainer, private val id: String) : RecordViewModel<PatternEntity>(container) {
     private val repo = container.patterns

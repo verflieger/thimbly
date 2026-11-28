@@ -54,7 +54,10 @@ class ProjectFlowTest {
         compose.onNodeWithTag("addPattern").performScrollTo().performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Raglan")
         compose.onNodeWithText("Create “Raglan”").performClick()
-        waitFor("Raglan")
+        compose.onNodeWithTag("dialogText").assertTextEquals("Raglan") // New pattern dialog, type optional (SPEC 4.1)
+        compose.onNodeWithTag("type-TOP").performClick()
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("Raglan · Top")
 
         // A machine setting with a new machine, straight from the project; its form opens for the values.
         compose.onNodeWithTag("addSetup").performScrollTo().performClick()
@@ -129,19 +132,35 @@ class ProjectFlowTest {
         compose.onNodeWithText("Jeans").assertExists()
     }
 
-    /** SPEC 4.1: a pattern's type groups the Library pattern list. */
+    /** SPEC 4.1: the type picked in the New pattern dialog (or changed on the page) groups the Library pattern list. */
     @Test
     fun patternTypeGroupsTheLibrary() {
         compose.onNodeWithTag("library").performClick()
         compose.onNodeWithTag("add").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Raglan")
+        compose.onNodeWithTag("type-DRESS").performClick()
+        compose.onNodeWithTag("type-TOP").performClick()
         compose.onNodeWithTag("dialogSave").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("edit-garmentType").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("edit-garmentType").performClick()
-        compose.onNodeWithTag("type-TOP").performClick()
         waitFor("Top")
         back()
         waitFor("Top (1)")
+        compose.onNodeWithText("Raglan").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("edit-garmentType").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("edit-garmentType").performClick()
+        compose.onNodeWithTag("type-SKIRT").performClick()
+        waitFor("Skirt")
+        back()
+        waitFor("Skirt (1)")
+        // A second tap deselects: the type stays optional.
+        compose.onNodeWithTag("add").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("Tote")
+        compose.onNodeWithTag("type-BAG").performClick()
+        compose.onNodeWithTag("type-BAG").performClick()
+        compose.onNodeWithTag("dialogSave").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("edit-garmentType").fetchSemanticsNodes().isNotEmpty() }
+        back()
+        waitFor("No type (1)")
     }
 
     /** SPEC 2, 5.1: name and type in one dialog (Save waits for a type); the type is then shown read-only. */

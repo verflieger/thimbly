@@ -10,6 +10,7 @@ import at.mtr.sewfar.data.db.MachineEntity
 import at.mtr.sewfar.data.db.PatternEntity
 import at.mtr.sewfar.data.db.PersonEntity
 import at.mtr.sewfar.data.db.SetupRow
+import at.mtr.sewfar.domain.GarmentType
 import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.domain.ProjectStatus
@@ -66,7 +67,7 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
     fun createPerson(personName: String) = write { container.projectPage.createPerson(id, personName) }
 
     fun addPattern(patternId: String) = write { projects.addPattern(id, patternId) }
-    fun createPattern(patternName: String) = write { container.projectPage.createPattern(id, patternName) }
+    fun createPattern(patternName: String, type: GarmentType?) = write { container.projectPage.createPattern(id, patternName, type) }
     suspend fun removePattern(linkId: String): DeletionToken? = run { projects.removePattern(linkId) }
 
     fun addTag(name: String) = write { projects.addTag(id, name) }

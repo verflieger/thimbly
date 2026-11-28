@@ -37,10 +37,13 @@ screens, fields and tabs).
   if the labels don't fit), each a list with a "+" button. Patterns,
   machines, settings and people can also be created right from a project, so the Library is only needed to edit or
   delete them.
-- **Creating (one rule since 2026-11-28):** "+" (and "Create “…”" in a picker) opens one dialog with the record's
-  required fields and Save: the name for projects, patterns, people and settings; name and type for a machine; name,
-  price, category and date for a purchase. Every record then opens its page, where the optional fields (notes …) are
-  added; every record is edited on its page, the same way everywhere.
+- **Creating (one rule since 2026-11-28):** "+" (and "Create “…”" in a picker) opens one "New …" dialog with the
+  record's most important fields; only some of them are required, and Save waits for those. Today: projects, people
+  and settings: the name (required); pattern: name (required) and type (optional chips); machine: name and type (both
+  required, the type never changes); purchase: name, price, category and date (all required, category and date
+  pre-filled). From "+", the new record's page opens, where the remaining fields (notes …) are added; from a project's
+  picker the new record is linked and the project stays open (a new setting opens for its values, §5.2). Every
+  record is edited on its page, the same way everywhere.
 - **Deleting:** always the trash icon in a page's top bar, followed by the Undo snackbar (§6).
 - **Editing (2026-11-24, one way everywhere since 2026-11-25):** texts are edited in a dialog with Save; state
   changes apply at once.
@@ -51,11 +54,12 @@ screens, fields and tabs).
     form ✕ discards and back saves (while the form can't be saved, e.g. a measurement is not a number, back does
     nothing).
   - Status, timer, photos, linking or unlinking patterns, person, settings and tags, and a machine's or pattern's
-    type apply immediately. A type is picked from its fixed list in a dialog; a tap picks.
+    type (on its page) apply immediately. A type is picked from its fixed list in a dialog; a tap picks.
   - Every text field has its label fixed above it (as on the read-only page), never floating inside, so fields
     keep their size when focused. Search fields have only a placeholder.
 - Pickers (pattern, person, machine setting, machine, tag) have a search field and a "Create “…”" row that creates the
-  item from the typed name. A tap picks and closes; the tag picker picks several (checkboxes, Done).
+  item from the typed name, or opens its "New …" dialog (§2) with the name filled in when it has more fields (pattern,
+  machine). A tap picks and closes; the tag picker picks several (checkboxes, Done).
 - Back: the system back gesture or the arrow in the top bar.
 
 ## 3. Projects
@@ -156,8 +160,10 @@ Name, type, designer, notes, photos, and "Used in" (projects linking it). Deleti
 projects (with Undo).
 
 **Type (2026-11-27):** what the pattern sews, one of dress, skirt, top (also shirts), trousers, jacket (also coats),
-bag (also accessories), other; who it is for comes from the person. Optional ("Tap to add"); shown read-only, a tap
-or ✎ opens the choice dialog "What is it?", and it can be changed any time. The Library pattern list is grouped by
+bag (also accessories), other; who it is for comes from the person. Optional: the "New pattern" dialog (from "+" and
+from a project's "Create “…”") shows the type chips under the name, none preselected, a second tap deselects
+(2026-11-28); without one the page shows "Tap to add". Shown read-only, a tap or ✎ opens the choice dialog
+"What is it?"; it can be changed any time but not cleared. The Library pattern list is grouped by
 type like the home list by status ("Top (3)", not collapsible) once any pattern has a type; patterns without one come
 last under "No type". A project shows it in its pattern chip.
 

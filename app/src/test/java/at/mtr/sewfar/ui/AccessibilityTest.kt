@@ -81,6 +81,7 @@ class AccessibilityTest {
         compose.onNodeWithTag("addPattern").performScrollTo().performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Raglan")
         compose.onNode(hasText("Raglan", substring = true) and hasText("anlegen", substring = true)).performClick()
+        compose.onNodeWithTag("dialogSave").performClick() // New pattern dialog
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Raglan")).fetchSemanticsNodes().isNotEmpty() }
         val remove = compose.onNode(
             SemanticsMatcher("remove ×") { it.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("remove-") == true },

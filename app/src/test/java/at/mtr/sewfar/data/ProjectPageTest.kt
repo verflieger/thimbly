@@ -75,7 +75,7 @@ class ProjectPageTest {
     fun createPersonAndPatternLinkWhatTheyCreate() = runTest {
         val project = t.projects.create("Skirt")
         t.projectPage.createPerson(project, "Lena")
-        t.projectPage.createPattern(project, "Circle skirt")
+        t.projectPage.createPattern(project, "Circle skirt", null)
 
         val s = state(project)
         assertEquals("Lena", s.person!!.name)
