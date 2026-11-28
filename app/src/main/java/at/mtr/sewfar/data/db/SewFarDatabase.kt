@@ -9,7 +9,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * SPEC 7. Schema version 1 is frozen since v0.1, version 2 adds `pattern.coverPhotoId`, version 3 `pattern.garmentType` and `project_tag`, version 4 `purchase` (`SchemaFreezeTest` pins v1's identity hash). Every schema change raises
+ * SPEC 7. Schema version 1 is frozen since v0.1, version 2 adds `pattern.coverPhotoId`, version 3 `pattern.garmentType` and `project_tag`, version 4 `purchase`, version 5 `purchase.notes` (`SchemaFreezeTest` pins v1's identity hash). Every schema change raises
  * the version, ships a migration in [MIGRATIONS] and a migration test; the database is never dropped.
  */
 @Database(
@@ -31,7 +31,7 @@ abstract class SewFarDatabase : RoomDatabase() {
 
     companion object {
         /** Current schema version. Raise it with every schema change (and add a migration). */
-        const val VERSION = 4
+        const val VERSION = 5
 
         /** Migrations between schema versions. */
         val MIGRATIONS: Array<Migration> = arrayOf(
@@ -58,6 +58,10 @@ abstract class SewFarDatabase : RoomDatabase() {
                         "`priceCents` INTEGER NOT NULL, `boughtOn` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, " +
                         "`deletedAt` INTEGER, PRIMARY KEY(`id`))",
                 )
+            },
+            // 5: notes on purchases (SPEC 4.3).
+            object : Migration(4, 5) {
+                override fun migrate(db: SupportSQLiteDatabase) = db.execSQL("ALTER TABLE purchase ADD COLUMN notes TEXT NOT NULL DEFAULT ''")
             },
         )
 

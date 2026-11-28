@@ -55,6 +55,19 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun fourToFiveGivesPurchasesEmptyNotes() {
+        helper.createDatabase(DB, 4).use { db ->
+            db.execSQL("INSERT INTO purchase (id, name, category, priceCents, boughtOn, createdAt, updatedAt) VALUES ('b1', 'Jersey', 'FABRIC', 1850, '2026-11-28', 1, 1)")
+        }
+        helper.runMigrationsAndValidate(DB, 5, true, *SewFarDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT name, notes FROM purchase WHERE id = 'b1'").use { c ->
+                c.moveToFirst()
+                assertEquals(listOf("Jersey", ""), (0..1).map { c.getString(it) })
+            }
+        }
+    }
+
     private companion object {
         const val DB = "migration-test"
     }

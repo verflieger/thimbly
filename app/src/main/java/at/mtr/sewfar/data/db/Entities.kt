@@ -1,5 +1,6 @@
 package at.mtr.sewfar.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -234,6 +235,8 @@ data class PurchaseEntity(
     val category: PurchaseCategory,
     val priceCents: Long,
     val boughtOn: LocalDate,
+    // Schema 5; the column default fills rows from older backups and the migration.
+    @ColumnInfo(defaultValue = "") val notes: String = "",
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

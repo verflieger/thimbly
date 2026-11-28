@@ -209,6 +209,7 @@
     <string name="purchase_name_hint">e.g. Jersey 2 m</string>
     <string name="purchase_price">Price</string>
     <string name="purchase_category">Category</string>
+    <string name="purchase_notes">Notes</string>
     <string name="purchase_date">Date</string>
     <string name="purchases_total">Total</string>
     <string name="purchases_empty">No purchases yet. Note what you buy for sewing to see what your hobby costs.</string>

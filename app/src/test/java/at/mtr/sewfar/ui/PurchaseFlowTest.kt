@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -37,7 +38,10 @@ class PurchaseFlowTest {
         compose.onNodeWithTag("purchasePrice").performTextInput(price)
         compose.onNodeWithTag("category-$category").performScrollTo().performClick()
         compose.onNodeWithTag("dialogSave").performClick()
-        waitFor(name)
+        // Its page opens (SPEC 2); back to the list.
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("edit-notes").fetchSemanticsNodes().isNotEmpty() }
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("total").fetchSemanticsNodes().isNotEmpty() }
     }
 
     @Test
@@ -69,6 +73,10 @@ class PurchaseFlowTest {
         compose.onNodeWithTag("purchasePrice").performTextReplacement("30")
         compose.onNodeWithTag("dialogSave").performClick()
         waitFor("€30.00")
+        compose.onNodeWithTag("edit-notes").performClick()
+        compose.onNodeWithTag("dialogText").performTextInput("From the market")
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("From the market")
         compose.onNodeWithTag("edit-category").performClick()
         compose.onNodeWithTag("type-OTHER").performClick()
         waitFor("Other")

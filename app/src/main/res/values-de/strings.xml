@@ -208,6 +208,7 @@
     <string name="purchase_name_hint">z. B. Jersey 2 m</string>
     <string name="purchase_price">Preis</string>
     <string name="purchase_category">Kategorie</string>
+    <string name="purchase_notes">Notizen</string>
     <string name="purchase_date">Datum</string>
     <string name="purchases_total">Gesamt</string>
     <string name="purchases_empty">Noch keine Einkäufe. Notiere, was du fürs Nähen kaufst, um zu sehen, was dein Hobby kostet.</string>

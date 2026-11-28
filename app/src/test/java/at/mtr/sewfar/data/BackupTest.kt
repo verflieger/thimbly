@@ -244,7 +244,16 @@ class BackupTest {
         val purchase = t.purchases.observeAll().first().single()
         assertEquals(listOf("Fixture jersey", at.mtr.sewfar.domain.PurchaseCategory.FABRIC, 1850L, java.time.LocalDate.of(2026, 11, 28)),
             listOf(purchase.name, purchase.category, purchase.priceCents, purchase.boughtOn))
+        assertEquals("format 4 has no purchase notes", "", purchase.notes)
         for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables) assertTrue(table, t.count(table) > 0)
+    }
+
+    /** Format 5 adds notes on purchases (SPEC 8.1). */
+    @Test
+    fun formatFiveFixtureKeepsPurchaseNotes() = runTest {
+        val fixture = javaClass.classLoader!!.getResourceAsStream("backup/format5.zip")!!
+        backup.import(backup.prepareImport(fixture))
+        assertEquals("Fixture note", t.purchases.observeAll().first().single().notes)
     }
 
     @Test

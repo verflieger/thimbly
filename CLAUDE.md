@@ -50,12 +50,12 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   this against the schema. Re-adding a removed link/value within the Undo window revives its row (unique indexes
   span deleted rows). Child-row changes must call `ProjectDao.touch` (`lastActivityAt`). Status changes only via
   `ProjectRepository.setStatus`.
-- **Creating and editing** (SPEC 2): "+" opens one dialog with the required fields (`TextDialog` for a name; `FormDialog` for a machine or a purchase), creates the row, opens the page (a purchase stays on the list; its page is for editing). Texts are
+- **Creating and editing** (SPEC 2): "+" opens one dialog with the required fields (`TextDialog` for a name; `FormDialog` for a machine or a purchase), creates the row, opens the page. Texts are
   shown read-only and edited in a `TextDialog` (library pages: `EditableText`, rename via ✎ in `RecordScreen`). Only
   groups of values (measurements, setting values) use a form (`DetailScaffold` editing mode, `RecordScreen` draft
   map); state changes (status, timer, links, photos) are written at once.
 - **Frozen formats** (SPEC 7, 8): database schemas 1–4 and backup formats 1–4 are released (v0.1, v0.1.3, v0.2.0, v0.3.0;
-  testers use real data). A schema change needs a new `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and
+  testers use real data). Schema 5 and backup format 5 (`purchase.notes`) are not released yet. A schema change needs a new `SewFarDatabase.VERSION`, a migration in `SewFarDatabase.MIGRATIONS` and
   a case in `MigrationTest` (`SchemaFreezeTest` pins the v1 hash and requires an exported schema and a migration for
   every step); never edit a released schema or drop the database. A backup format change needs a new `BackupRepository.FORMAT`, reading
   of all older formats, and a new fixture.

@@ -38,9 +38,9 @@ screens, fields and tabs).
   machines, settings and people can also be created right from a project, so the Library is only needed to edit or
   delete them.
 - **Creating (one rule since 2026-11-28):** "+" (and "Create “…”" in a picker) opens one dialog with the record's
-  required fields and Save: the name for projects, patterns, people and settings; name and type for a machine; all
-  fields for a purchase. Every record except a purchase then opens its page; a purchase is complete after the dialog,
-  so the list stays (quick for several receipt lines). Every record is edited on its page, the same way everywhere.
+  required fields and Save: the name for projects, patterns, people and settings; name and type for a machine; name,
+  price, category and date for a purchase. Every record then opens its page, where the optional fields (notes …) are
+  added; every record is edited on its page, the same way everywhere.
 - **Deleting:** always the trash icon in a page's top bar, followed by the Undo snackbar (§6).
 - **Editing (2026-11-24, one way everywhere since 2026-11-25):** texts are edited in a dialog with Save; state
   changes apply at once.
@@ -181,13 +181,14 @@ sewn with. Unchanged values store nothing.
 **(2026-11-28)** A log of what sewing costs ("what does my hobby roughly cost?"): fabric, notions, patterns, tools,
 machines. Not linked to projects.
 
-- A purchase has a name ("Jersey 2 m"), a price, a category and a date. Categories are a fixed list: Fabric,
-  Notions, Patterns, Tools, Machines, Other.
-- "+" opens one dialog with all fields: name, price (numbers with comma or dot, at most two decimals; the field shows
+- A purchase has a name ("Jersey 2 m"), a price, a category, a date and notes (optional, 2026-11-28, schema 5).
+  Categories are a fixed list: Fabric, Notions, Patterns, Tools, Machines, Other.
+- "+" opens one dialog with the required fields: name, price (numbers with comma or dot, at most two decimals; the field shows
   the currency), category (chips, Fabric preselected) and date (today, a tap opens the date picker). Save is disabled
-  while the name is blank or the price is not a number. Tapping a purchase opens its page like any library record:
-  price, category and date read-only, a tap edits one (price dialog, category choice, date picker), ✎ renames, the
-  trash icon deletes (Undo, §6).
+  while the name is blank or the price is not a number. Save opens the new purchase's page; tapping a purchase in the
+  list opens it too, like any library record: price, category, date and notes read-only ("Tap to add" while notes
+  are empty), a tap edits one (price dialog, category choice, date picker, notes dialog), ✎ renames, the trash icon
+  deletes (Undo, §6).
 - The list shows the total on top, then the purchases by year, newest first, each year with its sum. Category chips
   above the list filter the list and all sums (a tap picks one category, a second tap shows all again).
 - One currency for all purchases, chosen in Settings (§9); the default is the currency of the phone's region, stored
@@ -257,24 +258,25 @@ Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 - `setup` (machineId, title, notes)
 - `setup_value` (setupId, key, value; unique pair)
 - `project_setup` (projectId, setupId, sortOrder; unique pair)
-- `purchase` (name, category, priceCents, boughtOn — schema 4)
+- `purchase` (name, category, priceCents, boughtOn — schema 4; notes — schema 5)
 
 The database file is `sewfar2.db`; the incompatible `sewfar.db` of the 1.0 prototype is deleted on start.
 Enums are stored by name; never rename or remove an entry. Schema version 1 is frozen since v0.1
 (`SchemaFreezeTest`); every change needs a new version, a migration and a migration test (`MigrationTest`).
-Version 2 adds `pattern.coverPhotoId`, version 3 `pattern.garmentType` and `project_tag`, version 4 `purchase`.
+Version 2 adds `pattern.coverPhotoId`, version 3 `pattern.garmentType` and `project_tag`, version 4 `purchase`, version 5 `purchase.notes`.
 
 ## 8. Backup
 
 ### 8.1 Format
 
-A zip with `backup.json` (`{ "format": 4, "appVersion", "exportedAt", "tables": { "<table>": [rows] } }`, read in
+A zip with `backup.json` (`{ "format": 5, "appVersion", "exportedAt", "tables": { "<table>": [rows] } }`, read in
 one transaction) and `photos/<photoId>.jpg` for every live photo. Tables hold live rows only (rows inside the Undo
 window are left out, references to them cleared) plus `deletion_log`; importing an older backup drops its deleted
 rows the same way. Preferences are not
 included. Format 1 is frozen since v0.1, format 2 adds `pattern.coverPhotoId`
 (a format 1 backup restores without pinned pattern covers), format 3 `pattern.garmentType` and `project_tag` (older
-backups restore without types and tags), format 4 `purchase` (older backups restore without purchases); every app version reads every older format; each format has a fixture in
+backups restore without types and tags), format 4 `purchase` (older backups restore without purchases), format 5 `purchase.notes` (older
+backups restore purchases without notes); every app version reads every older format; each format has a fixture in
 `src/test/resources/backup/format<n>.zip`. Backups of the discarded 1.0 prototype (also "format 1", but other tables)
 are rejected with their own message.
 

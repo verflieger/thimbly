@@ -92,13 +92,12 @@ class LibraryViewModel(private val container: AppContainer, initialTab: LibraryT
 
     fun today(): LocalDate = container.time.today()
 
-    fun createPurchase(name: String, category: PurchaseCategory, priceCents: Long, boughtOn: LocalDate) {
-        container.appScope.launch {
+    suspend fun createPurchase(name: String, category: PurchaseCategory, priceCents: Long, boughtOn: LocalDate): String =
+        container.runInApp {
             // Store the default on first use, so a later region change doesn't relabel the amounts (SPEC 4.3).
             if (container.settings.currency.first() == null) container.settings.setCurrency(currencyOf(null).currencyCode)
             container.purchases.create(name, category, priceCents, boughtOn)
         }
-    }
 
     /** A machine always gets its type picked (SPEC 5.1), so it has no default here. */
     suspend fun createMachine(name: String, type: MachineType): String = container.runInApp { container.machines.create(name, type) }
@@ -201,10 +200,15 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
         )
     }
     if (creatingPurchase) {
-        // A purchase is complete after its dialog, so the list stays (SPEC 2): quick for several receipt lines.
         NewPurchaseDialog(
             currency = currency, today = viewModel.today(),
-            onSave = { name, category, cents, date -> creatingPurchase = false; viewModel.createPurchase(name, category, cents, date) },
+            onSave = { name, category, cents, date ->
+                creatingPurchase = false
+                scope.launch {
+                    val id = viewModel.createPurchase(name, category, cents, date)
+                    withContext(Dispatchers.Main) { onOpen(LibraryTab.PURCHASES, id) } // its page, for the notes (SPEC 2)
+                }
+            },
             onDismiss = { creatingPurchase = false },
         )
     }

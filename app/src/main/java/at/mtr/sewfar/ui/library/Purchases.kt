@@ -38,6 +38,7 @@ import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
 import at.mtr.sewfar.data.db.ProjectRef
 import at.mtr.sewfar.ui.common.EditableChoice
+import at.mtr.sewfar.ui.common.EditableText
 import at.mtr.sewfar.ui.common.EditableValue
 import at.mtr.sewfar.ui.common.currencyOf
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -121,8 +122,8 @@ fun PurchaseList(purchases: List<PurchaseEntity>, currency: Currency, padding: P
 }
 
 /**
- * Adds a purchase with all its fields in one dialog (SPEC 2, 4.3). Save is disabled while the name is blank or the
- * price is not a number. Editing happens on the purchase's page ([PurchaseScreen]).
+ * Adds a purchase with its required fields in one dialog (SPEC 2, 4.3). Save is disabled while the name is blank or the
+ * price is not a number. Notes and editing are on the purchase's page ([PurchaseScreen]), which opens after Save.
  */
 @Composable
 fun NewPurchaseDialog(
@@ -189,7 +190,7 @@ class PurchaseViewModel(container: AppContainer, private val id: String) : Recor
     fun change(change: (PurchaseEntity) -> PurchaseEntity) = write { repo.edit(id, change) }
 }
 
-/** A purchase's page: price, category and date read-only, each edited by a tap; ✎ renames, the trash icon deletes. */
+/** A purchase's page: price, category, date and notes read-only, each edited by a tap; ✎ renames, the trash icon deletes. */
 @Composable
 fun PurchaseScreen(viewModel: PurchaseViewModel, onBack: () -> Unit) {
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
@@ -213,6 +214,7 @@ fun PurchaseScreen(viewModel: PurchaseViewModel, onBack: () -> Unit) {
             PurchaseCategory.entries, { it.label },
         ) { category -> viewModel.change { it.copy(category = category) } }
         EditableValue(stringResource(R.string.purchase_date), "date", purchase.boughtOn.format()) { editing = "date" }
+        EditableText(stringResource(R.string.purchase_notes), purchase.notes, "notes") { notes -> viewModel.change { it.copy(notes = notes) } }
         when (editing) {
             "price" -> PriceDialog(purchase.priceCents, currency, onSave = { cents -> editing = null; viewModel.change { it.copy(priceCents = cents) } }, onDismiss = { editing = null })
             "date" -> DatePickDialog(purchase.boughtOn, onPick = { date -> editing = null; viewModel.change { it.copy(boughtOn = date) } }, onDismiss = { editing = null })
