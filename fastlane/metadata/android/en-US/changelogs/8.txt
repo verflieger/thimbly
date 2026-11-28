@@ -1,0 +1,1 @@
+New in the Library: Purchases. Note what you buy for sewing (fabric, notions, patterns, tools, machines) and see the total and each year's sum; filter by category. The currency is set in Settings. Your data is kept; after this update older versions can no longer open it.

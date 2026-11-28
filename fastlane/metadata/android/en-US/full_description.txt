@@ -15,7 +15,7 @@ Save a setting once (stitch, tensions, differential feed …, with the fields of
 "New project" opens the project right away. Patterns, people, machines and their settings are created from the project by typing a name.
 
 <b>Library</b>
-Patterns grouped by type, with their photos and the photos of every project sewn from them. People with dated measurements. Your machines with their settings. Each shows the projects that used it.
+Patterns grouped by type, with their photos and the photos of every project sewn from them. People with dated measurements. Your machines with their settings. Each shows the projects that used it. Plus a purchases log with totals per year: what does your hobby cost?
 
 <b>Backup</b>
 Save or share a backup file at any time, or let Thimbly back up weekly into a folder of your choice. Every update keeps your data and reads all older backups.

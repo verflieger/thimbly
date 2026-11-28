@@ -18,7 +18,8 @@ per-app language setting. The full specification is in [SPEC.md](SPEC.md), later
   right from the project by typing a name.
 - **Library** (button at the bottom of the project list): patterns grouped by type, with their photos and the
   photos of every project sewn from them; people with dated measurements; machines with their settings. Each shows
-  the projects that used it.
+  the projects that used it. Plus a purchases log (fabric, notions, tools …) with totals per year, to see what the
+  hobby costs.
 - **Search** over names, people, patterns, labels, size, fabric and notes.
 - **Backup:** zip export/import, optional weekly automatic backup to a folder of your choice. Every update keeps
   your data and reads all older backups.

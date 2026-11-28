@@ -1,0 +1,1 @@
+Neu in der Bibliothek: Einkäufe. Notiere, was du fürs Nähen kaufst (Stoff, Kurzwaren, Schnittmuster, Werkzeug, Maschinen), und sieh die Gesamtsumme und die Summe pro Jahr; nach Kategorie filterbar. Die Währung stellst du in den Einstellungen ein. Deine Daten bleiben erhalten; danach können ältere Versionen sie nicht mehr öffnen.

@@ -15,7 +15,7 @@ Speichere eine Einstellung einmal (Stich, Spannungen, Differentialtransport …,
 „Neues Projekt“ öffnet das Projekt sofort. Schnittmuster, Personen, Maschinen und ihre Einstellungen legst du direkt im Projekt an, indem du einen Namen tippst.
 
 <b>Bibliothek</b>
-Schnittmuster nach Art sortiert, mit ihren Fotos und den Fotos aller Projekte, die daraus genäht wurden. Personen mit datierten Maßen. Deine Maschinen mit ihren Einstellungen. Jeweils mit den Projekten, in denen sie vorkamen.
+Schnittmuster nach Art sortiert, mit ihren Fotos und den Fotos aller Projekte, die daraus genäht wurden. Personen mit datierten Maßen. Deine Maschinen mit ihren Einstellungen. Jeweils mit den Projekten, in denen sie vorkamen. Dazu ein Einkaufslog mit Summen pro Jahr: Was kostet dein Hobby?
 
 <b>Sicherung</b>
 Speichere oder teile jederzeit eine Sicherungsdatei, oder lass Thimbly wöchentlich in einen Ordner deiner Wahl sichern. Jedes Update behält deine Daten und liest alle älteren Sicherungen.

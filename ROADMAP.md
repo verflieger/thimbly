@@ -10,6 +10,13 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 - Data guarantee: every update migrates the database and reads all older backups.
 - No ads, no shop content, no "premium".
 
+## Next patch (0.3.1, asap)
+
+- **Align creating and editing** (before anything else): purchases (SPEC 4.3) use one dialog with all fields, and
+  Delete sits in the dialog; everything else asks for the name first, opens a page, and deletes from the page's top
+  bar. The one-step dialog feels slightly better for short records. Decide on one pattern (maybe: short records in a dialog, records with
+  photos or links on a page) and make delete look and work the same everywhere.
+
 ## v1.x — small additions
 
 - **Sew again** (next; builds on what only Thimbly records: settings, size and measurements per project). A Done
@@ -19,10 +26,6 @@ order. Nothing here is decided in detail. Every addition must keep the project p
   pattern for that person ("Last time: 122, height 118 cm (March 2026); now 127 cm") with a link to it. It is
   computed from existing links and measurements, so it also works for projects created by hand and needs no schema
   or backup change. It only shows the numbers and does not suggest a size (that is "Size suggestion" below).
-- Align creating and editing: purchases (SPEC 4.3) use one dialog with all fields, and Delete sits in the dialog;
-  everything else asks for the name first, opens a page, and deletes from the page's top bar. The one-step dialog
-  feels slightly better for short records. Decide on one pattern (maybe: short records in a dialog, records with
-  photos or links on a page) and make delete look and work the same everywhere.
 - Fabrics (see v2) are the next big step: they become a Library tab (Patterns, Fabrics, People, Machines, Purchases);
   home stays the project list.
 - Costs per project.
