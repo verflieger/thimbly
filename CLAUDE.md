@@ -38,7 +38,7 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   `(application as SewFarApp).container`. No Hilt.
 - **Layers**: `data/` (Room entities/DAOs in `data/db`, repositories, DataStore `SettingsRepository`),
   `domain/` (pure Kotlin, no Android deps), `ui/` (`projects/` = home list + project page, `library/` = patterns,
-  people, machines, settings ("setups"); navigation in `ui/SewFarRoot.kt`, theme in `ui/theme/Theme.kt`).
+  people, machines, settings ("setups"), purchases; `settings/` = Settings screen; navigation in `ui/SewFarRoot.kt`, theme in `ui/theme/Theme.kt`).
 - Navigation: no bottom bar; the project list is home; Library (bottom button) and Settings (top-bar icon) open from it. Keep the short slide
   transitions in `SewFarRoot` (the 700 ms default fades made the app feel laggy).
 - **Data rules** (SPEC 1, 6, 7): UUID string keys. Delete through `SoftDeleter`, which stamps `deletedAt` on the row
@@ -50,8 +50,9 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   this against the schema. Re-adding a removed link/value within the Undo window revives its row (unique indexes
   span deleted rows). Child-row changes must call `ProjectDao.touch` (`lastActivityAt`). Status changes only via
   `ProjectRepository.setStatus`.
-- **Creating and editing** (SPEC 2): "+" opens one "New …" dialog with the most important fields, Save waiting only for the required ones (`TextDialog` for a name alone; `FormDialog` + `ChipChoice` for a pattern, machine or purchase), creates the row, opens the page. Texts are
-  shown read-only and edited in a `TextDialog` (library pages: `EditableText`, rename via ✎ in `RecordScreen`). Only
+- **Creating and editing** (SPEC 2): "+" opens one "New …" dialog with the most important fields, Save waiting only for the required ones (`TextDialog` for a name alone; `FormDialog` + `ChipChoice` for a pattern, machine or purchase), creates the row, opens the page (from a project's picker: links it, the project stays open). Every record is edited
+  on its page; delete is the trash icon in the page's top bar. Texts are shown read-only and edited in a `TextDialog`
+  (library pages: `EditableText`/`EditableValue`/`EditableChoice`, rename via ✎ in `RecordScreen`). Only
   groups of values (measurements, setting values) use a form (`DetailScaffold` editing mode, `RecordScreen` draft
   map); state changes (status, timer, links, photos) are written at once.
 - **Frozen formats** (SPEC 7, 8): database schemas 1–4 and backup formats 1–4 are released (v0.1, v0.1.3, v0.2.0, v0.3.0;
@@ -67,7 +68,7 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
 - Raw SQL writes (`openHelper.writableDatabase.execSQL`) only inside `db.withTransaction`, so they run off the main
   thread and Room observers are notified.
 - **Photos** (SPEC 3.5): `PhotoRepository` stores the processed file first (`PhotoFiles`, `ImageProcessor`: EXIF
-  orientation, ≤ 2048 px, JPEG 85, no EXIF), forces it and its folder to storage (`syncToStorage`), then inserts the
+  orientation, ≤ 2048 px or 4096 px with "Fine photos", JPEG 85, no EXIF), forces it and its folder to storage (`syncToStorage`), then inserts the
   row; any file the database comes to depend on (also in a restore) is synced first. Files are immutable; replacing = new row.
   The purge removes a deleted photo's row; `purgeFiles` then removes files without a row older than the Undo window.
   UI: `rememberTakePhoto` (TakePicture → cache temp file via FileProvider, no CAMERA permission),
@@ -77,7 +78,7 @@ There are no instrumented (`androidTest`) tests; UI tests use Compose test + Rob
   `container.appScope` so edits saved while leaving a screen survive.
   Text inputs use `LabeledTextField`/`FormField` (label fixed above the field; tests find fields by tag, not label).
   Snackbars (incl. Undo) go through `LocalMessages`. Pickers are `EntityPicker` (search + "Create …" from the typed
-  name, no extra form); show only one dialog at a time. After a suspend call, navigate inside `withContext(Dispatchers.Main)`.
+  name; for a pattern or machine it opens the "New …" dialog with the name filled in); show only one dialog at a time. After a suspend call, navigate inside `withContext(Dispatchers.Main)`.
 - Tests use `TestDb` (in-memory Room + `FakeTime`) under Robolectric. UI flow tests keep Robolectric's default screen
   (a larger `w…dp-h…dp` qualifier made dialogs with text fields never go idle) and reach off-screen controls with
   `performScrollTo()`.

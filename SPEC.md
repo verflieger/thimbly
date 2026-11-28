@@ -35,8 +35,8 @@ screens, fields and tabs).
 - Top bar: search and a **Settings** icon. At the bottom: **Library** and **+ New project**.
 - **Library:** one screen with four tabs (Patterns, People, Machines, Purchases; opens on Patterns; the tab row scrolls
   if the labels don't fit), each a list with a "+" button. Patterns,
-  machines, settings and people can also be created right from a project, so the Library is only needed to edit or
-  delete them.
+  machines, settings and people can also be created right from a project, so for them the Library is only needed to
+  edit or delete them; purchases live only in the Library.
 - **Creating (one rule since 2026-11-28):** "+" (and "Create “…”" in a picker) opens one "New …" dialog with the
   record's most important fields; only some of them are required, and Save waits for those. Today: projects, people
   and settings: the name (required); pattern: name (required) and type (optional chips); machine: name and type (both
@@ -44,7 +44,8 @@ screens, fields and tabs).
   pre-filled). From "+", the new record's page opens, where the remaining fields (notes …) are added; from a project's
   picker the new record is linked and the project stays open (a new setting opens for its values, §5.2). Every
   record is edited on its page, the same way everywhere.
-- **Deleting:** always the trash icon in a page's top bar, followed by the Undo snackbar (§6).
+- **Deleting** a record: always the trash icon in its page's top bar, followed by the Undo snackbar (§6). Photos
+  (viewer), links, tags and time entries are removed where they are shown, also with Undo.
 - **Editing (2026-11-24, one way everywhere since 2026-11-25):** texts are edited in a dialog with Save; state
   changes apply at once.
   - Texts (names, notes, size, fabric, a pattern's designer) are shown read-only. Tapping one or its ✎ opens a text
@@ -306,12 +307,12 @@ Appearance (dynamic colour), Purchases ("Currency", §4.3: a list of common curr
 ## 10. Quality
 
 - Unit tests (JVM + Robolectric): status dates, timer (one running, Done stops it), manual time, link and tag revival,
-  discarding empty new records, cascade and undo, photo pipeline and cleanup, backup round trip / fixture /
-  rejections / interrupted swaps, auto-backup pruning, duration and price parsing, search.
-- Compose UI tests: navigation, creating a project with a pattern and a machine setting (new machine) inline, a tag
-  from the suggestions filtering the search, a pattern type grouping the Library, adding a purchase and filtering
-  the totals by category, timer,
-  delete and undo, discarding an empty new project, German strings.
+  cascade and undo, purge, photo pipeline and cleanup, backup round trip / every format's fixture / rejections /
+  interrupted swaps, schema migrations, auto-backup pruning, duration and price parsing, search, purchases.
+- Compose UI tests: navigation, creating a project with a pattern (New pattern dialog with type) and a machine
+  setting (New machine dialog) inline, a tag from the suggestions filtering the search, a pattern type grouping the
+  Library (picked, changed, deselected), adding a purchase, filtering the totals by category and editing and deleting
+  it on its page, timer, delete and undo, German strings.
 - Every string exists in both languages (`StringsCompletenessTest`).
 - Accessibility (2026-11-25, `AccessibilityTest`): text follows the system font size; at 200 % the home buttons
   stack instead of cutting off their labels (side by side up to Android's "Large", 115 %); a link chip's × is a
