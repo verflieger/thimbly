@@ -7,6 +7,7 @@ import at.mtr.sewfar.data.PersonRepository
 import at.mtr.sewfar.data.PhotoRepository
 import at.mtr.sewfar.data.ProjectPage
 import at.mtr.sewfar.data.ProjectRepository
+import at.mtr.sewfar.data.PurchaseRepository
 import at.mtr.sewfar.data.SettingsRepository
 import at.mtr.sewfar.data.TimeSource
 import at.mtr.sewfar.data.backup.BackupRepository
@@ -39,6 +40,7 @@ class AppContainer(private val context: Context) {
     val patterns: PatternRepository by lazy { PatternRepository(database, deleter, time) }
     val persons: PersonRepository by lazy { PersonRepository(database, deleter, time) }
     val machines: MachineRepository by lazy { MachineRepository(database, deleter, time) }
+    val purchases: PurchaseRepository by lazy { PurchaseRepository(database, deleter, time) }
 
     val photoFiles: PhotoFiles by lazy { PhotoFiles(context.filesDir) }
     val photos: PhotoRepository by lazy {

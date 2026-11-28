@@ -19,15 +19,6 @@ order. Nothing here is decided in detail. Every addition must keep the project p
   pattern for that person ("Last time: 122, height 118 cm (March 2026); now 127 cm") with a link to it. It is
   computed from existing links and measurements, so it also works for projects created by hand and needs no schema
   or backup change. It only shows the numbers and does not suggest a size (that is "Size suggestion" below).
-- **Purchases log** (decided 2026-11-28; "what does my hobby roughly cost?"): a fifth Library tab "Purchases".
-  Entry: name, price, category (fixed: Fabric, Notions, Patterns, Tools, Machines, Other), date (default today).
-  "+" opens one dialog with all fields; tapping an entry edits it in the same dialog; delete with Undo; no detail
-  page. List: grand total on top, then per year (newest first) a header with its sum and the entries; category
-  chips filter list and totals. One currency, chosen in Settings (default: the phone's currency; picker from
-  `java.util.Currency`), amounts stored as integer cents and formatted for the locale. No project link yet
-  ("Costs per project" can add an optional `projectId` later). New table `purchase` → schema 4, backup format 4.
-  Stash path: stash items (v2) get an optional `purchaseId`; "Add to stash" on a purchase pre-fills a stash item,
-  and creating a stash item with a price creates its purchase, so totals stay in one table and nothing migrates.
 - Fabrics (see v2) are the next big step: they become a fourth Library tab (Patterns, Fabrics, People, Machines);
   home stays the project list.
 - Costs per project.
@@ -52,7 +43,8 @@ order. Nothing here is decided in detail. Every addition must keep the project p
 ## v2 — fabric stash
 
 - Fabric entity: name, type, composition, weight (g/m²), width, colour, print, amount, where bought, price, storage
-  location, photos.
+  location, photos. Price via an optional link to a purchase (SPEC 4.3): "Add to stash" on a purchase pre-fills a
+  stash item, a stash item with a price creates its purchase, so totals stay in one table and nothing migrates.
 - Projects link stash fabrics (like patterns today); finishing a project subtracts the used amount. The project's
   free-text Fabric field (v1) stays beside the linked fabrics for extras; nothing is converted.
 - Machine settings link to fabrics: "which setting worked for this fabric?".

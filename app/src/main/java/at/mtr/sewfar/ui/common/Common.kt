@@ -20,6 +20,8 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,6 +53,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import at.mtr.sewfar.R
+import java.time.LocalDate
 
 /** Centered hint shown while a list is empty. */
 @Composable
@@ -316,4 +320,23 @@ fun formatDuration(millis: Long): String {
     val minutes = millis / 60_000
     return if (minutes >= 60) stringResource(R.string.duration_h_min, minutes / 60, minutes % 60)
     else stringResource(R.string.duration_min, minutes)
+}
+
+private const val DayMillis = 86_400_000L
+
+/** The Material date picker for one day, starting at [date]; OK calls [onPick]. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickDialog(date: LocalDate, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+    // The picker works in UTC millis, so the epoch day maps without a time zone.
+    val pickerState = rememberDatePickerState(initialSelectedDateMillis = date.toEpochDay() * DayMillis)
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { pickerState.selectedDateMillis?.let { onPick(LocalDate.ofEpochDay(it / DayMillis)) } ?: onDismiss() }) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    ) { DatePicker(pickerState) }
 }

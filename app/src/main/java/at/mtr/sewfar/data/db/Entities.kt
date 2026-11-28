@@ -8,6 +8,7 @@ import at.mtr.sewfar.domain.GarmentType
 import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.PhotoOwner
 import at.mtr.sewfar.domain.ProjectStatus
+import at.mtr.sewfar.domain.PurchaseCategory
 import java.time.LocalDate
 
 // SPEC 7. Every table (except deletion_log): UUID string id, createdAt/updatedAt (epoch millis UTC), deletedAt (soft
@@ -220,6 +221,19 @@ data class ProjectSetupEntity(
     val projectId: String,
     val setupId: String,
     val sortOrder: Int,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+)
+
+/** Something bought for sewing (SPEC 4.3, schema 4). [priceCents] = hundredths of the chosen currency. */
+@Entity(tableName = "purchase")
+data class PurchaseEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val category: PurchaseCategory,
+    val priceCents: Long,
+    val boughtOn: LocalDate,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

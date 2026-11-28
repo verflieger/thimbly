@@ -34,6 +34,8 @@ class NavigationTest {
         compose.waitFor("No people yet.")
         compose.onNodeWithTag("tab-MACHINES").performClick()
         compose.waitFor("No machines yet.")
+        compose.onNodeWithTag("tab-PURCHASES").performClick()
+        compose.waitFor("No purchases yet.")
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitFor("No projects yet.")
     }

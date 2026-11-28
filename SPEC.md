@@ -33,7 +33,8 @@ screens, fields and tabs).
 
 - **Home = project list** (§3.1). No bottom bar.
 - Top bar: search and a **Settings** icon. At the bottom: **Library** and **+ New project**.
-- **Library:** one screen with three tabs (Patterns, People, Machines; opens on Patterns), each a list with a "+" button. Patterns,
+- **Library:** one screen with four tabs (Patterns, People, Machines, Purchases; opens on Patterns; the tab row scrolls
+  if the labels don't fit), each a list with a "+" button. Patterns,
   machines, settings and people can also be created right from a project, so the Library is only needed to edit or
   delete them.
 - **Creating:** "+" asks only for the name (dialog with Save), creates the record and opens its page.
@@ -143,7 +144,7 @@ from an imported older backup) is appended to the notes.
   seconds later left the row with an empty or missing file). A deleted photo's file is removed with its row after the 60 s Undo window (§6); files without a row
   (e.g. after a crash) are removed once older than that window.
 
-## 4. Library: patterns and people
+## 4. Library: patterns, people, purchases
 
 ### 4.1 Patterns
 
@@ -170,6 +171,26 @@ in cm, numbers only (comma or dot), the field shows "cm". The page shows the fil
 is not a number between 1 and 300). Saving changed values stores today's measuring: a measuring from today is
 corrected, otherwise a new one is added and older ones stay hidden, so finished projects keep showing what they were
 sewn with. Unchanged values store nothing.
+
+### 4.3 Purchases
+
+**(2026-11-28)** A log of what sewing costs ("what does my hobby roughly cost?"): fabric, notions, patterns, tools,
+machines. Not linked to projects.
+
+- A purchase has a name ("Jersey 2 m"), a price, a category and a date. Categories are a fixed list: Fabric,
+  Notions, Patterns, Tools, Machines, Other.
+- "+" opens one dialog with all fields: name, price (numbers with comma or dot, at most two decimals; the field shows
+  the currency), category (chips, Fabric preselected) and date (today, a tap opens the date picker). Save is disabled
+  while the name is blank or the price is not a number. Tapping a purchase opens the same dialog to edit it, with
+  Delete (Undo, §6). A purchase has no page of its own: it is a short record, so this is the one exception to
+  "name first, then the page" (§2).
+- The list shows the total on top, then the purchases by year, newest first, each year with its sum. Category chips
+  above the list filter the list and all sums (a tap picks one category, a second tap shows all again).
+- One currency for all purchases, chosen in Settings (§9); the default is the currency of the phone's region, stored
+  with the first purchase so a later region change doesn't relabel the amounts. Changing it changes only how amounts
+  are shown, not the amounts. Prices are stored in hundredths, shown in the locale's format with up to two decimals
+  (also for currencies without cents).
+- Later (ROADMAP, stash): stash items get an optional link to a purchase, so totals stay in this one table.
 
 ## 5. Machines and machine settings
 
@@ -231,23 +252,24 @@ Exception: `deletion_log` (rowId, tableName, deletedAt), see §6.
 - `setup` (machineId, title, notes)
 - `setup_value` (setupId, key, value; unique pair)
 - `project_setup` (projectId, setupId, sortOrder; unique pair)
+- `purchase` (name, category, priceCents, boughtOn — schema 4)
 
 The database file is `sewfar2.db`; the incompatible `sewfar.db` of the 1.0 prototype is deleted on start.
 Enums are stored by name; never rename or remove an entry. Schema version 1 is frozen since v0.1
 (`SchemaFreezeTest`); every change needs a new version, a migration and a migration test (`MigrationTest`).
-Version 2 adds `pattern.coverPhotoId`, version 3 `pattern.garmentType` and `project_tag`.
+Version 2 adds `pattern.coverPhotoId`, version 3 `pattern.garmentType` and `project_tag`, version 4 `purchase`.
 
 ## 8. Backup
 
 ### 8.1 Format
 
-A zip with `backup.json` (`{ "format": 3, "appVersion", "exportedAt", "tables": { "<table>": [rows] } }`, read in
+A zip with `backup.json` (`{ "format": 4, "appVersion", "exportedAt", "tables": { "<table>": [rows] } }`, read in
 one transaction) and `photos/<photoId>.jpg` for every live photo. Tables hold live rows only (rows inside the Undo
 window are left out, references to them cleared) plus `deletion_log`; importing an older backup drops its deleted
 rows the same way. Preferences are not
 included. Format 1 is frozen since v0.1, format 2 adds `pattern.coverPhotoId`
 (a format 1 backup restores without pinned pattern covers), format 3 `pattern.garmentType` and `project_tag` (older
-backups restore without types and tags); every app version reads every older format; each format has a fixture in
+backups restore without types and tags), format 4 `purchase` (older backups restore without purchases); every app version reads every older format; each format has a fixture in
 `src/test/resources/backup/format<n>.zip`. Backups of the discarded 1.0 prototype (also "format 1", but other tables)
 are rejected with their own message.
 
@@ -264,16 +286,17 @@ are rejected with their own message.
 
 ## 9. Settings
 
-Appearance (dynamic colour), Time ("Time tracking", §3.3), Photos ("Fine photos": new photos at up to 4096 px, §3.5), Backup (§8.2, plus the note that switching phones needs a manual backup), About
+Appearance (dynamic colour), Purchases ("Currency", §4.3: a list of common currencies plus the phone's), Time ("Time tracking", §3.3), Photos ("Fine photos": new photos at up to 4096 px, §3.5), Backup (§8.2, plus the note that switching phones needs a manual backup), About
 (version, licence).
 
 ## 10. Quality
 
 - Unit tests (JVM + Robolectric): status dates, timer (one running, Done stops it), manual time, link and tag revival,
   discarding empty new records, cascade and undo, photo pipeline and cleanup, backup round trip / fixture /
-  rejections / interrupted swaps, auto-backup pruning, duration parsing, search.
+  rejections / interrupted swaps, auto-backup pruning, duration and price parsing, search.
 - Compose UI tests: navigation, creating a project with a pattern and a machine setting (new machine) inline, a tag
-  from the suggestions filtering the search, a pattern type grouping the Library, timer,
+  from the suggestions filtering the search, a pattern type grouping the Library, adding a purchase and filtering
+  the totals by category, timer,
   delete and undo, discarding an empty new project, German strings.
 - Every string exists in both languages (`StringsCompletenessTest`).
 - Accessibility (2026-11-25, `AccessibilityTest`): text follows the system font size; at 200 % the home buttons

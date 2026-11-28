@@ -151,7 +151,7 @@ class SoftDeleter(
          */
         val AllTables = listOf(
             "person", "measurement", "measurement_value", "pattern", "project", "project_pattern", "project_tag", "time_entry", "photo",
-            "machine", "setup", "setup_value", "project_setup",
+            "machine", "setup", "setup_value", "project_setup", "purchase",
         )
 
         /** Child rows that a deletion of a row in the key table also deletes (SPEC 6, cascade table). */

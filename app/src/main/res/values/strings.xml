@@ -63,7 +63,7 @@
     <string name="backup_restored">Backup restored</string>
     <string name="backup_failed">That didn\'t work</string>
     <string name="backup_confirm_title">Replace all data?</string>
-    <string name="backup_confirm_text">%1$d projects, %2$d patterns, %3$d people and %4$d photos will replace your current data. Your current data is kept as a safety copy.</string>
+    <string name="backup_confirm_text">%1$d projects, %2$d patterns, %3$d people, %4$d photos and %5$d purchases will replace your current data. Your current data is kept as a safety copy.</string>
     <string name="backup_replace">Replace</string>
     <string name="backup_error_not_backup">This file is not a Thimbly backup.</string>
     <string name="backup_error_newer">This backup is from a newer Thimbly version. Update the app first.</string>
@@ -202,4 +202,23 @@
     <string name="action_done">Done</string>
     <string name="tag_search_hint">Search or new label</string>
     <string name="tag_rename">Rename label</string>
+    <!-- Purchases (SPEC 4.3) -->
+    <string name="library_purchases">Purchases</string>
+    <string name="purchase_new">New purchase</string>
+    <string name="purchase_edit">Edit purchase</string>
+    <string name="purchase_name">What did you buy?</string>
+    <string name="purchase_name_hint">e.g. Jersey 2 m</string>
+    <string name="purchase_price">Price</string>
+    <string name="purchase_category">Category</string>
+    <string name="purchase_date">Date</string>
+    <string name="purchases_total">Total</string>
+    <string name="purchases_empty">No purchases yet. Note what you buy for sewing to see what your hobby costs.</string>
+    <string name="purchase_deleted">Purchase deleted</string>
+    <string name="pcat_fabric">Fabric</string>
+    <string name="pcat_notions">Notions</string>
+    <string name="pcat_patterns">Patterns</string>
+    <string name="pcat_tools">Tools</string>
+    <string name="pcat_machines">Machines</string>
+    <string name="pcat_other">Other</string>
+    <string name="settings_currency">Currency</string>
 </resources>

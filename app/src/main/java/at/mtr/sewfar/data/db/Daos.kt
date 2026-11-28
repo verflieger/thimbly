@@ -300,3 +300,16 @@ interface MachineDao {
     )
     fun observeProjects(id: String): Flow<List<ProjectRef>>
 }
+
+@Dao
+interface PurchaseDao {
+    @Insert suspend fun insert(purchase: PurchaseEntity)
+    @Update suspend fun update(purchase: PurchaseEntity)
+
+    @Query("SELECT * FROM purchase WHERE id = :id AND deletedAt IS NULL")
+    suspend fun get(id: String): PurchaseEntity?
+
+    /** Newest first (SPEC 4.3). */
+    @Query("SELECT * FROM purchase WHERE deletedAt IS NULL ORDER BY boughtOn DESC, createdAt DESC")
+    fun observeAll(): Flow<List<PurchaseEntity>>
+}

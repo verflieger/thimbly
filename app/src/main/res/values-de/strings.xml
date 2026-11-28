@@ -62,7 +62,7 @@
     <string name="backup_restored">Sicherung wiederhergestellt</string>
     <string name="backup_failed">Das hat nicht geklappt</string>
     <string name="backup_confirm_title">Alle Daten ersetzen?</string>
-    <string name="backup_confirm_text">%1$d Projekte, %2$d Schnittmuster, %3$d Personen und %4$d Fotos ersetzen deine aktuellen Daten. Die aktuellen Daten bleiben als Sicherheitskopie erhalten.</string>
+    <string name="backup_confirm_text">%1$d Projekte, %2$d Schnittmuster, %3$d Personen, %4$d Fotos und %5$d Einkäufe ersetzen deine aktuellen Daten. Die aktuellen Daten bleiben als Sicherheitskopie erhalten.</string>
     <string name="backup_replace">Ersetzen</string>
     <string name="backup_error_not_backup">Diese Datei ist keine Thimbly-Sicherung.</string>
     <string name="backup_error_newer">Diese Sicherung stammt von einer neueren Thimbly-Version. Aktualisiere zuerst die App.</string>
@@ -201,4 +201,23 @@
     <string name="action_done">Fertig</string>
     <string name="tag_search_hint">Suchen oder neues Label</string>
     <string name="tag_rename">Label umbenennen</string>
+    <!-- Purchases (SPEC 4.3) -->
+    <string name="library_purchases">Einkäufe</string>
+    <string name="purchase_new">Neuer Einkauf</string>
+    <string name="purchase_edit">Einkauf bearbeiten</string>
+    <string name="purchase_name">Was hast du gekauft?</string>
+    <string name="purchase_name_hint">z. B. Jersey 2 m</string>
+    <string name="purchase_price">Preis</string>
+    <string name="purchase_category">Kategorie</string>
+    <string name="purchase_date">Datum</string>
+    <string name="purchases_total">Gesamt</string>
+    <string name="purchases_empty">Noch keine Einkäufe. Notiere, was du fürs Nähen kaufst, um zu sehen, was dein Hobby kostet.</string>
+    <string name="purchase_deleted">Einkauf gelöscht</string>
+    <string name="pcat_fabric">Stoff</string>
+    <string name="pcat_notions">Kurzwaren</string>
+    <string name="pcat_patterns">Schnittmuster</string>
+    <string name="pcat_tools">Werkzeug</string>
+    <string name="pcat_machines">Maschinen</string>
+    <string name="pcat_other">Sonstiges</string>
+    <string name="settings_currency">Währung</string>
 </resources>

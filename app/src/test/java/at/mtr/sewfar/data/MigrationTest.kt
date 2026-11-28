@@ -43,6 +43,18 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun threeToFourAddsAnEmptyPurchaseTable() {
+        helper.createDatabase(DB, 3).use { db ->
+            db.execSQL("INSERT INTO pattern (id, name, designer, notes, createdAt, updatedAt) VALUES ('p1', 'Raglan', 'Studio', 'M', 1, 2)")
+        }
+        helper.runMigrationsAndValidate(DB, 4, true, *SewFarDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT COUNT(*) FROM pattern").use { c -> c.moveToFirst(); assertEquals(1, c.getInt(0)) }
+            db.execSQL("INSERT INTO purchase (id, name, category, priceCents, boughtOn, createdAt, updatedAt) VALUES ('b1', 'Jersey', 'FABRIC', 1850, '2026-11-28', 1, 1)")
+            db.query("SELECT COUNT(*) FROM purchase").use { c -> c.moveToFirst(); assertEquals(1, c.getInt(0)) }
+        }
+    }
+
     private companion object {
         const val DB = "migration-test"
     }

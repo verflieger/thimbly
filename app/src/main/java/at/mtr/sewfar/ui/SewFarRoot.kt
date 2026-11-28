@@ -194,6 +194,7 @@ fun SewFarRoot(container: AppContainer) {
                                     LibraryTab.PATTERNS -> PatternRoute(id)
                                     LibraryTab.MACHINES -> MachineRoute(id)
                                     LibraryTab.PEOPLE -> PersonRoute(id)
+                                    LibraryTab.PURCHASES -> return@LibraryScreen // edited in a dialog, no page
                                 },
                             )
                         },

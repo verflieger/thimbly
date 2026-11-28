@@ -51,6 +51,13 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         }
     }
 
+    /** ISO 4217 code of the purchases' currency (SPEC 4.3, 9); null = the phone's currency. */
+    val currency: Flow<String?> = store.data.map { it[Currency] }
+
+    suspend fun setCurrency(code: String) {
+        store.edit { it[Currency] = code }
+    }
+
     // ---- Automatic backup (SPEC 8.2) ----
 
     /** SAF tree URI of the chosen folder; null = automatic backup off. */
@@ -81,6 +88,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         private val AutoBackupFolder = stringPreferencesKey("auto_backup_folder")
         private val LastAutoBackupAt = longPreferencesKey("last_auto_backup_at")
         private val LastAutoBackupError = stringPreferencesKey("last_auto_backup_error")
+        private val Currency = stringPreferencesKey("currency")
         private val CollapsedSections = stringSetPreferencesKey("collapsed_sections")
         private val DynamicColor = booleanPreferencesKey("dynamic_color")
         private val FinePhotos = booleanPreferencesKey("fine_photos")

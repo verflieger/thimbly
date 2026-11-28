@@ -30,6 +30,7 @@ class TestDb {
     val patterns = PatternRepository(db, deleter, time)
     val persons = PersonRepository(db, deleter, time)
     val machines = MachineRepository(db, deleter, time)
+    val purchases = PurchaseRepository(db, deleter, time)
 
     val photoFiles = PhotoFiles(File(ApplicationProvider.getApplicationContext<android.content.Context>().cacheDir, "test-${Ids.random()}"))
     val photos = PhotoRepository(db, deleter, photoFiles, time, projects)

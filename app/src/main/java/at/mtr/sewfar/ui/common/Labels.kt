@@ -5,6 +5,7 @@ import at.mtr.sewfar.R
 import at.mtr.sewfar.domain.GarmentType
 import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.domain.ProjectStatus
+import at.mtr.sewfar.domain.PurchaseCategory
 
 @get:StringRes
 val ProjectStatus.label: Int
@@ -34,6 +35,17 @@ val GarmentType.label: Int
         GarmentType.JACKET -> R.string.garment_jacket
         GarmentType.BAG -> R.string.garment_bag
         GarmentType.OTHER -> R.string.garment_other
+    }
+
+@get:StringRes
+val PurchaseCategory.label: Int
+    get() = when (this) {
+        PurchaseCategory.FABRIC -> R.string.pcat_fabric
+        PurchaseCategory.NOTIONS -> R.string.pcat_notions
+        PurchaseCategory.PATTERNS -> R.string.pcat_patterns
+        PurchaseCategory.TOOLS -> R.string.pcat_tools
+        PurchaseCategory.MACHINES -> R.string.pcat_machines
+        PurchaseCategory.OTHER -> R.string.pcat_other
     }
 
 /** Names of setting fields (SPEC 5.2); keys match `MachineTemplates`. */

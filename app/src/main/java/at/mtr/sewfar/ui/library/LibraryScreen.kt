@@ -16,7 +16,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -49,17 +49,23 @@ import at.mtr.sewfar.data.patternCovers
 import at.mtr.sewfar.ui.photos.CoverThumbnail
 import at.mtr.sewfar.ui.common.EmptyState
 import at.mtr.sewfar.ui.common.TextDialog
+import at.mtr.sewfar.ui.common.LocalMessages
+import at.mtr.sewfar.ui.common.currencyOf
+import at.mtr.sewfar.data.db.DeletionToken
+import at.mtr.sewfar.domain.PurchaseCategory
+import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Library sections (SPEC 2). */
 /** In the order of the tabs. */
-enum class LibraryTab { PATTERNS, PEOPLE, MACHINES }
+enum class LibraryTab { PATTERNS, PEOPLE, MACHINES, PURCHASES }
 
 /** A library row: title, an optional second line and, for patterns, the cover photo (SPEC 3.5) and type (SPEC 4.1). */
 data class LibraryItem(
@@ -82,11 +88,29 @@ class LibraryViewModel(private val container: AppContainer, initialTab: LibraryT
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** Purchases (SPEC 4.3), newest first, and the chosen currency code (null = the phone's). */
+    val purchases = container.purchases.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val currency = container.settings.currency.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun today(): LocalDate = container.time.today()
+
+    fun savePurchase(id: String?, name: String, category: PurchaseCategory, priceCents: Long, boughtOn: LocalDate) {
+        container.appScope.launch {
+            // Store the default on first use, so a later region change doesn't relabel the amounts (SPEC 4.3).
+            if (container.settings.currency.first() == null) container.settings.setCurrency(currencyOf(null).currencyCode)
+            if (id == null) container.purchases.create(name, category, priceCents, boughtOn)
+            else container.purchases.edit(id, name, category, priceCents, boughtOn)
+        }
+    }
+
+    suspend fun deletePurchase(id: String): DeletionToken? = container.runInApp { container.purchases.delete(id) }
+
     suspend fun create(tab: LibraryTab, name: String, type: MachineType = MachineType.SEWING_MACHINE): String = container.runInApp {
         when (tab) {
             LibraryTab.PATTERNS -> container.patterns.create(name)
             LibraryTab.MACHINES -> container.machines.create(name, type)
             LibraryTab.PEOPLE -> container.persons.create(name)
+            LibraryTab.PURCHASES -> error("Purchases are created in their dialog")
         }
     }
 }
@@ -100,6 +124,12 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
     val scope = rememberCoroutineScope()
     var naming by rememberSaveable { mutableStateOf(false) }
     var newMachine by rememberSaveable { mutableStateOf<String?>(null) } // named, type still to pick
+    val purchases by viewModel.purchases.collectAsStateWithLifecycle()
+    val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
+    val currency = currencyOf(currencyCode)
+    var purchaseDialog by rememberSaveable { mutableStateOf<String?>(null) } // "" = new, else the purchase's id
+    val messages = LocalMessages.current
+    val purchaseDeleted = stringResource(R.string.purchase_deleted)
     Scaffold(
         topBar = {
             Column {
@@ -109,7 +139,8 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
                         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back)) }
                     },
                 )
-                PrimaryTabRow(selectedTabIndex = tab.ordinal) {
+                // Scrollable: four fixed tabs cut "Schnittmuster" in two on a phone.
+                PrimaryScrollableTabRow(selectedTabIndex = tab.ordinal, edgePadding = 0.dp) {
                     LibraryTab.entries.forEach { t ->
                         Tab(selected = tab == t, onClick = { viewModel.tab.value = t }, text = { Text(stringResource(t.title)) },
                             modifier = Modifier.testTag("tab-$t"))
@@ -119,11 +150,15 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { naming = true },
+                onClick = { if (tab == LibraryTab.PURCHASES) purchaseDialog = "" else naming = true },
                 modifier = Modifier.testTag("add"),
             ) { Icon(Icons.Outlined.Add, stringResource(tab.addLabel)) }
         },
     ) { padding ->
+        if (tab == LibraryTab.PURCHASES) {
+            purchases?.let { PurchaseList(it, currency, padding, onOpen = { p -> purchaseDialog = p.id }) }
+            return@Scaffold
+        }
         val list = items?.get(tab) ?: return@Scaffold
         if (list.isEmpty()) {
             EmptyState(stringResource(tab.empty), padding)
@@ -164,6 +199,21 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
             onDismiss = { naming = false },
         )
     }
+    purchaseDialog?.let { id ->
+        val editing = purchases?.firstOrNull { it.id == id }
+        if (id.isNotEmpty() && editing == null) return@let // just deleted, or still loading
+        PurchaseDialog(
+            initial = editing, currency = currency, today = viewModel.today(),
+            onSave = { name, category, cents, date -> purchaseDialog = null; viewModel.savePurchase(editing?.id, name, category, cents, date) },
+            onDelete = editing?.let { p ->
+                {
+                    purchaseDialog = null
+                    scope.launch { viewModel.deletePurchase(p.id)?.let { messages.showUndo(purchaseDeleted, it) } }
+                }
+            },
+            onDismiss = { purchaseDialog = null },
+        )
+    }
     newMachine?.let { name ->
         MachineTypeDialog(
             onPick = { type ->
@@ -180,6 +230,7 @@ private val LibraryTab.nameLabel: Int
         LibraryTab.PATTERNS -> R.string.pattern_name
         LibraryTab.MACHINES -> R.string.machine_name
         LibraryTab.PEOPLE -> R.string.person_name
+        LibraryTab.PURCHASES -> R.string.purchase_name
     }
 
 private val LibraryTab.title: Int
@@ -187,6 +238,7 @@ private val LibraryTab.title: Int
         LibraryTab.PATTERNS -> R.string.library_patterns
         LibraryTab.MACHINES -> R.string.library_machines
         LibraryTab.PEOPLE -> R.string.library_people
+        LibraryTab.PURCHASES -> R.string.library_purchases
     }
 
 private val LibraryTab.addLabel: Int
@@ -194,6 +246,7 @@ private val LibraryTab.addLabel: Int
         LibraryTab.PATTERNS -> R.string.pattern_new
         LibraryTab.MACHINES -> R.string.machine_new
         LibraryTab.PEOPLE -> R.string.person_new
+        LibraryTab.PURCHASES -> R.string.purchase_new
     }
 
 private val LibraryTab.empty: Int
@@ -201,4 +254,5 @@ private val LibraryTab.empty: Int
         LibraryTab.PATTERNS -> R.string.patterns_empty
         LibraryTab.MACHINES -> R.string.machines_empty
         LibraryTab.PEOPLE -> R.string.people_empty
+        LibraryTab.PURCHASES -> R.string.purchases_empty
     }

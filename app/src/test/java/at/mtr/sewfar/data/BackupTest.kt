@@ -208,7 +208,7 @@ class BackupTest {
         assertEquals("1.3", t.machines.observeValues(setup.setupId).first().single().value)
         assertEquals(mapOf("waist" to 74.5), t.persons.observeMeasurements(project.personId!!).first()!!.valuesCm)
         // Tables added later (format 3: project_tag) are empty after restoring format 1.
-        for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables - "project_tag") assertTrue(table, t.count(table) > 0)
+        for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables - "project_tag" - "purchase") assertTrue(table, t.count(table) > 0)
         assertEquals("format 1 has no pinned pattern cover", null, t.patterns.observeAll().first().single().coverPhotoId)
     }
 
@@ -233,6 +233,17 @@ class BackupTest {
         assertEquals(at.mtr.sewfar.domain.GarmentType.DRESS, t.patterns.observeAll().first().single().garmentType)
         val project = t.projects.observeAll().first().single()
         assertEquals(listOf("Fixture tag"), t.projects.observeTags(project.id).first().map { it.name })
+        for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables - "purchase") assertTrue(table, t.count(table) > 0)
+    }
+
+    /** Format 4 adds purchases (SPEC 8.1). */
+    @Test
+    fun formatFourFixtureKeepsPurchases() = runTest {
+        val fixture = javaClass.classLoader!!.getResourceAsStream("backup/format4.zip")!!
+        backup.import(backup.prepareImport(fixture))
+        val purchase = t.purchases.observeAll().first().single()
+        assertEquals(listOf("Fixture jersey", at.mtr.sewfar.domain.PurchaseCategory.FABRIC, 1850L, java.time.LocalDate.of(2026, 11, 28)),
+            listOf(purchase.name, purchase.category, purchase.priceCents, purchase.boughtOn))
         for (table in at.mtr.sewfar.data.db.SoftDeleter.AllTables) assertTrue(table, t.count(table) > 0)
     }
 

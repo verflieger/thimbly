@@ -9,7 +9,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * SPEC 7. Schema version 1 is frozen since v0.1, version 2 adds `pattern.coverPhotoId`, version 3 `pattern.garmentType` and `project_tag` (`SchemaFreezeTest` pins v1's identity hash). Every schema change raises
+ * SPEC 7. Schema version 1 is frozen since v0.1, version 2 adds `pattern.coverPhotoId`, version 3 `pattern.garmentType` and `project_tag`, version 4 `purchase` (`SchemaFreezeTest` pins v1's identity hash). Every schema change raises
  * the version, ships a migration in [MIGRATIONS] and a migration test; the database is never dropped.
  */
 @Database(
@@ -17,7 +17,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     entities = [
         PersonEntity::class, MeasurementEntity::class, MeasurementValueEntity::class, PatternEntity::class, ProjectEntity::class, ProjectPatternEntity::class, ProjectTagEntity::class,
         TimeEntryEntity::class, PhotoEntity::class, MachineEntity::class, SetupEntity::class,
-        SetupValueEntity::class, ProjectSetupEntity::class, DeletionLogEntity::class,
+        SetupValueEntity::class, ProjectSetupEntity::class, PurchaseEntity::class, DeletionLogEntity::class,
     ],
 )
 @TypeConverters(Converters::class)
@@ -27,10 +27,11 @@ abstract class SewFarDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao
     abstract fun photoDao(): PhotoDao
     abstract fun machineDao(): MachineDao
+    abstract fun purchaseDao(): PurchaseDao
 
     companion object {
         /** Current schema version. Raise it with every schema change (and add a migration). */
-        const val VERSION = 3
+        const val VERSION = 4
 
         /** Migrations between schema versions. */
         val MIGRATIONS: Array<Migration> = arrayOf(
@@ -49,6 +50,14 @@ abstract class SewFarDatabase : RoomDatabase() {
                     )
                     db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_project_tag_projectId_name` ON `project_tag` (`projectId`, `name`)")
                 }
+            },
+            // 4: purchases log (SPEC 4.3).
+            object : Migration(3, 4) {
+                override fun migrate(db: SupportSQLiteDatabase) = db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `purchase` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, " +
+                        "`priceCents` INTEGER NOT NULL, `boughtOn` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, " +
+                        "`deletedAt` INTEGER, PRIMARY KEY(`id`))",
+                )
             },
         )
 

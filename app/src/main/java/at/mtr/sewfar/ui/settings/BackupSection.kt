@@ -190,7 +190,7 @@ fun BackupSection(container: AppContainer) {
             onDismissRequest = { plan = null },
             title = { Text(stringResource(R.string.backup_confirm_title)) },
             text = {
-                Text(stringResource(R.string.backup_confirm_text, p.counts["project"] ?: 0, p.counts["pattern"] ?: 0, p.counts["person"] ?: 0, p.counts["photo"] ?: 0))
+                Text(stringResource(R.string.backup_confirm_text, p.counts["project"] ?: 0, p.counts["pattern"] ?: 0, p.counts["person"] ?: 0, p.counts["photo"] ?: 0, p.counts["purchase"] ?: 0))
             },
             confirmButton = {
                 TextButton(onClick = { plan = null; work(restoredText) { backup.import(p) } }) { Text(stringResource(R.string.backup_replace)) }

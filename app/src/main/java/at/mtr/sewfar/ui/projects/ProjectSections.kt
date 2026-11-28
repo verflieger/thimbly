@@ -15,8 +15,6 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,7 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +40,7 @@ import at.mtr.sewfar.data.ProjectDetailState
 import at.mtr.sewfar.R
 import at.mtr.sewfar.domain.Durations
 import at.mtr.sewfar.domain.ProjectStatus
+import at.mtr.sewfar.ui.common.DatePickDialog
 import at.mtr.sewfar.ui.common.LabeledTextField
 import at.mtr.sewfar.ui.common.SectionLabel
 import at.mtr.sewfar.ui.common.format
@@ -52,7 +50,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-private const val DayMillis = 86_400_000L
 
 /** Time spent (SPEC 3.3): total, start/stop, add time by hand, the entries (tap one to correct it). */
 @Composable
@@ -145,17 +142,7 @@ internal fun TimeDialog(
     var pickingDate by remember { mutableStateOf(false) }
     val minutes = Durations.parseMinutes(text)
     if (pickingDate) {
-        val pickerState = rememberDatePickerState(initialSelectedDateMillis = date.toEpochDay() * DayMillis)
-        DatePickerDialog(
-            onDismissRequest = { pickingDate = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { date = LocalDate.ofEpochDay(it / DayMillis) }
-                    pickingDate = false
-                }) { Text(stringResource(android.R.string.ok)) }
-            },
-            dismissButton = { TextButton(onClick = { pickingDate = false }) { Text(stringResource(R.string.action_cancel)) } },
-        ) { DatePicker(pickerState) }
+        DatePickDialog(date, onPick = { date = it; pickingDate = false }, onDismiss = { pickingDate = false })
         return
     }
     AlertDialog(

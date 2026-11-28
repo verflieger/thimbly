@@ -11,5 +11,8 @@ enum class PhotoOwner { PROJECT, PATTERN }
 /** SPEC 4.1: what a pattern sews. TOP includes shirts, JACKET coats, BAG accessories. Declaration order = list order. */
 enum class GarmentType { DRESS, SKIRT, TOP, TROUSERS, JACKET, BAG, OTHER }
 
+/** SPEC 4.3. Declaration order = chip order. */
+enum class PurchaseCategory { FABRIC, NOTIONS, PATTERNS, TOOLS, MACHINES, OTHER }
+
 /** SPEC 5.1 */
 enum class MachineType { SEWING_MACHINE, OVERLOCKER, COVERSTITCH, EMBROIDERY, OTHER }
