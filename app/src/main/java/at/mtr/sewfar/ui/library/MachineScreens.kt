@@ -15,12 +15,16 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -36,7 +40,9 @@ import at.mtr.sewfar.data.db.SetupRow
 import at.mtr.sewfar.domain.MachineTemplates
 import at.mtr.sewfar.domain.MachineType
 import at.mtr.sewfar.ui.common.EditHeader
-import at.mtr.sewfar.ui.common.ChoiceDialog
+import at.mtr.sewfar.ui.common.ChipChoice
+import at.mtr.sewfar.ui.common.FormDialog
+import at.mtr.sewfar.ui.common.LabeledTextField
 import at.mtr.sewfar.ui.common.EditableText
 import at.mtr.sewfar.ui.common.FormField
 import at.mtr.sewfar.ui.common.ReadOnlyField
@@ -196,7 +202,21 @@ fun SetupScreen(
     }
 }
 
-/** Asks for the type of a new machine; the type decides the setting fields and is fixed (SPEC 5.1). */
+/** "New machine" (SPEC 2, 5.1): name and type in one dialog; the type decides the setting fields and is fixed. */
 @Composable
-fun MachineTypeDialog(onPick: (MachineType) -> Unit, onDismiss: () -> Unit) =
-    ChoiceDialog(stringResource(R.string.machine_type_question), MachineType.entries, { it.label }, onPick, onDismiss)
+fun NewMachineDialog(initialName: String = "", onSave: (String, MachineType) -> Unit, onDismiss: () -> Unit) {
+    var name by rememberSaveable { mutableStateOf(initialName) }
+    // None preselected: a machine never changes kind (SPEC 5.1).
+    var type by rememberSaveable { mutableStateOf<MachineType?>(null) }
+    val focus = remember { FocusRequester() }
+    FormDialog(
+        stringResource(R.string.machine_new),
+        canSave = name.isNotBlank() && type != null,
+        onSave = { type?.let { onSave(name.trim(), it) } },
+        onDismiss = onDismiss,
+    ) {
+        LabeledTextField(name, { name = it }, stringResource(R.string.machine_name), fieldModifier = Modifier.focusRequester(focus).testTag("dialogText"))
+        ChipChoice(stringResource(R.string.machine_type_question), MachineType.entries, type, { it.label }, "type") { type = it }
+    }
+    LaunchedEffect(Unit) { if (initialName.isBlank()) runCatching { focus.requestFocus() } }
+}

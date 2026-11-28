@@ -5,13 +5,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Close
@@ -23,6 +27,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -81,7 +86,7 @@ fun EditHeader(title: String, tag: String, onEdit: () -> Unit) {
 
 /** A value shown read-only under its label with ✎; null shows "Tap to add". A tap or ✎ calls [onEdit] (SPEC 2). */
 @Composable
-private fun EditableValue(label: String, tag: String, shown: String?, onEdit: () -> Unit) {
+fun EditableValue(label: String, tag: String, shown: String?, onEdit: () -> Unit) {
     Column {
         EditHeader(label, tag, onEdit)
         Text(
@@ -135,7 +140,7 @@ fun GroupHeader(label: String, count: Int, collapsed: Boolean? = null, onToggle:
 }
 
 /**
- * Picks one of [options] (SPEC 2: a fixed list, e.g. a machine's or a pattern's type); a tap picks at once.
+ * Picks one of [options] (SPEC 2: a fixed list, e.g. a pattern's type or a purchase's category); a tap picks at once.
  * Each option is tagged `type-<NAME>` for tests.
  */
 @Composable
@@ -339,4 +344,46 @@ fun DatePickDialog(date: LocalDate, onPick: (LocalDate) -> Unit, onDismiss: () -
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     ) { DatePicker(pickerState) }
+}
+
+/**
+ * A dialog with several fields or a checked one (SPEC 2: a new machine, a new purchase, a price): [title], the fields,
+ * Save (enabled by [canSave]) and Cancel. A tap outside does nothing; Cancel and back discard.
+ */
+@Composable
+fun FormDialog(
+    title: String,
+    canSave: Boolean,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(dismissOnClickOutside = false),
+        title = { Text(title) },
+        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp), content = content) },
+        confirmButton = {
+            TextButton(onClick = onSave, enabled = canSave, modifier = Modifier.testTag("dialogSave")) { Text(stringResource(R.string.action_save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+/** A fixed choice inside a [FormDialog]: [label] above one chip per option; chips are tagged `<tagPrefix>-<NAME>`. */
+@Composable
+fun <T : Enum<T>> ChipChoice(label: String, options: List<T>, selected: T?, labelOf: (T) -> Int, tagPrefix: String, onPick: (T) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        SectionLabel(label)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            options.forEach { option ->
+                FilterChip(
+                    selected = selected == option,
+                    onClick = { onPick(option) },
+                    label = { Text(stringResource(labelOf(option))) },
+                    modifier = Modifier.testTag("$tagPrefix-${option.name}"),
+                )
+            }
+        }
+    }
 }

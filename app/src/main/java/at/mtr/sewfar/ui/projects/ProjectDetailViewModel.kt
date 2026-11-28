@@ -77,7 +77,7 @@ class ProjectDetailViewModel(private val container: AppContainer, val id: String
 
     /** Creates a setup on [machineId] (or on a new machine named [newMachineName] of [newMachineType]), links it and returns its ID. */
     suspend fun createSetup(
-        title: String, machineId: String?, newMachineName: String? = null, newMachineType: MachineType = MachineType.SEWING_MACHINE,
+        title: String, machineId: String?, newMachineName: String? = null, newMachineType: MachineType? = null,
     ): String = run { container.projectPage.createSetup(id, title, machineId, newMachineName, newMachineType) }
 
     suspend fun removeSetup(linkId: String): DeletionToken? = run { projects.removeSetup(linkId) }

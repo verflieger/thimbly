@@ -50,7 +50,7 @@ import at.mtr.sewfar.domain.SearchText
 import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.domain.ProjectStatus
 import at.mtr.sewfar.ui.common.DetailScaffold
-import at.mtr.sewfar.ui.library.MachineTypeDialog
+import at.mtr.sewfar.ui.library.NewMachineDialog
 import at.mtr.sewfar.ui.common.EditHeader
 import at.mtr.sewfar.ui.common.EntityPicker
 import at.mtr.sewfar.ui.common.LocalMessages
@@ -77,7 +77,7 @@ private sealed interface Picking {
     data class RenameTag(val name: String, val back: Tag) : Picking
     /** A new setup named [title] needs a machine. */
     data class SetupMachine(val title: String) : Picking
-    /** The new machine [machineName] for setup [title] needs its type, which decides the setting's fields (SPEC 5.2). */
+    /** "New machine" dialog for setup [title], with the typed [machineName] filled in (SPEC 5.2). */
     data class MachineKind(val title: String, val machineName: String) : Picking
     data object Rename : Picking
     data object Size : Picking
@@ -318,11 +318,12 @@ fun ProjectDetailScreen(
             onCreate = { machineName -> picking = Picking.MachineKind(p.title, machineName) },
             onDismiss = { picking = null },
         )
-        is Picking.MachineKind -> MachineTypeDialog(
-            onPick = { type ->
+        is Picking.MachineKind -> NewMachineDialog(
+            initialName = p.machineName,
+            onSave = { name, type ->
                 picking = null
                 scope.launch {
-                    val id = viewModel.createSetup(p.title, null, p.machineName, type)
+                    val id = viewModel.createSetup(p.title, null, name, type)
                     withContext(Dispatchers.Main) { onOpenNewSetup(id) }
                 }
             },

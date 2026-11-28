@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,14 +13,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,12 +34,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
+import at.mtr.sewfar.AppContainer
 import at.mtr.sewfar.R
+import at.mtr.sewfar.data.db.ProjectRef
+import at.mtr.sewfar.ui.common.EditableChoice
+import at.mtr.sewfar.ui.common.EditableValue
+import at.mtr.sewfar.ui.common.currencyOf
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.stateIn
 import at.mtr.sewfar.data.db.PurchaseEntity
 import at.mtr.sewfar.domain.Money
 import at.mtr.sewfar.domain.PurchaseCategory
+import at.mtr.sewfar.ui.common.ChipChoice
 import at.mtr.sewfar.ui.common.DatePickDialog
+import at.mtr.sewfar.ui.common.FormDialog
 import at.mtr.sewfar.ui.common.EmptyState
 import at.mtr.sewfar.ui.common.LabeledTextField
 import at.mtr.sewfar.ui.common.SectionLabel
@@ -113,85 +121,113 @@ fun PurchaseList(purchases: List<PurchaseEntity>, currency: Currency, padding: P
 }
 
 /**
- * Adds ([initial] null) or edits a purchase in one dialog (SPEC 4.3). Save is disabled while the name is blank or the
- * price is not a number; a tap outside does nothing, Cancel and back discard (SPEC 2). [onDelete] only when editing.
+ * Adds a purchase with all its fields in one dialog (SPEC 2, 4.3). Save is disabled while the name is blank or the
+ * price is not a number. Editing happens on the purchase's page ([PurchaseScreen]).
  */
 @Composable
-fun PurchaseDialog(
-    initial: PurchaseEntity?,
+fun NewPurchaseDialog(
     currency: Currency,
     today: LocalDate,
     onSave: (name: String, category: PurchaseCategory, priceCents: Long, boughtOn: LocalDate) -> Unit,
-    onDelete: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
-    val locale = currentLocale
-    var name by rememberSaveable { mutableStateOf(initial?.name.orEmpty()) }
-    var price by rememberSaveable {
-        mutableStateOf(initial?.let { Money.toInput(it.priceCents, DecimalFormatSymbols.getInstance(locale).decimalSeparator) }.orEmpty())
-    }
-    var category by rememberSaveable { mutableStateOf(initial?.category ?: PurchaseCategory.FABRIC) }
-    var date by rememberSaveable { mutableStateOf(initial?.boughtOn ?: today) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var price by rememberSaveable { mutableStateOf("") }
+    var category by rememberSaveable { mutableStateOf(PurchaseCategory.FABRIC) }
+    var date by rememberSaveable { mutableStateOf(today) }
     var pickingDate by remember { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     val cents = Money.parseCents(price)
     // Before the early return, so coming back from the date picker doesn't run it again.
-    LaunchedEffect(Unit) { if (initial == null) runCatching { focus.requestFocus() } }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     if (pickingDate) {
         DatePickDialog(date, onPick = { date = it; pickingDate = false }, onDismiss = { pickingDate = false })
         return
     }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(dismissOnClickOutside = false),
-        title = { Text(stringResource(if (initial == null) R.string.purchase_new else R.string.purchase_edit)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                LabeledTextField(
-                    name, { name = it }, stringResource(R.string.purchase_name),
-                    fieldModifier = Modifier.focusRequester(focus).testTag("purchaseName"),
-                    placeholder = stringResource(R.string.purchase_name_hint),
-                )
-                LabeledTextField(
-                    price, { price = it }, stringResource(R.string.purchase_price),
-                    fieldModifier = Modifier.testTag("purchasePrice"),
-                    suffix = currency.getSymbol(locale),
-                    isError = price.isNotBlank() && cents == null,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, capitalization = KeyboardCapitalization.None),
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    SectionLabel(stringResource(R.string.purchase_category))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PurchaseCategory.entries.forEach { option ->
-                            FilterChip(
-                                selected = category == option,
-                                onClick = { category = option },
-                                label = { Text(stringResource(option.label)) },
-                                modifier = Modifier.testTag("category-${option.name}"),
-                            )
-                        }
-                    }
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    SectionLabel(stringResource(R.string.purchase_date))
-                    OutlinedButton(onClick = { pickingDate = true }) { Text(date.format()) }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { cents?.let { onSave(name.trim(), category, it, date) } },
-                enabled = name.isNotBlank() && cents != null,
-                modifier = Modifier.testTag("purchaseSave"),
-            ) { Text(stringResource(R.string.action_save)) }
-        },
-        dismissButton = {
-            Row {
-                if (onDelete != null) {
-                    TextButton(onClick = onDelete, modifier = Modifier.testTag("purchaseDelete")) { Text(stringResource(R.string.action_delete)) }
-                }
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-            }
-        },
+    FormDialog(
+        title = stringResource(R.string.purchase_new),
+        canSave = name.isNotBlank() && cents != null,
+        onSave = { cents?.let { onSave(name.trim(), category, it, date) } },
+        onDismiss = onDismiss,
+    ) {
+        LabeledTextField(
+            name, { name = it }, stringResource(R.string.purchase_name),
+            fieldModifier = Modifier.focusRequester(focus).testTag("purchaseName"),
+            placeholder = stringResource(R.string.purchase_name_hint),
+        )
+        PriceField(price, { price = it }, currency)
+        ChipChoice(stringResource(R.string.purchase_category), PurchaseCategory.entries, category, { it.label }, "category") { category = it }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            SectionLabel(stringResource(R.string.purchase_date))
+            OutlinedButton(onClick = { pickingDate = true }) { Text(date.format()) }
+        }
+    }
+}
+
+/** The price input: comma or dot, at most two decimals, the currency as suffix (SPEC 4.3). */
+@Composable
+private fun PriceField(price: String, onChange: (String) -> Unit, currency: Currency, focus: FocusRequester? = null) {
+    LabeledTextField(
+        price, onChange, stringResource(R.string.purchase_price),
+        fieldModifier = (focus?.let { Modifier.focusRequester(it) } ?: Modifier).testTag("purchasePrice"),
+        suffix = currency.getSymbol(currentLocale),
+        isError = price.isNotBlank() && Money.parseCents(price) == null,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, capitalization = KeyboardCapitalization.None),
     )
+}
+
+// ---- Purchase page (SPEC 4.3): like every library page ----
+
+class PurchaseViewModel(container: AppContainer, private val id: String) : RecordViewModel<PurchaseEntity>(container) {
+    private val repo = container.purchases
+    override val record = repo.observe(id)
+    override val projectsFlow = emptyFlow<List<ProjectRef>>()
+    val currency: StateFlow<String?> = container.settings.currency.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    override suspend fun delete() = container.runInApp { repo.delete(id) }
+
+    fun change(change: (PurchaseEntity) -> PurchaseEntity) = write { repo.edit(id, change) }
+}
+
+/** A purchase's page: price, category and date read-only, each edited by a tap; ✎ renames, the trash icon deletes. */
+@Composable
+fun PurchaseScreen(viewModel: PurchaseViewModel, onBack: () -> Unit) {
+    val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
+    val currency = currencyOf(currencyCode)
+    val locale = currentLocale
+    var editing by rememberSaveable { mutableStateOf<String?>(null) } // "price" or "date"
+    RecordScreen(
+        viewModel = viewModel,
+        startEditing = false,
+        deletedText = stringResource(R.string.purchase_deleted),
+        onBack = onBack,
+        onOpenProject = {},
+        titleOf = { it.name },
+        nameOf = { it.name },
+        nameLabel = stringResource(R.string.purchase_name),
+        onRename = { name -> viewModel.change { it.copy(name = name) } },
+    ) { purchase, _ ->
+        EditableValue(stringResource(R.string.purchase_price), "price", formatMoney(purchase.priceCents, currency, locale)) { editing = "price" }
+        EditableChoice(
+            stringResource(R.string.purchase_category), purchase.category, "category", stringResource(R.string.purchase_category),
+            PurchaseCategory.entries, { it.label },
+        ) { category -> viewModel.change { it.copy(category = category) } }
+        EditableValue(stringResource(R.string.purchase_date), "date", purchase.boughtOn.format()) { editing = "date" }
+        when (editing) {
+            "price" -> PriceDialog(purchase.priceCents, currency, onSave = { cents -> editing = null; viewModel.change { it.copy(priceCents = cents) } }, onDismiss = { editing = null })
+            "date" -> DatePickDialog(purchase.boughtOn, onPick = { date -> editing = null; viewModel.change { it.copy(boughtOn = date) } }, onDismiss = { editing = null })
+        }
+    }
+}
+
+@Composable
+private fun PriceDialog(cents: Long, currency: Currency, onSave: (Long) -> Unit, onDismiss: () -> Unit) {
+    val separator = DecimalFormatSymbols.getInstance(currentLocale).decimalSeparator
+    var price by rememberSaveable { mutableStateOf(Money.toInput(cents, separator)) }
+    val parsed = Money.parseCents(price)
+    val focus = remember { FocusRequester() }
+    FormDialog(stringResource(R.string.purchase_price), canSave = parsed != null, onSave = { parsed?.let(onSave) }, onDismiss = onDismiss) {
+        PriceField(price, { price = it }, currency, focus)
+    }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 }

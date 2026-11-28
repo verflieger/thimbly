@@ -20,7 +20,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** SPEC 4.3: add purchases in the dialog, totals per year and overall, category filter, edit, delete. */
+/** SPEC 4.3: add purchases in the dialog, totals per year and overall, category filter, edit and delete on the page. */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "en")
 class PurchaseFlowTest {
@@ -36,7 +36,7 @@ class PurchaseFlowTest {
         compose.onNodeWithTag("purchaseName").performTextInput(name)
         compose.onNodeWithTag("purchasePrice").performTextInput(price)
         compose.onNodeWithTag("category-$category").performScrollTo().performClick()
-        compose.onNodeWithTag("purchaseSave").performClick()
+        compose.onNodeWithTag("dialogSave").performClick()
         waitFor(name)
     }
 
@@ -50,7 +50,7 @@ class PurchaseFlowTest {
         compose.onNodeWithTag("add").performClick()
         compose.onNodeWithTag("purchaseName").performTextInput("Thread")
         compose.onNodeWithTag("purchasePrice").performTextInput("1,234")
-        compose.onNodeWithTag("purchaseSave").assertIsNotEnabled()
+        compose.onNodeWithTag("dialogSave").assertIsNotEnabled()
         compose.onNodeWithText("Cancel").performClick()
 
         add("Jersey 2 m", "18,50", "FABRIC")
@@ -63,14 +63,31 @@ class PurchaseFlowTest {
         compose.onNodeWithTag("filter-TOOLS").performClick()
         compose.onNodeWithTag("total").assertTextEquals("€43.40")
 
+        // Edited on its page, like every library record (SPEC 2).
         compose.onNodeWithText("Scissors").performClick()
+        compose.onNodeWithTag("edit-price").performClick()
         compose.onNodeWithTag("purchasePrice").performTextReplacement("30")
-        compose.onNodeWithTag("purchaseSave").performClick()
+        compose.onNodeWithTag("dialogSave").performClick()
+        waitFor("€30.00")
+        compose.onNodeWithTag("edit-category").performClick()
+        compose.onNodeWithTag("type-OTHER").performClick()
+        waitFor("Other")
+        compose.onNodeWithTag("edit").performClick() // rename
+        compose.onNodeWithTag("dialogText").performTextReplacement("  Shears ")
+        compose.onNodeWithTag("dialogSave").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Shears")).fetchSemanticsNodes().isNotEmpty() } // trimmed
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("total").assertTextEquals("€48.50") }.isSuccess }
 
-        compose.onNodeWithText("Scissors").performClick()
-        compose.onNodeWithTag("purchaseDelete").performClick()
+        compose.onNodeWithTag("filter-OTHER").performClick()
+        compose.onNodeWithTag("total").assertTextEquals("€30.00")
+        compose.onNodeWithTag("filter-OTHER").performClick()
+
+        compose.onNodeWithText("Shears").performClick()
+        compose.onNodeWithTag("delete").performClick()
         waitFor("Purchase deleted")
         compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("total").assertTextEquals("€18.50") }.isSuccess }
+        compose.onNodeWithText("Undo").performClick()
+        compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("total").assertTextEquals("€48.50") }.isSuccess }
     }
 }

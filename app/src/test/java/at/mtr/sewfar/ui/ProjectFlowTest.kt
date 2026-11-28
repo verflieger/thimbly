@@ -1,6 +1,8 @@
 package at.mtr.sewfar.ui
 
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -60,7 +62,9 @@ class ProjectFlowTest {
         compose.onNodeWithText("New setting “Jersey seam”").performClick()
         compose.onNodeWithTag("pickerSearch").performTextInput("Overlock")
         compose.onNodeWithText("Create “Overlock”").performClick()
+        compose.onNodeWithTag("dialogText").assertTextEquals("Overlock") // the New machine dialog has the name filled in
         compose.onNodeWithTag("type-OVERLOCKER").performClick()
+        compose.onNodeWithTag("dialogSave").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("field-differential_feed").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("field-differential_feed").performTextInput("1.3")
         compose.onNodeWithTag("save").performClick()
@@ -140,15 +144,16 @@ class ProjectFlowTest {
         waitFor("Top (1)")
     }
 
-    /** SPEC 5.1: a new machine is asked for its type, which is then shown read-only. */
+    /** SPEC 2, 5.1: name and type in one dialog (Save waits for a type); the type is then shown read-only. */
     @Test
     fun newMachineAsksForItsTypeOnce() {
         compose.onNodeWithTag("library").performClick()
         compose.onNodeWithTag("tab-MACHINES").performClick()
         compose.onNodeWithTag("add").performClick()
         compose.onNodeWithTag("dialogText").performTextInput("Juki")
-        compose.onNodeWithTag("dialogSave").performClick()
+        compose.onNodeWithTag("dialogSave").assertIsNotEnabled()
         compose.onNodeWithTag("type-COVERSTITCH").performClick()
+        compose.onNodeWithTag("dialogSave").performClick()
         waitFor("Coverstitch")
     }
 

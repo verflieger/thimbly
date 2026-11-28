@@ -15,6 +15,7 @@ class PurchaseRepository(private val db: SewFarDatabase, private val deleter: So
     private val dao = db.purchaseDao()
 
     fun observeAll(): Flow<List<PurchaseEntity>> = dao.observeAll()
+    fun observe(id: String): Flow<PurchaseEntity?> = dao.observeOne(id)
 
     suspend fun create(name: String, category: PurchaseCategory, priceCents: Long, boughtOn: LocalDate): String {
         val id = Ids.random()
@@ -23,9 +24,9 @@ class PurchaseRepository(private val db: SewFarDatabase, private val deleter: So
         return id
     }
 
-    suspend fun edit(id: String, name: String, category: PurchaseCategory, priceCents: Long, boughtOn: LocalDate) = db.withTransaction {
+    suspend fun edit(id: String, change: (PurchaseEntity) -> PurchaseEntity) = db.withTransaction {
         val current = dao.get(id) ?: return@withTransaction
-        val next = current.copy(name = name.trim(), category = category, priceCents = priceCents, boughtOn = boughtOn)
+        val next = change(current)
         if (next != current) dao.update(next.copy(updatedAt = time.nowMillis()))
     }
 

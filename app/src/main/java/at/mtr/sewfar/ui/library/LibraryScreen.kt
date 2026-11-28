@@ -49,9 +49,7 @@ import at.mtr.sewfar.data.patternCovers
 import at.mtr.sewfar.ui.photos.CoverThumbnail
 import at.mtr.sewfar.ui.common.EmptyState
 import at.mtr.sewfar.ui.common.TextDialog
-import at.mtr.sewfar.ui.common.LocalMessages
 import at.mtr.sewfar.ui.common.currencyOf
-import at.mtr.sewfar.data.db.DeletionToken
 import at.mtr.sewfar.domain.PurchaseCategory
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
@@ -94,21 +92,21 @@ class LibraryViewModel(private val container: AppContainer, initialTab: LibraryT
 
     fun today(): LocalDate = container.time.today()
 
-    fun savePurchase(id: String?, name: String, category: PurchaseCategory, priceCents: Long, boughtOn: LocalDate) {
+    fun createPurchase(name: String, category: PurchaseCategory, priceCents: Long, boughtOn: LocalDate) {
         container.appScope.launch {
             // Store the default on first use, so a later region change doesn't relabel the amounts (SPEC 4.3).
             if (container.settings.currency.first() == null) container.settings.setCurrency(currencyOf(null).currencyCode)
-            if (id == null) container.purchases.create(name, category, priceCents, boughtOn)
-            else container.purchases.edit(id, name, category, priceCents, boughtOn)
+            container.purchases.create(name, category, priceCents, boughtOn)
         }
     }
 
-    suspend fun deletePurchase(id: String): DeletionToken? = container.runInApp { container.purchases.delete(id) }
+    /** A machine always gets its type picked (SPEC 5.1), so it has no default here. */
+    suspend fun createMachine(name: String, type: MachineType): String = container.runInApp { container.machines.create(name, type) }
 
-    suspend fun create(tab: LibraryTab, name: String, type: MachineType = MachineType.SEWING_MACHINE): String = container.runInApp {
+    suspend fun create(tab: LibraryTab, name: String): String = container.runInApp {
         when (tab) {
             LibraryTab.PATTERNS -> container.patterns.create(name)
-            LibraryTab.MACHINES -> container.machines.create(name, type)
+            LibraryTab.MACHINES -> error("Machines are created with their type (createMachine)")
             LibraryTab.PEOPLE -> container.persons.create(name)
             LibraryTab.PURCHASES -> error("Purchases are created in their dialog")
         }
@@ -123,13 +121,11 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
     val items by viewModel.items.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var naming by rememberSaveable { mutableStateOf(false) }
-    var newMachine by rememberSaveable { mutableStateOf<String?>(null) } // named, type still to pick
+    var creatingMachine by rememberSaveable { mutableStateOf(false) }
     val purchases by viewModel.purchases.collectAsStateWithLifecycle()
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
     val currency = currencyOf(currencyCode)
-    var purchaseDialog by rememberSaveable { mutableStateOf<String?>(null) } // "" = new, else the purchase's id
-    val messages = LocalMessages.current
-    val purchaseDeleted = stringResource(R.string.purchase_deleted)
+    var creatingPurchase by rememberSaveable { mutableStateOf(false) }
     Scaffold(
         topBar = {
             Column {
@@ -150,13 +146,19 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { if (tab == LibraryTab.PURCHASES) purchaseDialog = "" else naming = true },
+                onClick = {
+                    when (tab) {
+                        LibraryTab.PURCHASES -> creatingPurchase = true
+                        LibraryTab.MACHINES -> creatingMachine = true
+                        else -> naming = true
+                    }
+                },
                 modifier = Modifier.testTag("add"),
             ) { Icon(Icons.Outlined.Add, stringResource(tab.addLabel)) }
         },
     ) { padding ->
         if (tab == LibraryTab.PURCHASES) {
-            purchases?.let { PurchaseList(it, currency, padding, onOpen = { p -> purchaseDialog = p.id }) }
+            purchases?.let { PurchaseList(it, currency, padding, onOpen = { p -> onOpen(LibraryTab.PURCHASES, p.id) }) }
             return@Scaffold
         }
         val list = items?.get(tab) ?: return@Scaffold
@@ -193,34 +195,26 @@ fun LibraryScreen(viewModel: LibraryViewModel, onBack: () -> Unit, onOpen: (Libr
             onSave = { name ->
                 naming = false
                 val t = tab
-                if (t == LibraryTab.MACHINES) newMachine = name
-                else scope.launch { val id = viewModel.create(t, name); withContext(Dispatchers.Main) { onOpen(t, id) } }
+                scope.launch { val id = viewModel.create(t, name); withContext(Dispatchers.Main) { onOpen(t, id) } }
             },
             onDismiss = { naming = false },
         )
     }
-    purchaseDialog?.let { id ->
-        val editing = purchases?.firstOrNull { it.id == id }
-        if (id.isNotEmpty() && editing == null) return@let // just deleted, or still loading
-        PurchaseDialog(
-            initial = editing, currency = currency, today = viewModel.today(),
-            onSave = { name, category, cents, date -> purchaseDialog = null; viewModel.savePurchase(editing?.id, name, category, cents, date) },
-            onDelete = editing?.let { p ->
-                {
-                    purchaseDialog = null
-                    scope.launch { viewModel.deletePurchase(p.id)?.let { messages.showUndo(purchaseDeleted, it) } }
-                }
-            },
-            onDismiss = { purchaseDialog = null },
+    if (creatingPurchase) {
+        // A purchase is complete after its dialog, so the list stays (SPEC 2): quick for several receipt lines.
+        NewPurchaseDialog(
+            currency = currency, today = viewModel.today(),
+            onSave = { name, category, cents, date -> creatingPurchase = false; viewModel.createPurchase(name, category, cents, date) },
+            onDismiss = { creatingPurchase = false },
         )
     }
-    newMachine?.let { name ->
-        MachineTypeDialog(
-            onPick = { type ->
-                newMachine = null
-                scope.launch { val id = viewModel.create(LibraryTab.MACHINES, name, type); withContext(Dispatchers.Main) { onOpen(LibraryTab.MACHINES, id) } }
+    if (creatingMachine) {
+        NewMachineDialog(
+            onSave = { name, type ->
+                creatingMachine = false
+                scope.launch { val id = viewModel.createMachine(name, type); withContext(Dispatchers.Main) { onOpen(LibraryTab.MACHINES, id) } }
             },
-            onDismiss = { newMachine = null },
+            onDismiss = { creatingMachine = false },
         )
     }
 }

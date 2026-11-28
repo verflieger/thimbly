@@ -205,7 +205,6 @@
     <!-- Purchases (SPEC 4.3) -->
     <string name="library_purchases">Purchases</string>
     <string name="purchase_new">New purchase</string>
-    <string name="purchase_edit">Edit purchase</string>
     <string name="purchase_name">What did you buy?</string>
     <string name="purchase_name_hint">e.g. Jersey 2 m</string>
     <string name="purchase_price">Price</string>

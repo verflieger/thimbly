@@ -309,6 +309,9 @@ interface PurchaseDao {
     @Query("SELECT * FROM purchase WHERE id = :id AND deletedAt IS NULL")
     suspend fun get(id: String): PurchaseEntity?
 
+    @Query("SELECT * FROM purchase WHERE id = :id AND deletedAt IS NULL")
+    fun observeOne(id: String): Flow<PurchaseEntity?>
+
     /** Newest first (SPEC 4.3). */
     @Query("SELECT * FROM purchase WHERE deletedAt IS NULL ORDER BY boughtOn DESC, createdAt DESC")
     fun observeAll(): Flow<List<PurchaseEntity>>

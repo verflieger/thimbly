@@ -37,7 +37,11 @@ screens, fields and tabs).
   if the labels don't fit), each a list with a "+" button. Patterns,
   machines, settings and people can also be created right from a project, so the Library is only needed to edit or
   delete them.
-- **Creating:** "+" asks only for the name (dialog with Save), creates the record and opens its page.
+- **Creating (one rule since 2026-11-28):** "+" (and "Create “…”" in a picker) opens one dialog with the record's
+  required fields and Save: the name for projects, patterns, people and settings; name and type for a machine; all
+  fields for a purchase. Every record except a purchase then opens its page; a purchase is complete after the dialog,
+  so the list stays (quick for several receipt lines). Every record is edited on its page, the same way everywhere.
+- **Deleting:** always the trash icon in a page's top bar, followed by the Undo snackbar (§6).
 - **Editing (2026-11-24, one way everywhere since 2026-11-25):** texts are edited in a dialog with Save; state
   changes apply at once.
   - Texts (names, notes, size, fabric, a pattern's designer) are shown read-only. Tapping one or its ✎ opens a text
@@ -181,9 +185,9 @@ machines. Not linked to projects.
   Notions, Patterns, Tools, Machines, Other.
 - "+" opens one dialog with all fields: name, price (numbers with comma or dot, at most two decimals; the field shows
   the currency), category (chips, Fabric preselected) and date (today, a tap opens the date picker). Save is disabled
-  while the name is blank or the price is not a number. Tapping a purchase opens the same dialog to edit it, with
-  Delete (Undo, §6). A purchase has no page of its own: it is a short record, so this is the one exception to
-  "name first, then the page" (§2).
+  while the name is blank or the price is not a number. Tapping a purchase opens its page like any library record:
+  price, category and date read-only, a tap edits one (price dialog, category choice, date picker), ✎ renames, the
+  trash icon deletes (Undo, §6).
 - The list shows the total on top, then the purchases by year, newest first, each year with its sum. Category chips
   above the list filter the list and all sums (a tap picks one category, a second tap shows all again).
 - One currency for all purchases, chosen in Settings (§9); the default is the currency of the phone's region, stored
@@ -196,8 +200,9 @@ machines. Not linked to projects.
 
 ### 5.1 Machines
 
-Name, type (sewing machine, overlocker, coverstitch, embroidery, other; asked right after the name when the machine
-is created, "What kind of machine?", and shown read-only after: a machine never changes kind), notes, and the
+Name, type (sewing machine, overlocker, coverstitch, embroidery, other; chosen with chips in the "New machine" dialog
+next to the name, none preselected, Save is disabled until one is picked; shown read-only after: a machine never
+changes kind), notes, and the
 list of its settings with "+ New setting" (asks for the name, then opens the setting's values form). Deleting a machine deletes its settings and their project links (with Undo).
 
 ### 5.2 Machine settings ("setups")
@@ -216,8 +221,8 @@ list of its settings with "+ New setting" (asks for the name, then opens the set
   changed only on the machine page.
 - Plus notes and "Used in".
 - From a project: "+ Machine setting" → pick a setting, or type a name and "New setting “…”". With exactly one
-  machine it is used directly; otherwise a machine picker follows (with "Create “…”" for a new machine, which then
-  asks for the machine's type: "What kind of machine?"). The new setting is linked and its page opens with
+  machine it is used directly; otherwise a machine picker follows (with "Create “…”" for a new machine, which opens the
+  "New machine" dialog with the typed name filled in, §5.1). The new setting is linked and its page opens with
   the values form.
 
 ## 6. Delete and undo

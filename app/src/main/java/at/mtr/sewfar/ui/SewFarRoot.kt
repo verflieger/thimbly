@@ -50,6 +50,8 @@ import at.mtr.sewfar.ui.library.PatternScreen
 import at.mtr.sewfar.ui.library.PatternViewModel
 import at.mtr.sewfar.ui.library.PersonScreen
 import at.mtr.sewfar.ui.library.PersonViewModel
+import at.mtr.sewfar.ui.library.PurchaseScreen
+import at.mtr.sewfar.ui.library.PurchaseViewModel
 import at.mtr.sewfar.ui.library.SetupScreen
 import at.mtr.sewfar.ui.library.SetupViewModel
 import at.mtr.sewfar.ui.photos.PhotoViewerScreen
@@ -74,6 +76,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class PatternRoute(val id: String)
 @Serializable data class PersonRoute(val id: String)
 @Serializable data class MachineRoute(val id: String)
+@Serializable data class PurchaseRoute(val id: String)
 /** [edit]: just created, so the form opens right away for the values. */
 @Serializable data class SetupRoute(val id: String, val edit: Boolean = false)
 /** All photos of one owner, opened at [photoId] (SPEC 3.5). [ownerType] is a [PhotoOwner] name. */
@@ -194,7 +197,7 @@ fun SewFarRoot(container: AppContainer) {
                                     LibraryTab.PATTERNS -> PatternRoute(id)
                                     LibraryTab.MACHINES -> MachineRoute(id)
                                     LibraryTab.PEOPLE -> PersonRoute(id)
-                                    LibraryTab.PURCHASES -> return@LibraryScreen // edited in a dialog, no page
+                                    LibraryTab.PURCHASES -> PurchaseRoute(id)
                                 },
                             )
                         },
@@ -223,6 +226,10 @@ fun SewFarRoot(container: AppContainer) {
                         onBack = { nav.popFrom(entry) },
                         onOpenSetup = { id, edit -> nav.navigate(SetupRoute(id, edit)) },
                     )
+                }
+                composable<PurchaseRoute> { entry ->
+                    val route = entry.toRoute<PurchaseRoute>()
+                    PurchaseScreen(viewModel = viewModel { PurchaseViewModel(container, route.id) }, onBack = { nav.popFrom(entry) })
                 }
                 composable<SetupRoute> { entry ->
                     val route = entry.toRoute<SetupRoute>()

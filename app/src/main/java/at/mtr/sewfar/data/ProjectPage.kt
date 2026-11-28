@@ -74,10 +74,10 @@ class ProjectPage(
 
     /** Creates a setup on [machineId] (or on a new machine named [newMachineName] of [newMachineType]), links it and returns its ID. */
     suspend fun createSetup(
-        id: String, title: String, machineId: String?, newMachineName: String? = null, newMachineType: MachineType = MachineType.SEWING_MACHINE,
+        id: String, title: String, machineId: String?, newMachineName: String? = null, newMachineType: MachineType? = null,
     ): String = db.withTransaction {
         // One transaction: a crash never leaves an empty machine or an unlinked setting.
-        val machine = machineId ?: machines.create(newMachineName.orEmpty(), newMachineType)
+        val machine = machineId ?: machines.create(newMachineName.orEmpty(), requireNotNull(newMachineType) { "A new machine needs its type (SPEC 5.1)" })
         machines.createSetup(machine, title).also { projects.addSetup(id, it) }
     }
 }

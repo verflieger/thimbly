@@ -26,7 +26,7 @@ class PurchaseRepositoryTest {
         assertEquals(listOf(new, old), t.purchases.observeAll().first().map { it.id })
         assertEquals("Scissors", t.purchases.observeAll().first().last().name)
 
-        t.purchases.edit(old, "Scissors", PurchaseCategory.TOOLS, 2990, LocalDate.of(2025, 3, 2))
+        t.purchases.edit(old) { it.copy(priceCents = 2990) }
         assertEquals(2990L, t.purchases.observeAll().first().single { it.id == old }.priceCents)
 
         val token = t.purchases.delete(new)!!
